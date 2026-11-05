@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,11 @@ using NovaHardware.Hardware;
 using NovaHardware.Hardware.Amd;
 using NovaHardware.Hardware.Nvidia;
 using NovaHardware.Infrastructure;
+using NovaHardware.Core.Explorer;
+using NovaHardware.Infrastructure.Cpu;
 using NovaHardware.Infrastructure.Discovery;
+using NovaHardware.Infrastructure.Gpu;
+using NovaHardware.Infrastructure.Preferences;
 using NovaHardware.Infrastructure.Settings;
 using NovaHardware.Infrastructure.Smbios;
 using NovaHardware.Storage;
@@ -48,6 +53,7 @@ public static class Bootstrapper
 
         // Hardware providers — each isolated behind IHardwareProvider.
         services.AddSingleton<IHardwareProvider, LibreHardwareMonitorProvider>();
+        services.AddSingleton<IHardwareProvider, WindowsMemoryProvider>();
         if (settings.EnableNvidiaProvider)
         {
             services.AddSingleton<IHardwareProvider, NvApiProvider>();
@@ -66,12 +72,25 @@ public static class Bootstrapper
             Interval = TimeSpan.FromMilliseconds(settings.PollingIntervalMs),
         });
 
-        // Discovery.
+        // Discovery. Order matters: detailed, sectioned sources come first so their values win when devices are merged.
+        services.AddSingleton<IDeviceDiscoveryService, CpuDiscoveryService>();
+        services.AddSingleton<IDeviceDiscoveryService, GpuDiscoveryService>();
+        if (settings.EnableNvidiaProvider)
+        {
+            services.AddSingleton<IDeviceDiscoveryService, NvidiaGpuDetailSource>();
+        }
+
+        services.AddSingleton<SmbiosDiscoveryService>();
+        services.AddSingleton<IDeviceDiscoveryService, MotherboardDiscoveryService>();
         services.AddSingleton<WmiDeviceDiscoveryService>();
         services.AddSingleton<IDeviceDiscoveryService>(sp => sp.GetRequiredService<WmiDeviceDiscoveryService>());
         services.AddSingleton<ISystemSummaryProvider>(sp => sp.GetRequiredService<WmiDeviceDiscoveryService>());
-        services.AddSingleton<IDeviceDiscoveryService, SmbiosDiscoveryService>();
+        services.AddSingleton<IDeviceDiscoveryService>(sp => sp.GetRequiredService<SmbiosDiscoveryService>());
         services.AddSingleton<IDeviceDiscoveryService, SetupApiDiscoveryService>();
+
+        // Local user preferences.
+        services.AddSingleton<IPreferenceStore<SensorExplorerState>>(sp =>
+            new JsonPreferenceStore<SensorExplorerState>(Path.Combine(paths.Root, "sensor-explorer.json"), sp.GetRequiredService<ILogger<SensorExplorerState>>()));
         services.AddSingleton<IHardwareInventoryService, HardwareInventoryService>();
 
         // Storage, analytics, alerts, reporting, stress.
@@ -84,7 +103,7 @@ public static class Bootstrapper
         // UI.
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<DashboardViewModel>();
-        services.AddSingleton<SensorsViewModel>();
+        services.AddSingleton<SensorExplorerViewModel>();
         services.AddSingleton<HardwareViewModel>();
         services.AddSingleton<HistoryViewModel>();
         services.AddSingleton<StabilityViewModel>();

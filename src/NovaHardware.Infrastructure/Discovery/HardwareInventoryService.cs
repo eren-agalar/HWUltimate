@@ -97,7 +97,9 @@ public sealed class HardwareInventoryService : IHardwareInventoryService
             };
         }
 
-        return result.OrderBy(d => d.Category).ToList();
+        return result.OrderBy(d => d.Category)
+            .Select(d => d with { Properties = d.Properties.Select(PropertySectionMap.Assign).ToList() })
+            .ToList();
     }
 
     private static string Normalize(string name) =>

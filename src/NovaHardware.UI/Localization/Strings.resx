@@ -139,4 +139,104 @@
   <data name="Quality_Stale" xml:space="preserve"><value>Stale</value></data>
   <data name="Quality_Suspect" xml:space="preserve"><value>Suspect</value></data>
   <data name="Quality_Missing" xml:space="preserve"><value>No data</value></data>
+  <data name="Explorer_ExpandAll" xml:space="preserve"><value>Expand all</value></data>
+  <data name="Explorer_CollapseAll" xml:space="preserve"><value>Collapse all</value></data>
+  <data name="Explorer_ShowHidden" xml:space="preserve"><value>Show hidden sensors</value></data>
+  <data name="Explorer_UnhideAll" xml:space="preserve"><value>Unhide all</value></data>
+  <data name="Explorer_ResetAll" xml:space="preserve"><value>Reset all min/max</value></data>
+  <data name="Explorer_ResetOrder" xml:space="preserve"><value>Reset sensor order</value></data>
+  <data name="Explorer_Columns" xml:space="preserve"><value>Columns</value></data>
+  <data name="Explorer_Compact" xml:space="preserve"><value>Compact</value></data>
+  <data name="Explorer_Detailed" xml:space="preserve"><value>Detailed</value></data>
+  <data name="Explorer_Interval" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Explorer_AllCategories" xml:space="preserve"><value>All hardware</value></data>
+  <data name="Explorer_AllGroups" xml:space="preserve"><value>All sensor types</value></data>
+  <data name="Explorer_Favorite" xml:space="preserve"><value>Add to favorites</value></data>
+  <data name="Explorer_Unfavorite" xml:space="preserve"><value>Remove from favorites</value></data>
+  <data name="Explorer_Hide" xml:space="preserve"><value>Hide sensor</value></data>
+  <data name="Explorer_Unhide" xml:space="preserve"><value>Show sensor</value></data>
+  <data name="Explorer_MoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="Explorer_MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="Explorer_ResetSensor" xml:space="preserve"><value>Reset min/max</value></data>
+  <data name="Explorer_CopyValue" xml:space="preserve"><value>Copy value</value></data>
+  <data name="Explorer_CopyRow" xml:space="preserve"><value>Copy row</value></data>
+  <data name="Explorer_Count" xml:space="preserve"><value>{0} sensors · {1} devices · {2} hidden · {3} favorites</value></data>
+  <data name="Explorer_Favorites" xml:space="preserve"><value>Favorites</value></data>
+  <data name="Explorer_Name" xml:space="preserve"><value>Sensor</value></data>
+  <data name="Explorer_Samples" xml:space="preserve"><value>{0:N0} samples</value></data>
+  <data name="Explorer_NoSensors" xml:space="preserve"><value>No sensors match the current filters.</value></data>
+  <data name="Explorer_SortHint" xml:space="preserve"><value>Click a column header to sort; click again to reverse; a third click restores your custom order.</value></data>
+  <data name="Explorer_Available" xml:space="preserve"><value>Reporting</value></data>
+  <data name="Explorer_Unavailable" xml:space="preserve"><value>No data</value></data>
+  <data name="Col_Value" xml:space="preserve"><value>Current</value></data>
+  <data name="Col_Minimum" xml:space="preserve"><value>Min</value></data>
+  <data name="Col_Maximum" xml:space="preserve"><value>Max</value></data>
+  <data name="Col_Average" xml:space="preserve"><value>Average</value></data>
+  <data name="Col_Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Col_Provider" xml:space="preserve"><value>Source</value></data>
+  <data name="Col_Quality" xml:space="preserve"><value>Quality</value></data>
+  <data name="Group_Temperatures" xml:space="preserve"><value>Temperatures</value></data>
+  <data name="Group_Hotspot" xml:space="preserve"><value>Hotspot</value></data>
+  <data name="Group_MemoryTemperatures" xml:space="preserve"><value>Memory temperatures</value></data>
+  <data name="Group_Voltages" xml:space="preserve"><value>Voltages</value></data>
+  <data name="Group_Currents" xml:space="preserve"><value>Currents</value></data>
+  <data name="Group_Powers" xml:space="preserve"><value>Powers</value></data>
+  <data name="Group_PowerLimits" xml:space="preserve"><value>Power limits</value></data>
+  <data name="Group_Clocks" xml:space="preserve"><value>Clocks</value></data>
+  <data name="Group_MemoryClocks" xml:space="preserve"><value>Memory clocks</value></data>
+  <data name="Group_Utilization" xml:space="preserve"><value>Utilization</value></data>
+  <data name="Group_PerCore" xml:space="preserve"><value>Per-core</value></data>
+  <data name="Group_Throttling" xml:space="preserve"><value>Thermal throttling &amp; limits</value></data>
+  <data name="Group_PerformanceLimits" xml:space="preserve"><value>Performance limitations</value></data>
+  <data name="Group_Fans" xml:space="preserve"><value>Fans &amp; pumps</value></data>
+  <data name="Group_FanControl" xml:space="preserve"><value>Fan control</value></data>
+  <data name="Group_Memory" xml:space="preserve"><value>Memory</value></data>
+  <data name="Group_Vram" xml:space="preserve"><value>VRAM</value></data>
+  <data name="Group_Activity" xml:space="preserve"><value>Activity</value></data>
+  <data name="Group_Throughput" xml:space="preserve"><value>Throughput</value></data>
+  <data name="Group_Data" xml:space="preserve"><value>Data transferred</value></data>
+  <data name="Group_Health" xml:space="preserve"><value>Health</value></data>
+  <data name="Group_Levels" xml:space="preserve"><value>Levels</value></data>
+  <data name="Group_Energy" xml:space="preserve"><value>Energy</value></data>
+  <data name="Group_Timings" xml:space="preserve"><value>Timings</value></data>
+  <data name="Group_Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Category_Cpu" xml:space="preserve"><value>Processor</value></data>
+  <data name="Category_Gpu" xml:space="preserve"><value>Graphics</value></data>
+  <data name="Category_Memory" xml:space="preserve"><value>System memory</value></data>
+  <data name="Category_Motherboard" xml:space="preserve"><value>Motherboard</value></data>
+  <data name="Category_SuperIo" xml:space="preserve"><value>Super I/O</value></data>
+  <data name="Category_EmbeddedController" xml:space="preserve"><value>Embedded controller</value></data>
+  <data name="Category_Storage" xml:space="preserve"><value>Storage</value></data>
+  <data name="Category_Network" xml:space="preserve"><value>Network</value></data>
+  <data name="Category_Cooler" xml:space="preserve"><value>Cooling devices</value></data>
+  <data name="Category_PowerSupply" xml:space="preserve"><value>Power supply</value></data>
+  <data name="Category_Battery" xml:space="preserve"><value>Battery</value></data>
+  <data name="Category_Display" xml:space="preserve"><value>Display</value></data>
+  <data name="Category_Audio" xml:space="preserve"><value>Audio</value></data>
+  <data name="Category_Usb" xml:space="preserve"><value>USB &amp; input</value></data>
+  <data name="Category_System" xml:space="preserve"><value>System</value></data>
+  <data name="Category_Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Hw_Search" xml:space="preserve"><value>Search all hardware properties…</value></data>
+  <data name="Hw_CopyDevice" xml:space="preserve"><value>Copy device report</value></data>
+  <data name="Hw_CopyAll" xml:space="preserve"><value>Copy all</value></data>
+  <data name="Hw_Export" xml:space="preserve"><value>Export…</value></data>
+  <data name="Hw_LiveSensors" xml:space="preserve"><value>Live sensors</value></data>
+  <data name="Hw_Property" xml:space="preserve"><value>Property</value></data>
+  <data name="Hw_Value" xml:space="preserve"><value>Value</value></data>
+  <data name="Hw_Source" xml:space="preserve"><value>Source</value></data>
+  <data name="Hw_Copied" xml:space="preserve"><value>Copied to clipboard.</value></data>
+  <data name="Hw_Exported" xml:space="preserve"><value>Exported to {0}</value></data>
+  <data name="Hw_Matches" xml:space="preserve"><value>{0} matching properties in {1} devices</value></data>
+  <data name="Hw_NotAvailable" xml:space="preserve"><value>Not Available</value></data>
+  <data name="Hw_RequiresAdmin" xml:space="preserve"><value>Requires administrator rights</value></data>
+  <data name="Hw_SystemSummary" xml:space="preserve"><value>System summary</value></data>
+  <data name="Hw_SelectDevice" xml:space="preserve"><value>Select a device to see its details.</value></data>
+  <data name="Hw_NoLiveSensors" xml:space="preserve"><value>The sensor provider reports no live sensors for this device.</value></data>
+  <data name="Hw_PropertyCount" xml:space="preserve"><value>{0} properties · {1} not available</value></data>
+  <data name="Section_Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Section_Identification" xml:space="preserve"><value>Identification</value></data>
+  <data name="Section_TechnicalSpecifications" xml:space="preserve"><value>Technical Specifications</value></data>
+  <data name="Section_PerformanceCapabilities" xml:space="preserve"><value>Performance Capabilities</value></data>
+  <data name="Section_FirmwareDrivers" xml:space="preserve"><value>Firmware &amp; Drivers</value></data>
+  <data name="Section_AdvancedDetails" xml:space="preserve"><value>Advanced Details</value></data>
 </root>

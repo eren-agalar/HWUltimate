@@ -37,6 +37,15 @@ public sealed class SensorStatisticsTracker
         }
     }
 
+    /// <summary>Resets statistics for a single sensor; the next real sample starts a new min/max/average.</summary>
+    public void Reset(string sensorId)
+    {
+        lock (_gate)
+        {
+            _stats.Remove(sensorId);
+        }
+    }
+
     public void Reset()
     {
         lock (_gate)

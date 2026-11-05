@@ -290,6 +290,8 @@ public sealed class SensorPollingService : ISensorPollingService
         _logger.LogInformation("Sensor session statistics reset");
     }
 
+    public void ResetStatistics(string sensorId) => _stats.Reset(sensorId);
+
     public async ValueTask DisposeAsync()
     {
         await StopAsync().ConfigureAwait(false);

@@ -45,6 +45,9 @@ public interface ISensorPollingService : IAsyncDisposable
 
     /// <summary>Resets session min / max / average for all sensors.</summary>
     void ResetStatistics();
+
+    /// <summary>Resets session min / max / average for one sensor.</summary>
+    void ResetStatistics(string sensorId);
 }
 
 public interface IHistoricalDataService
@@ -90,4 +93,11 @@ public interface IStressTestService
         StressTestOptions options,
         IProgress<StressTestProgress>? progress = null,
         CancellationToken cancellationToken = default);
+}
+
+/// <summary>Loads and saves a small local preference document (JSON on disk in the default implementation).</summary>
+public interface IPreferenceStore<T> where T : class, new()
+{
+    T Load();
+    void Save(T value);
 }

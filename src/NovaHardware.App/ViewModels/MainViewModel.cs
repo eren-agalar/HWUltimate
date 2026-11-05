@@ -45,14 +45,14 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly ISettingsService _settings;
     private readonly ILogger<MainViewModel> _logger;
     private readonly DashboardViewModel _dashboard;
-    private readonly SensorsViewModel _sensors;
+    private readonly SensorExplorerViewModel _sensors;
     private readonly StabilityViewModel _stability;
     private int _uiUpdatePending;
 
     public MainViewModel(
         ISensorPollingService polling, IHardwareInventoryService inventory, IHistoricalDataService history, HistoryRecorder recorder,
         IAlertService alerts, ISettingsService settings, ILogger<MainViewModel> logger,
-        DashboardViewModel dashboard, SensorsViewModel sensors, HardwareViewModel hardware, HistoryViewModel historyVm,
+        DashboardViewModel dashboard, SensorExplorerViewModel sensors, HardwareViewModel hardware, HistoryViewModel historyVm,
         StabilityViewModel stability, AlertsViewModel alertsVm, ReportsViewModel reports, SettingsViewModel settingsVm)
     {
         _polling = polling;
@@ -68,17 +68,18 @@ public sealed partial class MainViewModel : ObservableObject
 
         Pages =
         [
-            new("Nav_Dashboard", "\uE80F", dashboard),
-            new("Nav_Sensors", "\uE9D9", sensors),
-            new("Nav_Hardware", "\uE950", hardware),
-            new("Nav_History", "\uE81C", historyVm),
-            new("Nav_Stability", "\uE945", stability),
-            new("Nav_Alerts", "\uE7E7", alertsVm),
-            new("Nav_Reports", "\uE8A5", reports),
-            new("Nav_Settings", "\uE713", settingsVm),
+            new("Nav_Dashboard", "Dashboard", dashboard),
+            new("Nav_Sensors", "Thermometer", sensors),
+            new("Nav_Hardware", "Cpu", hardware),
+            new("Nav_History", "History", historyVm),
+            new("Nav_Stability", "Health", stability),
+            new("Nav_Alerts", "Bell", alertsVm),
+            new("Nav_Reports", "Report", reports),
+            new("Nav_Settings", "Settings", settingsVm),
         ];
         _selectedPage = Pages[0];
         Pages[0].IsSelected = true;
+        _sensors.IsActive = false;
         IsElevated = Elevation.IsAdministrator();
         _alerts.AlertRaised += OnAlert;
     }
@@ -99,6 +100,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Lazily loads page data when a page is first shown.</summary>
     partial void OnSelectedPageChanged(NavPage value)
     {
+        _sensors.IsActive = value.ViewModel is SensorExplorerViewModel;
         switch (value.ViewModel)
         {
             case HardwareViewModel h: _ = h.LoadAsync(); break;
@@ -127,6 +129,8 @@ public sealed partial class MainViewModel : ObservableObject
 
             await _polling.InitializeAsync();
             _polling.SnapshotAvailable += OnSnapshot;
+            // One synchronous poll so the first screen and the inventory (Super I/O, EC names) have real data.
+            await Task.Run(_polling.PollOnce);
             _recorder.Start();
             _polling.Start();
             RefreshProviders();

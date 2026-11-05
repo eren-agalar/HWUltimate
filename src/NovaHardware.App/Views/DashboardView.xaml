@@ -1,6 +1,7 @@
 <UserControl x:Class="NovaHardware.App.Views.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:NovaHardware.UI.Controls;assembly=NovaHardware.UI"
              xmlns:loc="clr-namespace:NovaHardware.UI.Localization;assembly=NovaHardware.UI"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
   <UserControl.Resources>
@@ -27,7 +28,7 @@
         <Border Style="{StaticResource Card}">
           <StackPanel>
             <DockPanel Margin="0,0,0,12">
-              <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE950;" Foreground="{DynamicResource Brush.Accent}" Margin="0,0,10,0" />
+              <ui:Icon Kind="Cpu" Width="20" Height="20" Foreground="{DynamicResource Brush.Accent}" Margin="0,0,10,0" VerticalAlignment="Center" />
               <StackPanel>
                 <TextBlock FontWeight="SemiBold" Text="{loc:Tr Dash_Processor}" />
                 <TextBlock Style="{StaticResource Text.Muted}" FontSize="11" Text="{Binding CpuName}" TextTrimming="CharacterEllipsis" />
@@ -47,7 +48,7 @@
         <Border Style="{StaticResource Card}">
           <StackPanel>
             <DockPanel Margin="0,0,0,12">
-              <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE7F4;" Foreground="{DynamicResource Brush.Series2}" Margin="0,0,10,0" />
+              <ui:Icon Kind="Gpu" Width="20" Height="20" Foreground="{DynamicResource Brush.Series2}" Margin="0,0,10,0" VerticalAlignment="Center" />
               <StackPanel>
                 <TextBlock FontWeight="SemiBold" Text="{loc:Tr Dash_Graphics}" />
                 <TextBlock Style="{StaticResource Text.Muted}" FontSize="11" Text="{Binding GpuName}" TextTrimming="CharacterEllipsis" />
@@ -67,7 +68,7 @@
         <Border Style="{StaticResource Card}">
           <StackPanel>
             <DockPanel Margin="0,0,0,12">
-              <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE964;" Foreground="{DynamicResource Brush.Series3}" Margin="0,0,10,0" />
+              <ui:Icon Kind="Memory" Width="20" Height="20" Foreground="{DynamicResource Brush.Series3}" Margin="0,0,10,0" VerticalAlignment="Center" />
               <TextBlock FontWeight="SemiBold" Text="{loc:Tr Dash_Memory}" VerticalAlignment="Center" />
             </DockPanel>
             <ProgressBar Style="{StaticResource Gauge}" Margin="0,16,0,16" Value="{Binding MemLoad.Value, Mode=OneWay, TargetNullValue=0}"

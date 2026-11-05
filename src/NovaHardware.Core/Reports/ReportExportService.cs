@@ -218,7 +218,7 @@ public sealed class ReportExportService : IReportExportService
 
     // ---------------------------------------------------------------- HTML
     /// <summary>Escapes markup-significant characters only; the document is UTF-8 so symbols like °C stay readable.</summary>
-    internal static string H(string? s)
+    public static string H(string? s)
     {
         s ??= "N/A";
         if (s.AsSpan().IndexOfAny("&<>\"'") < 0)

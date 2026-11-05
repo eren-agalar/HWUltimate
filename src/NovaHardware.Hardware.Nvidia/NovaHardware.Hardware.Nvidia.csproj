@@ -7,4 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NovaHardware.Core\NovaHardware.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="NovaHardware.Tests" />
+  </ItemGroup>
 </Project>

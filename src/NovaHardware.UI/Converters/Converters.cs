@@ -76,3 +76,21 @@ public sealed class EnumEqualsConverter : IValueConverter
     public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         value is true && parameter is string s ? Enum.Parse(targetType, s) : Binding.DoNothing;
 }
+
+/// <summary>Visible column → fixed width (ConverterParameter), hidden → 0.</summary>
+public sealed class BoolToGridLengthConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? new GridLength(double.Parse((string)parameter, CultureInfo.InvariantCulture)) : new GridLength(0);
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
+/// <summary>Depth / indent in pixels → left margin.</summary>
+public sealed class IndentToMarginConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        new Thickness(value is double d ? d : 0, 0, 0, 0);
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}

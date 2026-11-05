@@ -25,4 +25,6 @@ public enum SensorType
     Conductivity,
     Duration,
     Timing,
+    /// <summary>A boolean limiter / throttle flag (1 = active, 0 = inactive), e.g. NVML clock-event reasons.</summary>
+    PerformanceLimit,
 }

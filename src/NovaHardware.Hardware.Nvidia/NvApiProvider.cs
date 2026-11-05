@@ -6,20 +6,27 @@ using NovaHardware.Domain.Sensors;
 
 namespace NovaHardware.Hardware.Nvidia;
 
-/// <summary>NVIDIA-specific telemetry directly from NVAPI: temperatures by target, engine utilisation, clocks and fan tach.</summary>
+/// <summary>
+/// NVIDIA-specific telemetry. NVAPI supplies temperatures by target, engine utilisation, clocks and fan tach;
+/// NVML adds board power, power limits, performance-limit (clock event) flags, VRAM usage, PCIe link state and P-state.
+/// NVML devices are matched to NVAPI GPUs by PCI bus number.
+/// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class NvApiProvider : IHardwareProvider
 {
-    public const string ProviderName = "NVAPI";
+    public const string ProviderName = "NVIDIA (NVAPI/NVML)";
 
     private static readonly string[] UtilizationDomains = ["GPU Core", "Memory Controller", "Video Engine", "Bus Interface"];
 
     private readonly ILogger<NvApiProvider> _logger;
     private readonly Lock _gate = new();
     private NvApiNative? _api;
-    private (nint Handle, string Id, string Name)[] _gpus = [];
+    private NvmlNative? _nvml;
+    private Gpu[] _gpus = [];
     private List<HardwareDevice> _devices = [];
     private List<RawSensorReading> _readings = [];
+
+    private sealed record Gpu(nint? NvApi, nint? Nvml, string Id, string Name);
 
     public NvApiProvider(ILogger<NvApiProvider> logger)
     {
@@ -35,26 +42,47 @@ public sealed class NvApiProvider : IHardwareProvider
     {
         try
         {
-            var api = NvApiNative.TryLoad(out var reason);
-            if (api is null)
+            _api = NvApiNative.TryLoad(out var nvapiReason);
+            _nvml = NvmlNative.TryLoad(out var nvmlReason);
+            if (_api is null && _nvml is null)
             {
-                Status = ProviderStatus.Unavailable(reason);
+                Status = ProviderStatus.Unavailable(nvapiReason);
                 return Task.CompletedTask;
             }
 
-            var handles = api.EnumPhysicalGpus();
-            _gpus = handles.Select((h, i) => (h, $"nvapi:gpu{i}", api.GetFullName(h) ?? $"NVIDIA GPU #{i}")).ToArray();
-            DriverVersion = api.GetDriverVersion();
+            var nvmlByBus = new Dictionary<uint, nint>();
+            var nvmlHandles = _nvml?.Devices() ?? [];
+            foreach (var h in nvmlHandles)
+            {
+                if (_nvml!.Pci(h) is { } pci) nvmlByBus[pci.Bus] = h;
+            }
+
+            var gpus = new List<Gpu>();
+            var nvapiHandles = _api?.EnumPhysicalGpus() ?? [];
+            for (var i = 0; i < nvapiHandles.Length; i++)
+            {
+                var h = nvapiHandles[i];
+                nint? nvml = _api!.GetBusId(h) is { } bus && nvmlByBus.TryGetValue(bus, out var m) ? m : nvmlHandles.Length == nvapiHandles.Length ? nvmlHandles[i] : null;
+                gpus.Add(new Gpu(h, nvml, $"nvapi:gpu{i}", _api.GetFullName(h) ?? (nvml is { } n ? _nvml!.Name(n) : null) ?? $"NVIDIA GPU #{i}"));
+            }
+
+            if (gpus.Count == 0)
+            {
+                gpus.AddRange(nvmlHandles.Select((h, i) => new Gpu(null, h, $"nvapi:gpu{i}", _nvml!.Name(h) ?? $"NVIDIA GPU #{i}")));
+            }
+
+            _gpus = [.. gpus];
+            DriverVersion = _api?.GetDriverVersion() ?? _nvml?.DriverVersion();
             _devices = _gpus.Select(g => new HardwareDevice(g.Id, g.Name, HardwareCategory.Gpu, ProviderName, Vendor: "NVIDIA")).ToList();
-            _api = api;
-            Status = _gpus.Length == 0
-                ? ProviderStatus.Unavailable("NVAPI loaded but no physical NVIDIA GPUs were enumerated.")
-                : ProviderStatus.Ready($"{_gpus.Length} GPU(s), driver {DriverVersion ?? "unknown"}");
+            var parts = new List<string> { $"{_gpus.Length} GPU(s)", $"driver {DriverVersion ?? "unknown"}" };
+            if (_api is null) parts.Add("NVAPI unavailable");
+            if (_nvml is null) parts.Add($"NVML unavailable: {nvmlReason}");
+            Status = _gpus.Length == 0 ? ProviderStatus.Unavailable("No NVIDIA GPUs enumerated.") : ProviderStatus.Ready(string.Join(", ", parts));
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "NVAPI initialisation failed");
-            Status = ProviderStatus.Unavailable($"NVAPI error: {ex.Message}");
+            _logger.LogWarning(ex, "NVIDIA provider initialisation failed");
+            Status = ProviderStatus.Unavailable($"NVIDIA API error: {ex.Message}");
         }
 
         return Task.CompletedTask;
@@ -64,21 +92,23 @@ public sealed class NvApiProvider : IHardwareProvider
     {
         lock (_gate)
         {
-            if (_api is null)
-            {
-                return;
-            }
-
             var list = new List<RawSensorReading>();
-            foreach (var (handle, id, _) in _gpus)
+            foreach (var g in _gpus)
             {
-                ReadThermals(_api, handle, id, list);
-                ReadUtilization(_api, handle, id, list);
-                ReadClocks(_api, handle, id, list);
-
-                if (_api.GetTachRpm(handle) is { } rpm)
+                if (_api is not null && g.NvApi is { } h)
                 {
-                    list.Add(Reading(id, "fan/0", "GPU Fan", SensorType.FanSpeed, SensorUnit.Rpm, rpm));
+                    ReadThermals(_api, h, g.Id, list);
+                    ReadUtilization(_api, h, g.Id, list);
+                    ReadClocks(_api, h, g.Id, list);
+                    if (_api.GetTachRpm(h) is { } rpm)
+                    {
+                        list.Add(Reading(g.Id, "fan/0", "GPU Fan", SensorType.FanSpeed, SensorUnit.Rpm, rpm));
+                    }
+                }
+
+                if (_nvml is not null && g.Nvml is { } n)
+                {
+                    ReadNvml(_nvml, n, g.Id, list);
                 }
             }
 
@@ -86,13 +116,40 @@ public sealed class NvApiProvider : IHardwareProvider
         }
     }
 
-    private static void ReadThermals(NvApiNative api, nint handle, string id, List<RawSensorReading> list)
+    private static void ReadNvml(NvmlNative nvml, nint d, string id, List<RawSensorReading> list)
     {
-        if (!api.TryGetThermal(handle, out var thermal))
+        if (nvml.PowerUsageMw(d) is { } p) list.Add(Reading(id, "nvml/power", "GPU Board Power", SensorType.Power, SensorUnit.Watt, p / 1000.0));
+        if (nvml.EnforcedPowerLimitMw(d) is { } el) list.Add(Reading(id, "nvml/powerlimit/enforced", "Power Limit (enforced)", SensorType.Power, SensorUnit.Watt, el / 1000.0));
+        if (nvml.PowerLimitMw(d) is { } pl) list.Add(Reading(id, "nvml/powerlimit/current", "Power Limit (management)", SensorType.Power, SensorUnit.Watt, pl / 1000.0));
+
+        if (nvml.ClockEventReasons(d) is { } mask)
         {
-            return;
+            var i = 0;
+            foreach (var (bit, name) in NvmlDecode.ClockEventReasons)
+            {
+                list.Add(Reading(id, $"nvml/limit/{bit:X}", name, SensorType.PerformanceLimit, SensorUnit.Flag, (mask & bit) != 0 ? 1 : 0, i++));
+            }
         }
 
+        if (nvml.Memory(d) is { } m)
+        {
+            const double mb = 1024d * 1024;
+            list.Add(Reading(id, "nvml/vram/used", "VRAM Used", SensorType.MemorySmall, SensorUnit.Megabyte, m.Used / mb));
+            list.Add(Reading(id, "nvml/vram/free", "VRAM Free", SensorType.MemorySmall, SensorUnit.Megabyte, m.Free / mb, 1));
+            list.Add(Reading(id, "nvml/vram/total", "VRAM Total", SensorType.MemorySmall, SensorUnit.Megabyte, m.Total / mb, 2));
+            if (m.Total > 0) list.Add(Reading(id, "nvml/vram/load", "VRAM Usage", SensorType.Utilization, SensorUnit.Percent, 100.0 * m.Used / m.Total, 9));
+        }
+
+        if (nvml.CurrentPcieGeneration(d) is { } gen) list.Add(Reading(id, "nvml/pcie/gen", "PCIe Link Generation", SensorType.Other, SensorUnit.None, gen));
+        if (nvml.CurrentPcieWidth(d) is { } w) list.Add(Reading(id, "nvml/pcie/width", "PCIe Link Width", SensorType.Other, SensorUnit.None, w, 1));
+        if (nvml.PcieThroughputKBps(d, 1) is { } rx) list.Add(Reading(id, "nvml/pcie/rx", "PCIe Receive", SensorType.Throughput, SensorUnit.BytesPerSecond, rx * 1024.0));
+        if (nvml.PcieThroughputKBps(d, 0) is { } tx) list.Add(Reading(id, "nvml/pcie/tx", "PCIe Transmit", SensorType.Throughput, SensorUnit.BytesPerSecond, tx * 1024.0, 1));
+        if (nvml.PerformanceState(d) is { } ps) list.Add(Reading(id, "nvml/pstate", "Performance State (P-state)", SensorType.Other, SensorUnit.None, ps, 2));
+    }
+
+    private static void ReadThermals(NvApiNative api, nint handle, string id, List<RawSensorReading> list)
+    {
+        if (!api.TryGetThermal(handle, out var thermal)) return;
         var count = (int)Math.Min(thermal.Count, NvThermalSettings.MaxSensors);
         for (var i = 0; i < count; i++)
         {
@@ -111,11 +168,7 @@ public sealed class NvApiProvider : IHardwareProvider
 
     private static void ReadUtilization(NvApiNative api, nint handle, string id, List<RawSensorReading> list)
     {
-        if (!api.TryGetUtilization(handle, out var info))
-        {
-            return;
-        }
-
+        if (!api.TryGetUtilization(handle, out var info)) return;
         for (var d = 0; d < UtilizationDomains.Length; d++)
         {
             if (info.IsPresent(d))
@@ -127,11 +180,7 @@ public sealed class NvApiProvider : IHardwareProvider
 
     private static void ReadClocks(NvApiNative api, nint handle, string id, List<RawSensorReading> list)
     {
-        if (!api.TryGetCurrentClocks(handle, out var clocks))
-        {
-            return;
-        }
-
+        if (!api.TryGetCurrentClocks(handle, out var clocks)) return;
         (int Domain, string Name)[] domains =
         [
             (NvClockFrequencies.Graphics, "GPU Core"),
@@ -165,6 +214,8 @@ public sealed class NvApiProvider : IHardwareProvider
         {
             _api?.Dispose();
             _api = null;
+            _nvml?.Dispose();
+            _nvml = null;
         }
     }
 }

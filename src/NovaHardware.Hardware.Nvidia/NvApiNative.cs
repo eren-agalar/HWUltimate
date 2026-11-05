@@ -22,6 +22,7 @@ internal sealed unsafe class NvApiNative : IDisposable
     private const uint IdGpuGetTachReading = 0x5F608315;
     private const uint IdGpuGetAllClockFrequencies = 0xDCB616C3;
     private const uint IdSysGetDriverAndBranchVersion = 0x2926AAAD;
+    private const uint IdGpuGetBusId = 0x1BE0B8E5;
 
     private readonly nint _library;
     private readonly delegate* unmanaged[Cdecl]<int> _initialize;
@@ -33,6 +34,7 @@ internal sealed unsafe class NvApiNative : IDisposable
     private readonly delegate* unmanaged[Cdecl]<nint, uint*, int> _getTach;
     private readonly delegate* unmanaged[Cdecl]<nint, NvClockFrequencies*, int> _getClocks;
     private readonly delegate* unmanaged[Cdecl]<uint*, byte*, int> _getDriverVersion;
+    private readonly delegate* unmanaged[Cdecl]<nint, uint*, int> _getBusId;
 
     private NvApiNative(nint library, delegate* unmanaged[Cdecl]<uint, nint> query)
     {
@@ -46,6 +48,7 @@ internal sealed unsafe class NvApiNative : IDisposable
         _getTach = (delegate* unmanaged[Cdecl]<nint, uint*, int>)query(IdGpuGetTachReading);
         _getClocks = (delegate* unmanaged[Cdecl]<nint, NvClockFrequencies*, int>)query(IdGpuGetAllClockFrequencies);
         _getDriverVersion = (delegate* unmanaged[Cdecl]<uint*, byte*, int>)query(IdSysGetDriverAndBranchVersion);
+        _getBusId = (delegate* unmanaged[Cdecl]<nint, uint*, int>)query(IdGpuGetBusId);
     }
 
     /// <summary>Loads nvapi64.dll and calls NvAPI_Initialize. Returns null with a reason when unavailable.</summary>
@@ -158,7 +161,17 @@ internal sealed unsafe class NvApiNative : IDisposable
         return _getTach(gpu, &rpm) == Ok ? rpm : null;
     }
 
-    public bool TryGetCurrentClocks(nint gpu, out NvClockFrequencies clocks)
+    public uint? GetBusId(nint gpu)
+    {
+        if (_getBusId == null) return null;
+        uint bus;
+        return _getBusId(gpu, &bus) == Ok ? bus : null;
+    }
+
+    public bool TryGetCurrentClocks(nint gpu, out NvClockFrequencies clocks) => TryGetClocks(gpu, 0, out clocks);
+
+    /// <summary>clockType: 0 = current, 1 = base, 2 = boost (NV_GPU_CLOCK_FREQUENCIES_CLOCK_TYPE).</summary>
+    public bool TryGetClocks(nint gpu, uint clockType, out NvClockFrequencies clocks)
     {
         clocks = default;
         if (_getClocks == null)
@@ -167,7 +180,7 @@ internal sealed unsafe class NvApiNative : IDisposable
         }
 
         clocks.Version = NvClockFrequencies.StructVersion;
-        clocks.ClockType = 0; // NV_GPU_CLOCK_FREQUENCIES_CURRENT_FREQ
+        clocks.ClockType = clockType;
         fixed (NvClockFrequencies* p = &clocks)
         {
             return _getClocks(gpu, p) == Ok;

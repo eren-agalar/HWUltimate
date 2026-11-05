@@ -25,6 +25,9 @@ public enum SensorUnit
     Second,
     Nanosecond,
     Ratio,
+    /// <summary>Boolean state: 1 = active / yes, 0 = inactive / no.</summary>
+    Flag,
+    Milliwatt,
 }
 
 public static class SensorUnitExtensions
@@ -49,6 +52,7 @@ public static class SensorUnitExtensions
         SensorUnit.Second => "s",
         SensorUnit.Nanosecond => "ns",
         SensorUnit.Ratio => "×",
+        SensorUnit.Milliwatt => "mW",
         _ => string.Empty,
     };
 
@@ -60,6 +64,11 @@ public static class SensorUnitExtensions
         if (value is not { } v)
         {
             return missing;
+        }
+
+        if (unit == SensorUnit.Flag)
+        {
+            return v != 0 ? "Active" : "—";
         }
 
         var format = unit switch
@@ -98,6 +107,7 @@ public static class SensorUnitExtensions
         SensorType.Conductivity => SensorUnit.MicrosiemensPerCentimeter,
         SensorType.Duration => SensorUnit.Second,
         SensorType.Timing => SensorUnit.Nanosecond,
+        SensorType.PerformanceLimit => SensorUnit.Flag,
         _ => SensorUnit.None,
     };
 }

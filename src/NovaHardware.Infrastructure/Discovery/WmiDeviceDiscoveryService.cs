@@ -65,6 +65,12 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
         }
     }
 
+    private static bool IsAdmin()
+    {
+        using var id = System.Security.Principal.WindowsIdentity.GetCurrent();
+        return new System.Security.Principal.WindowsPrincipal(id).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+    }
+
     private static string Gb(ulong bytes) => $"{bytes / 1024d / 1024 / 1024:0.##} GB";
 
     public Task<SystemSummary> GetSummaryAsync(CancellationToken cancellationToken = default) => Task.Run(() =>
@@ -251,6 +257,7 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
             foreach (var o in physical)
             {
                 var size = N<ulong>(o, "Size") ?? 0;
+                var reliability = ReliabilityCounters(S(o, "ObjectId"));
                 yield return new DeviceInfo
                 {
                     Id = $"wmi:disk{S(o, "DeviceId")}",
@@ -266,7 +273,11 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
                         ("Bus", (N<ushort>(o, "BusType") ?? 0) switch { 1 => "SCSI", 3 => "ATA", 7 => "USB", 8 => "RAID", 10 => "SAS", 11 => "SATA", 12 => "SD", 13 => "MMC", 17 => "NVMe", 18 => "SCM", 19 => "UFS", _ => null }),
                         ("Health", (N<ushort>(o, "HealthStatus") ?? 99) switch { 0 => "Healthy", 1 => "Warning", 2 => "Unhealthy", _ => null }),
                         ("Firmware", S(o, "FirmwareVersion")),
-                        ("Spindle speed", N<uint>(o, "SpindleSpeed") is { } rpm and > 0 and < uint.MaxValue ? $"{rpm} RPM" : null)),
+                        ("Spindle speed", N<uint>(o, "SpindleSpeed") is { } rpm and > 0 and < uint.MaxValue ? $"{rpm} RPM" : null),
+                        ("Operational status", OperationalStatus(o)),
+                        ("Logical sector size", N<ulong>(o, "LogicalSectorSize") is { } ls and > 0 ? $"{ls} bytes" : null),
+                        ("Physical sector size", N<ulong>(o, "PhysicalSectorSize") is { } ps and > 0 ? $"{ps} bytes" : null))
+                        .Concat(reliability).ToList(),
                 };
             }
 
@@ -294,6 +305,56 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
         }
     }
 
+    private static string? OperationalStatus(ManagementBaseObject o)
+    {
+        try
+        {
+            return o["OperationalStatus"] is ushort[] codes && codes.Length > 0
+                ? string.Join(", ", codes.Select(c => c switch { 2 => "OK", 3 => "Degraded", 5 => "Predictive failure", 6 => "Error", 10 => "Stopped", 11 => "In service", 13 => "Lost communication", 0xD00D => "Transient error", _ => c.ToString(CultureInfo.InvariantCulture) }))
+                : null;
+        }
+        catch (ManagementException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// MSFT_StorageReliabilityCounter: the drive's own SMART / NVMe health log as normalised by Windows.
+    /// Reading it requires administrator rights; unavailable counters are reported explicitly.
+    /// </summary>
+    private List<HardwareProperty> ReliabilityCounters(string? objectId)
+    {
+        const string src = "MSFT_StorageReliabilityCounter";
+        var list = new List<HardwareProperty>();
+        if (objectId is null) return list;
+        var escaped = objectId.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
+        var rc = Query($"ASSOCIATORS OF {{MSFT_PhysicalDisk.ObjectId=\"{escaped}\"}} WHERE ResultClass = MSFT_StorageReliabilityCounter", @"root\Microsoft\Windows\Storage").FirstOrDefault();
+        if (rc is null)
+        {
+            list.Add(new HardwareProperty("SMART / health log", HardwareProperty.NotAvailableText, PropertySections.Advanced, src,
+                IsAdmin() ? PropertyStatus.NotAvailable : PropertyStatus.RequiresElevation,
+                "The drive or its driver does not expose reliability counters to Windows, or administrator rights are required."));
+            return list;
+        }
+
+        void Add(string section, string name, string? value) { if (value is not null) list.Add(new HardwareProperty(name, value, section, src)); }
+        Add(PropertySections.Overview, "Temperature", N<byte>(rc, "Temperature") is { } t and > 0 ? $"{t} °C" : null);
+        Add(PropertySections.Performance, "Maximum temperature recorded", N<byte>(rc, "TemperatureMax") is { } tm and > 0 ? $"{tm} °C" : null);
+        Add(PropertySections.Overview, "Wear (percentage used)", N<byte>(rc, "Wear") is { } w ? $"{w} %" : null);
+        Add(PropertySections.Overview, "Power-on hours", N<uint>(rc, "PowerOnHours") is { } h ? $"{h:N0} h" : null);
+        Add(PropertySections.Advanced, "Start / stop cycles", N<uint>(rc, "StartStopCycleCount")?.ToString("N0", CultureInfo.InvariantCulture));
+        Add(PropertySections.Advanced, "Load / unload cycles", N<uint>(rc, "LoadUnloadCycleCount")?.ToString("N0", CultureInfo.InvariantCulture));
+        Add(PropertySections.Advanced, "Read errors (total / corrected / uncorrected)", N<ulong>(rc, "ReadErrorsTotal") is { } re ? $"{re:N0} / {N<ulong>(rc, "ReadErrorsCorrected") ?? 0:N0} / {N<ulong>(rc, "ReadErrorsUncorrected") ?? 0:N0}" : null);
+        Add(PropertySections.Advanced, "Write errors (total / corrected / uncorrected)", N<ulong>(rc, "WriteErrorsTotal") is { } we ? $"{we:N0} / {N<ulong>(rc, "WriteErrorsCorrected") ?? 0:N0} / {N<ulong>(rc, "WriteErrorsUncorrected") ?? 0:N0}" : null);
+        Add(PropertySections.Performance, "Max read latency", N<ulong>(rc, "ReadLatencyMax") is { } rl and > 0 ? $"{rl:N0} ms" : null);
+        Add(PropertySections.Performance, "Max write latency", N<ulong>(rc, "WriteLatencyMax") is { } wl and > 0 ? $"{wl:N0} ms" : null);
+        Add(PropertySections.Advanced, "Manufacture date", S(rc, "ManufactureDate"));
+        list.Add(HardwareProperty.Unavailable("Total host reads / writes", PropertySections.Overview,
+            "Not part of the Windows reliability counter. When the sensor provider reads it from SMART / NVMe logs it appears under Live sensors (Data Read / Data Written).", src));
+        return list;
+    }
+
     private IEnumerable<DeviceInfo> NetworkAdapters()
     {
         foreach (var (o, i) in Query("SELECT * FROM Win32_NetworkAdapter WHERE PhysicalAdapter = TRUE").Select((o, i) => (o, i)))
@@ -309,7 +370,8 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
                     ("Connection", S(o, "NetConnectionID")),
                     ("MAC address", S(o, "MACAddress")),
                     ("Link speed", N<ulong>(o, "Speed") is { } bps and > 0 and < ulong.MaxValue ? $"{bps / 1e6:0} Mbps" : null),
-                    ("Enabled", N<bool>(o, "NetEnabled") is { } e ? (e ? "Yes" : "No") : null)),
+                    ("Enabled", N<bool>(o, "NetEnabled") is { } e ? (e ? "Yes" : "No") : null))
+                    .Concat(NetworkConnection.Describe(S(o, "Name"), S(o, "MACAddress"))).ToList(),
             };
         }
     }
@@ -334,6 +396,9 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
 
     private IEnumerable<DeviceInfo> Monitors()
     {
+        var connections = Query("SELECT InstanceName, VideoOutputTechnology FROM WmiMonitorConnectionParams", @"root\wmi")
+            .Where(c => S(c, "InstanceName") is not null)
+            .ToDictionary(c => S(c, "InstanceName")!, c => N<uint>(c, "VideoOutputTechnology"), StringComparer.OrdinalIgnoreCase);
         foreach (var (o, i) in Query("SELECT * FROM WmiMonitorID", @"root\wmi").Select((o, i) => (o, i)))
         {
             var name = Decode(o, "UserFriendlyName") ?? "Monitor";
@@ -348,7 +413,8 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
                 Properties = SmbiosDiscoveryService.Props(
                     ("Manufacturer code", Decode(o, "ManufacturerName")),
                     ("Product code", Decode(o, "ProductCodeID")),
-                    ("Manufactured", N<ushort>(o, "YearOfManufacture") is { } y and > 0 ? $"Week {S(o, "WeekOfManufacture")}, {y}" : null)),
+                    ("Manufactured", N<ushort>(o, "YearOfManufacture") is { } y and > 0 ? $"Week {S(o, "WeekOfManufacture")}, {y}" : null),
+                    ("Connection", S(o, "InstanceName") is { } inst && connections.TryGetValue(inst, out var tech) ? OutputTechnology(tech) : null)),
             };
         }
 
@@ -366,6 +432,29 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
             }
         }
     }
+
+    internal static string? OutputTechnology(uint? code) => code switch
+    {
+        null => null,
+        0 => "VGA (HD15)",
+        1 => "S-Video",
+        2 => "Composite",
+        3 => "Component",
+        4 => "DVI",
+        5 => "HDMI",
+        6 => "LVDS (internal)",
+        8 => "D-Jpn",
+        9 => "SDI",
+        10 => "DisplayPort",
+        11 => "DisplayPort (embedded / eDP)",
+        12 => "UDI",
+        13 => "UDI (embedded)",
+        14 => "SDTV dongle",
+        15 => "Miracast (wireless)",
+        16 => "Indirect wired",
+        0x80000000 => "Internal",
+        _ => $"Other ({code})",
+    };
 
     private IEnumerable<DeviceInfo> Audio()
     {

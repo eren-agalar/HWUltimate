@@ -85,7 +85,8 @@ public class SmbiosParserTests
     {
         var devices = SmbiosDiscoveryService.ToDevices(SmbiosParser.Parse(Data));
         Assert.Contains(devices, d => d.Category == HardwareCategory.Motherboard && d.Name == "BoardCo Z990 PRO");
-        var mem = Assert.Single(devices, d => d.Category == HardwareCategory.Memory);
+        var mem = Assert.Single(devices, d => d.Category == HardwareCategory.Memory && d.Id != "smbios:memory");
+        Assert.Contains(devices, d => d.Id == "smbios:memory"); // aggregated memory summary
         Assert.Equal("G.Skill F5-6000J3038F16G (DIMM_A1)", mem.Name);
         Assert.Contains(mem.Properties, p => p.Name == "Capacity" && p.Value == "32 GB");
     }

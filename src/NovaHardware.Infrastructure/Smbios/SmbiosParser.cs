@@ -8,7 +8,15 @@ public sealed record SmbiosBaseboard(string? Manufacturer, string? Product, stri
 public sealed record SmbiosProcessor(string? Socket, string? Manufacturer, string? Version, int? ExternalClockMhz, int? MaxSpeedMhz, int? CurrentSpeedMhz, int? Cores, int? Threads);
 public sealed record SmbiosMemoryDevice(
     string? DeviceLocator, string? BankLocator, long SizeMegabytes, string MemoryType, int? SpeedMts, int? ConfiguredSpeedMts,
-    string? Manufacturer, string? SerialNumber, string? PartNumber, int? ConfiguredVoltageMv, string FormFactor);
+    string? Manufacturer, string? SerialNumber, string? PartNumber, int? ConfiguredVoltageMv, string FormFactor,
+    int? TotalWidthBits = null, int? DataWidthBits = null, int? Rank = null)
+{
+    /// <summary>A module whose total width exceeds its data width carries ECC check bits (e.g. 72 vs 64).</summary>
+    public bool? HasEccBits => TotalWidthBits is { } t && DataWidthBits is { } d ? t > d : null;
+}
+
+/// <summary>SMBIOS type 16 (Physical Memory Array).</summary>
+public sealed record SmbiosMemoryArray(string ErrorCorrection, long? MaxCapacityBytes, int? Slots, string Use);
 
 public sealed record SmbiosData(
     Version Version,
@@ -17,7 +25,11 @@ public sealed record SmbiosData(
     SmbiosBaseboard? Baseboard,
     IReadOnlyList<SmbiosProcessor> Processors,
     IReadOnlyList<SmbiosMemoryDevice> MemoryDevices,
-    int StructureCount);
+    int StructureCount,
+    IReadOnlyList<SmbiosMemoryArray>? MemoryArrays = null)
+{
+    public IReadOnlyList<SmbiosMemoryArray> Arrays => MemoryArrays ?? [];
+}
 
 /// <summary>
 /// Parser for the raw SMBIOS table returned by <c>GetSystemFirmwareTable('RSMB')</c>
@@ -47,6 +59,7 @@ public static class SmbiosParser
         SmbiosBaseboard? board = null;
         var cpus = new List<SmbiosProcessor>();
         var memory = new List<SmbiosMemoryDevice>();
+        var arrays = new List<SmbiosMemoryArray>();
         var count = 0;
         var offset = 0;
 
@@ -91,18 +104,45 @@ public static class SmbiosParser
                             MemoryTypeName(Byte(formatted, 0x12) ?? 0),
                             NonZero(Word(formatted, 0x15)), NonZero(Word(formatted, 0x20)),
                             Str(formatted, strings, 0x17), Str(formatted, strings, 0x18), Str(formatted, strings, 0x1A),
-                            NonZero(Word(formatted, 0x26)), FormFactorName(Byte(formatted, 0x0E) ?? 0)));
+                            NonZero(Word(formatted, 0x26)), FormFactorName(Byte(formatted, 0x0E) ?? 0),
+                            NonZero(Word(formatted, 0x08)), NonZero(Word(formatted, 0x0A)),
+                            Byte(formatted, 0x1B) is { } attr && (attr & 0xF) != 0 ? attr & 0xF : null));
                     }
 
                     break;
+                case 16:
+                    arrays.Add(ParseArray(formatted));
+                    break;
                 case 127:
-                    return new SmbiosData(version, bios, system, board, cpus, memory, count);
+                    return new SmbiosData(version, bios, system, board, cpus, memory, count, arrays);
             }
 
             offset = next;
         }
 
-        return new SmbiosData(version, bios, system, board, cpus, memory, count);
+        return new SmbiosData(version, bios, system, board, cpus, memory, count, arrays);
+    }
+
+    private static SmbiosMemoryArray ParseArray(ReadOnlySpan<byte> f)
+    {
+        var ecc = (Byte(f, 0x06) ?? 0) switch
+        {
+            3 => "None",
+            4 => "Parity",
+            5 => "Single-bit ECC",
+            6 => "Multi-bit ECC",
+            7 => "CRC",
+            1 => "Other",
+            _ => "Unknown",
+        };
+        long? max = DWord(f, 0x07) switch
+        {
+            0x80000000 when f.Length >= 0x17 => (long)BitConverter.ToUInt64(f.Slice(0x0F, 8)),
+            { } kb and > 0 and < 0x80000000 => (long)kb * 1024,
+            _ => null,
+        };
+        var use = (Byte(f, 0x05) ?? 0) switch { 3 => "System memory", 4 => "Video memory", 5 => "Flash memory", 7 => "Cache memory", _ => "Other" };
+        return new SmbiosMemoryArray(ecc, max, NonZero(Word(f, 0x0D)), use);
     }
 
     private static List<string> ReadStrings(ReadOnlySpan<byte> table, int start, out int next)

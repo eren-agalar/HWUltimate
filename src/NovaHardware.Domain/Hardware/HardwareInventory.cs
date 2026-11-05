@@ -1,7 +1,49 @@
 namespace NovaHardware.Domain.Hardware;
 
-/// <summary>A named property of a device, e.g. "Cores" = "16".</summary>
-public sealed record HardwareProperty(string Name, string Value, string? Group = null);
+/// <summary>Whether a property value was actually obtained from the system.</summary>
+public enum PropertyStatus
+{
+    /// <summary>Value read from a system API, firmware table, driver or vendor SDK.</summary>
+    Available = 0,
+    /// <summary>The platform / hardware does not expose this property. <see cref="HardwareProperty.Value"/> is "Not Available".</summary>
+    NotAvailable,
+    /// <summary>The property exists but could not be read (e.g. requires administrator rights).</summary>
+    RequiresElevation,
+}
+
+/// <summary>Standard presentation sections for device properties.</summary>
+public static class PropertySections
+{
+    public const string Overview = "Overview";
+    public const string Identification = "Identification";
+    public const string Specifications = "Technical Specifications";
+    public const string Performance = "Performance Capabilities";
+    public const string Firmware = "Firmware & Drivers";
+    public const string Advanced = "Advanced Details";
+
+    public static IReadOnlyList<string> All { get; } = [Overview, Identification, Specifications, Performance, Firmware, Advanced];
+}
+
+/// <summary>
+/// A named property of a device, e.g. "Cores" = "16". <see cref="Source"/> names the API the value came from
+/// (e.g. "CPUID", "SMBIOS type 17", "NVML"). Unsupported properties are listed explicitly with
+/// <see cref="PropertyStatus.NotAvailable"/> rather than being omitted or guessed.
+/// </summary>
+public sealed record HardwareProperty(
+    string Name,
+    string Value,
+    string? Group = null,
+    string? Source = null,
+    PropertyStatus Status = PropertyStatus.Available,
+    string? Note = null)
+{
+    public const string NotAvailableText = "Not Available";
+
+    public static HardwareProperty Unavailable(string name, string group, string note, string? checkedSources = null) =>
+        new(name, NotAvailableText, group, checkedSources, PropertyStatus.NotAvailable, note);
+
+    public bool IsAvailable => Status == PropertyStatus.Available;
+}
 
 /// <summary>Identification record for a discovered device (WMI / SMBIOS / SetupAPI).</summary>
 public sealed record DeviceInfo

@@ -17,6 +17,8 @@
       <conv:QualityToTextConverter x:Key="QualityText" />
       <conv:ThresholdToBrushConverter x:Key="ThresholdBrush" />
       <conv:EnumEqualsConverter x:Key="EnumEquals" />
+      <conv:BoolToGridLengthConverter x:Key="ColumnWidth" />
+      <conv:IndentToMarginConverter x:Key="IndentMargin" />
     </ResourceDictionary>
   </Application.Resources>
 </Application>
