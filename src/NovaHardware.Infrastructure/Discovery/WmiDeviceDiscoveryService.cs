@@ -1,0 +1,397 @@
+using System.Globalization;
+using System.Management;
+using System.Runtime.Versioning;
+using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
+using NovaHardware.Core.Abstractions;
+using NovaHardware.Domain.Hardware;
+using NovaHardware.Infrastructure.Smbios;
+
+namespace NovaHardware.Infrastructure.Discovery;
+
+/// <summary>Hardware identification through WMI / CIM (root\cimv2, root\Microsoft\Windows\Storage, root\wmi).</summary>
+[SupportedOSPlatform("windows")]
+public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystemSummaryProvider
+{
+    private const string DisplayClassKey = @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
+
+    private readonly ILogger<WmiDeviceDiscoveryService> _logger;
+
+    public WmiDeviceDiscoveryService(ILogger<WmiDeviceDiscoveryService> logger)
+    {
+        _logger = logger;
+    }
+
+    public string SourceName => "WMI";
+
+    private List<ManagementBaseObject> Query(string wql, string scope = @"root\cimv2")
+    {
+        try
+        {
+            using var searcher = new ManagementObjectSearcher(scope, wql);
+            searcher.Options.Timeout = TimeSpan.FromSeconds(15);
+            return searcher.Get().Cast<ManagementBaseObject>().ToList();
+        }
+        catch (Exception ex) when (ex is ManagementException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException)
+        {
+            _logger.LogDebug(ex, "WMI query failed: {Query} in {Scope}", wql, scope);
+            return [];
+        }
+    }
+
+    private static string? S(ManagementBaseObject o, string prop)
+    {
+        try
+        {
+            var v = o[prop];
+            var s = v?.ToString()?.Trim();
+            return string.IsNullOrEmpty(s) ? null : s;
+        }
+        catch (ManagementException)
+        {
+            return null;
+        }
+    }
+
+    private static T? N<T>(ManagementBaseObject o, string prop) where T : struct
+    {
+        try
+        {
+            return o[prop] is { } v ? (T)Convert.ChangeType(v, typeof(T), CultureInfo.InvariantCulture) : null;
+        }
+        catch (Exception ex) when (ex is ManagementException or InvalidCastException or FormatException or OverflowException)
+        {
+            return null;
+        }
+    }
+
+    private static string Gb(ulong bytes) => $"{bytes / 1024d / 1024 / 1024:0.##} GB";
+
+    public Task<SystemSummary> GetSummaryAsync(CancellationToken cancellationToken = default) => Task.Run(() =>
+    {
+        var os = Query("SELECT Caption, Version, BuildNumber, LastBootUpTime, OSArchitecture FROM Win32_OperatingSystem").FirstOrDefault();
+        var cs = Query("SELECT Manufacturer, Model, TotalPhysicalMemory FROM Win32_ComputerSystem").FirstOrDefault();
+        var board = Query("SELECT Manufacturer, Product FROM Win32_BaseBoard").FirstOrDefault();
+        var bios = Query("SELECT SMBIOSBIOSVersion, ReleaseDate FROM Win32_BIOS").FirstOrDefault();
+        var cpus = Query("SELECT Name, NumberOfCores, NumberOfLogicalProcessors FROM Win32_Processor");
+        var gpus = Query("SELECT Name FROM Win32_VideoController").Select(g => S(g, "Name")).OfType<string>().ToList();
+        var mem = Query("SELECT Capacity FROM Win32_PhysicalMemory").Select(m => N<ulong>(m, "Capacity") ?? 0).Aggregate(0UL, (a, b) => a + b);
+
+        TimeSpan? uptime = null;
+        if (os is not null && S(os, "LastBootUpTime") is { } boot)
+        {
+            try
+            {
+                uptime = DateTime.Now - ManagementDateTimeConverter.ToDateTime(boot);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+            }
+        }
+
+        string? biosDate = null;
+        if (bios is not null && S(bios, "ReleaseDate") is { } rd)
+        {
+            try
+            {
+                biosDate = ManagementDateTimeConverter.ToDateTime(rd).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+            }
+        }
+
+        return new SystemSummary
+        {
+            OperatingSystem = os is null ? null : $"{S(os, "Caption")} {S(os, "OSArchitecture")}".Trim(),
+            OsVersion = os is null ? null : S(os, "Version"),
+            OsBuild = os is null ? null : S(os, "BuildNumber"),
+            SystemManufacturer = cs is null ? null : S(cs, "Manufacturer"),
+            SystemModel = cs is null ? null : S(cs, "Model"),
+            Motherboard = board is null ? null : $"{S(board, "Manufacturer")} {S(board, "Product")}".Trim(),
+            BiosVersion = bios is null ? null : S(bios, "SMBIOSBIOSVersion"),
+            BiosDate = biosDate,
+            Processor = cpus.Count == 0 ? null : string.Join(" + ", cpus.Select(c => S(c, "Name")).OfType<string>().Distinct()),
+            PhysicalCores = cpus.Count == 0 ? null : cpus.Sum(c => N<int>(c, "NumberOfCores") ?? 0),
+            LogicalProcessors = cpus.Count == 0 ? Environment.ProcessorCount : cpus.Sum(c => N<int>(c, "NumberOfLogicalProcessors") ?? 0),
+            TotalMemoryBytes = mem > 0 ? mem : cs is null ? null : N<ulong>(cs, "TotalPhysicalMemory"),
+            Gpus = gpus,
+            Uptime = uptime ?? TimeSpan.FromMilliseconds(Environment.TickCount64),
+        };
+    }, cancellationToken);
+
+    public Task<IReadOnlyList<DeviceInfo>> DiscoverAsync(CancellationToken cancellationToken = default) => Task.Run<IReadOnlyList<DeviceInfo>>(() =>
+    {
+        var list = new List<DeviceInfo>();
+        list.AddRange(Processors());
+        list.AddRange(VideoControllers());
+        list.AddRange(MemoryModules());
+        list.AddRange(Disks());
+        list.AddRange(NetworkAdapters());
+        list.AddRange(Batteries());
+        list.AddRange(Monitors());
+        list.AddRange(Audio());
+        return list;
+    }, cancellationToken);
+
+    private IEnumerable<DeviceInfo> Processors()
+    {
+        foreach (var (o, i) in Query("SELECT * FROM Win32_Processor").Select((o, i) => (o, i)))
+        {
+            yield return new DeviceInfo
+            {
+                Id = $"wmi:cpu{i}",
+                Name = S(o, "Name") ?? "Processor",
+                Category = HardwareCategory.Cpu,
+                Manufacturer = S(o, "Manufacturer"),
+                Model = S(o, "Name"),
+                Source = SourceName,
+                Properties = SmbiosDiscoveryService.Props(
+                    ("Cores", S(o, "NumberOfCores")),
+                    ("Logical processors", S(o, "NumberOfLogicalProcessors")),
+                    ("Base clock", N<uint>(o, "MaxClockSpeed") is { } mhz ? $"{mhz} MHz" : null),
+                    ("L2 cache", N<uint>(o, "L2CacheSize") is { } l2 and > 0 ? $"{l2} KB" : null),
+                    ("L3 cache", N<uint>(o, "L3CacheSize") is { } l3 and > 0 ? $"{l3 / 1024.0:0.#} MB" : null),
+                    ("Socket", S(o, "SocketDesignation")),
+                    ("Processor ID", S(o, "ProcessorId")),
+                    ("Description", S(o, "Description")),
+                    ("Virtualization (firmware)", N<bool>(o, "VirtualizationFirmwareEnabled") is { } v ? (v ? "Enabled" : "Disabled") : null)),
+            };
+        }
+    }
+
+    private IEnumerable<DeviceInfo> VideoControllers()
+    {
+        foreach (var (o, i) in Query("SELECT * FROM Win32_VideoController").Select((o, i) => (o, i)))
+        {
+            var name = S(o, "Name") ?? "Display adapter";
+            // Win32_VideoController.AdapterRAM is a uint32 and saturates at 4 GB; the driver registry key holds the real size.
+            var vram = DedicatedVideoMemory(name) ?? N<uint>(o, "AdapterRAM");
+            yield return new DeviceInfo
+            {
+                Id = $"wmi:gpu{i}",
+                Name = name,
+                Category = HardwareCategory.Gpu,
+                Manufacturer = S(o, "AdapterCompatibility"),
+                Model = S(o, "VideoProcessor"),
+                DriverVersion = S(o, "DriverVersion"),
+                Source = SourceName,
+                Properties = SmbiosDiscoveryService.Props(
+                    ("Dedicated memory", vram is { } bytes and > 0 ? Gb(bytes) : null),
+                    ("Driver version", S(o, "DriverVersion")),
+                    ("Driver date", S(o, "DriverDate") is { } dd ? SafeDate(dd) : null),
+                    ("Current mode", N<uint>(o, "CurrentHorizontalResolution") is { } w and > 0
+                        ? $"{w} × {S(o, "CurrentVerticalResolution")} @ {S(o, "CurrentRefreshRate")} Hz" : null),
+                    ("PNP device ID", S(o, "PNPDeviceID"))),
+            };
+        }
+    }
+
+    private static ulong? DedicatedVideoMemory(string adapterName)
+    {
+        try
+        {
+            using var root = Registry.LocalMachine.OpenSubKey(DisplayClassKey);
+            if (root is null) return null;
+            foreach (var sub in root.GetSubKeyNames().Where(n => n.Length == 4))
+            {
+                using var key = root.OpenSubKey(sub);
+                if (key?.GetValue("DriverDesc") is string desc && desc.Equals(adapterName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return key.GetValue("HardwareInformation.qwMemorySize") switch
+                    {
+                        long l => (ulong)l,
+                        byte[] b when b.Length >= 8 => BitConverter.ToUInt64(b),
+                        int x => (uint)x,
+                        byte[] b when b.Length >= 4 => BitConverter.ToUInt32(b),
+                        _ => null,
+                    };
+                }
+            }
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        {
+        }
+
+        return null;
+    }
+
+    private IEnumerable<DeviceInfo> MemoryModules()
+    {
+        foreach (var (o, i) in Query("SELECT * FROM Win32_PhysicalMemory").Select((o, i) => (o, i)))
+        {
+            var capacity = N<ulong>(o, "Capacity") ?? 0;
+            var smbiosType = N<uint>(o, "SMBIOSMemoryType");
+            yield return new DeviceInfo
+            {
+                Id = $"wmi:mem{i}",
+                Name = SmbiosDiscoveryService.MemoryName(S(o, "Manufacturer"), S(o, "PartNumber"), S(o, "DeviceLocator")),
+                Category = HardwareCategory.Memory,
+                Manufacturer = S(o, "Manufacturer"),
+                Model = S(o, "PartNumber"),
+                SerialNumber = S(o, "SerialNumber"),
+                Source = SourceName,
+                Properties = SmbiosDiscoveryService.Props(
+                    ("Capacity", capacity > 0 ? Gb(capacity) : null),
+                    ("Type", smbiosType is { } t ? SmbiosParser.MemoryTypeName((byte)t) : null),
+                    ("Slot", S(o, "DeviceLocator")),
+                    ("Bank", S(o, "BankLabel")),
+                    ("Rated speed", N<uint>(o, "Speed") is { } sp and > 0 ? $"{sp} MT/s" : null),
+                    ("Configured speed", N<uint>(o, "ConfiguredClockSpeed") is { } cs and > 0 ? $"{cs} MT/s" : null),
+                    ("Configured voltage", N<uint>(o, "ConfiguredVoltage") is { } mv and > 0 ? $"{mv / 1000.0:0.000} V" : null)),
+            };
+        }
+    }
+
+    private IEnumerable<DeviceInfo> Disks()
+    {
+        var physical = Query("SELECT * FROM MSFT_PhysicalDisk", @"root\Microsoft\Windows\Storage");
+        if (physical.Count > 0)
+        {
+            foreach (var o in physical)
+            {
+                var size = N<ulong>(o, "Size") ?? 0;
+                yield return new DeviceInfo
+                {
+                    Id = $"wmi:disk{S(o, "DeviceId")}",
+                    Name = S(o, "FriendlyName") ?? "Disk",
+                    Category = HardwareCategory.Storage,
+                    Model = S(o, "Model"),
+                    SerialNumber = S(o, "SerialNumber"),
+                    DriverVersion = S(o, "FirmwareVersion"),
+                    Source = SourceName,
+                    Properties = SmbiosDiscoveryService.Props(
+                        ("Capacity", size > 0 ? $"{size / 1e9:0.#} GB ({Gb(size)})" : null),
+                        ("Media type", (N<ushort>(o, "MediaType") ?? 0) switch { 3 => "HDD", 4 => "SSD", 5 => "SCM", _ => null }),
+                        ("Bus", (N<ushort>(o, "BusType") ?? 0) switch { 1 => "SCSI", 3 => "ATA", 7 => "USB", 8 => "RAID", 10 => "SAS", 11 => "SATA", 12 => "SD", 13 => "MMC", 17 => "NVMe", 18 => "SCM", 19 => "UFS", _ => null }),
+                        ("Health", (N<ushort>(o, "HealthStatus") ?? 99) switch { 0 => "Healthy", 1 => "Warning", 2 => "Unhealthy", _ => null }),
+                        ("Firmware", S(o, "FirmwareVersion")),
+                        ("Spindle speed", N<uint>(o, "SpindleSpeed") is { } rpm and > 0 and < uint.MaxValue ? $"{rpm} RPM" : null)),
+                };
+            }
+
+            yield break;
+        }
+
+        foreach (var (o, i) in Query("SELECT * FROM Win32_DiskDrive").Select((o, i) => (o, i)))
+        {
+            var size = N<ulong>(o, "Size") ?? 0;
+            yield return new DeviceInfo
+            {
+                Id = $"wmi:disk{i}",
+                Name = S(o, "Model") ?? "Disk",
+                Category = HardwareCategory.Storage,
+                Model = S(o, "Model"),
+                SerialNumber = S(o, "SerialNumber"),
+                DriverVersion = S(o, "FirmwareRevision"),
+                Source = SourceName,
+                Properties = SmbiosDiscoveryService.Props(
+                    ("Capacity", size > 0 ? $"{size / 1e9:0.#} GB" : null),
+                    ("Interface", S(o, "InterfaceType")),
+                    ("Media", S(o, "MediaType")),
+                    ("Partitions", S(o, "Partitions"))),
+            };
+        }
+    }
+
+    private IEnumerable<DeviceInfo> NetworkAdapters()
+    {
+        foreach (var (o, i) in Query("SELECT * FROM Win32_NetworkAdapter WHERE PhysicalAdapter = TRUE").Select((o, i) => (o, i)))
+        {
+            yield return new DeviceInfo
+            {
+                Id = $"wmi:net{i}",
+                Name = S(o, "Name") ?? "Network adapter",
+                Category = HardwareCategory.Network,
+                Manufacturer = S(o, "Manufacturer"),
+                Source = SourceName,
+                Properties = SmbiosDiscoveryService.Props(
+                    ("Connection", S(o, "NetConnectionID")),
+                    ("MAC address", S(o, "MACAddress")),
+                    ("Link speed", N<ulong>(o, "Speed") is { } bps and > 0 and < ulong.MaxValue ? $"{bps / 1e6:0} Mbps" : null),
+                    ("Enabled", N<bool>(o, "NetEnabled") is { } e ? (e ? "Yes" : "No") : null)),
+            };
+        }
+    }
+
+    private IEnumerable<DeviceInfo> Batteries()
+    {
+        foreach (var (o, i) in Query("SELECT * FROM Win32_Battery").Select((o, i) => (o, i)))
+        {
+            yield return new DeviceInfo
+            {
+                Id = $"wmi:battery{i}",
+                Name = S(o, "Name") ?? "Battery",
+                Category = HardwareCategory.Battery,
+                Source = SourceName,
+                Properties = SmbiosDiscoveryService.Props(
+                    ("Charge", S(o, "EstimatedChargeRemaining") is { } c ? $"{c} %" : null),
+                    ("Chemistry", (N<ushort>(o, "Chemistry") ?? 0) switch { 3 => "Lead Acid", 4 => "Nickel Cadmium", 5 => "Nickel Metal Hydride", 6 => "Lithium-ion", 8 => "Lithium Polymer", _ => null }),
+                    ("Device ID", S(o, "DeviceID"))),
+            };
+        }
+    }
+
+    private IEnumerable<DeviceInfo> Monitors()
+    {
+        foreach (var (o, i) in Query("SELECT * FROM WmiMonitorID", @"root\wmi").Select((o, i) => (o, i)))
+        {
+            var name = Decode(o, "UserFriendlyName") ?? "Monitor";
+            yield return new DeviceInfo
+            {
+                Id = $"wmi:monitor{i}",
+                Name = name,
+                Category = HardwareCategory.Display,
+                Manufacturer = Decode(o, "ManufacturerName"),
+                SerialNumber = Decode(o, "SerialNumberID"),
+                Source = SourceName,
+                Properties = SmbiosDiscoveryService.Props(
+                    ("Manufacturer code", Decode(o, "ManufacturerName")),
+                    ("Product code", Decode(o, "ProductCodeID")),
+                    ("Manufactured", N<ushort>(o, "YearOfManufacture") is { } y and > 0 ? $"Week {S(o, "WeekOfManufacture")}, {y}" : null)),
+            };
+        }
+
+        static string? Decode(ManagementBaseObject o, string prop)
+        {
+            try
+            {
+                return o[prop] is ushort[] chars
+                    ? new string(chars.TakeWhile(c => c != 0).Select(c => (char)c).ToArray()).Trim() is { Length: > 0 } s ? s : null
+                    : null;
+            }
+            catch (ManagementException)
+            {
+                return null;
+            }
+        }
+    }
+
+    private IEnumerable<DeviceInfo> Audio()
+    {
+        foreach (var (o, i) in Query("SELECT * FROM Win32_SoundDevice").Select((o, i) => (o, i)))
+        {
+            yield return new DeviceInfo
+            {
+                Id = $"wmi:audio{i}",
+                Name = S(o, "Name") ?? "Audio device",
+                Category = HardwareCategory.Audio,
+                Manufacturer = S(o, "Manufacturer"),
+                Source = SourceName,
+                Properties = SmbiosDiscoveryService.Props(("Status", S(o, "Status")), ("PNP device ID", S(o, "PNPDeviceID"))),
+            };
+        }
+    }
+
+    private static string? SafeDate(string wmiDate)
+    {
+        try
+        {
+            return ManagementDateTimeConverter.ToDateTime(wmiDate).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return null;
+        }
+    }
+}
