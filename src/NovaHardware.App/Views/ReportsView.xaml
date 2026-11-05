@@ -1,0 +1,35 @@
+<UserControl x:Class="NovaHardware.App.Views.ReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:NovaHardware.UI.Localization;assembly=NovaHardware.UI"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:local="clr-namespace:NovaHardware.App.Views">
+  <Grid Margin="24,4,24,24">
+    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition /></Grid.RowDefinitions>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="320" /><ColumnDefinition /></Grid.ColumnDefinitions>
+    <TextBlock Grid.ColumnSpan="2" Style="{StaticResource Text.PageTitle}" Text="{loc:Tr Nav_Reports}" />
+
+    <Border Grid.Row="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+      <StackPanel>
+        <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Reports_Format}" />
+        <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding Format}" HorizontalAlignment="Left" />
+        <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Reports_Sections}" Margin="0,18,0,6" />
+        <CheckBox Content="{loc:Tr Reports_Summary}" IsChecked="{Binding IncludeSummary}" />
+        <CheckBox Content="{loc:Tr Reports_Devices}" IsChecked="{Binding IncludeDevices}" />
+        <CheckBox Content="{loc:Tr Reports_Sensors}" IsChecked="{Binding IncludeSensors}" />
+        <CheckBox Content="{loc:Tr Reports_Alerts}" IsChecked="{Binding IncludeAlerts}" />
+        <CheckBox Content="{loc:Tr Reports_Stress}" IsChecked="{Binding IncludeStress}" />
+        <Button Style="{StaticResource Button.Primary}" Margin="0,18,0,8" HorizontalAlignment="Stretch" Content="{loc:Tr Reports_Export}" Command="{Binding ExportCommand}" />
+        <Button Margin="0,0,0,8" HorizontalAlignment="Stretch" Content="{loc:Tr Reports_Preview}" Command="{Binding PreviewCommand}" />
+        <Button HorizontalAlignment="Stretch" Content="{loc:Tr Reports_OpenFolder}" Command="{Binding OpenFolderCommand}" />
+        <ProgressBar IsIndeterminate="True" Height="3" Margin="0,12,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+        <TextBlock Style="{StaticResource Text.Muted}" Margin="0,12,0,0" Text="{Binding Message}" />
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}" Margin="0">
+      <TextBox Text="{Binding Preview, Mode=OneWay}" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+               BorderThickness="0" Background="Transparent" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
+    </Border>
+  </Grid>
+</UserControl>

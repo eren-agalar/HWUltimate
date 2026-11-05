@@ -1,0 +1,70 @@
+<UserControl x:Class="NovaHardware.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:NovaHardware.UI.Localization;assembly=NovaHardware.UI"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:local="clr-namespace:NovaHardware.App.Views">
+  <ScrollViewer Padding="24,4,12,24">
+    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Style="{StaticResource Text.PageTitle}" Text="{loc:Tr Nav_Settings}" />
+
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Settings_Monitoring}" />
+          <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Settings_Interval}" Margin="0,0,0,4" />
+          <ComboBox ItemsSource="{Binding Intervals}" SelectedItem="{Binding PollingIntervalMs}" HorizontalAlignment="Left" />
+          <CheckBox Margin="0,14,0,0" Content="{loc:Tr Settings_History}" IsChecked="{Binding HistoryEnabled}" />
+          <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Settings_SampleInterval}" Margin="0,10,0,4" />
+          <TextBox Text="{Binding SampleIntervalSeconds, UpdateSourceTrigger=PropertyChanged}" Width="120" HorizontalAlignment="Left" />
+          <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Settings_Retention}" Margin="0,10,0,4" />
+          <TextBox Text="{Binding RetentionDays, UpdateSourceTrigger=PropertyChanged}" Width="120" HorizontalAlignment="Left" />
+          <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Stress_ThermalLimit}" Margin="0,10,0,4" />
+          <TextBox Text="{Binding ThermalLimit, UpdateSourceTrigger=PropertyChanged}" Width="120" HorizontalAlignment="Left" />
+        </StackPanel>
+      </Border>
+
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Settings_Appearance}" />
+          <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Settings_Language}" Margin="0,0,0,4" />
+          <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" DisplayMemberPath="Name" HorizontalAlignment="Left" />
+          <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Settings_Theme}" Margin="0,12,0,4" />
+          <StackPanel Orientation="Horizontal">
+            <RadioButton Style="{StaticResource Chip}" Content="{loc:Tr Settings_Dark}" IsChecked="{Binding IsDark}" GroupName="Theme" />
+            <RadioButton Style="{StaticResource Chip}" Content="{loc:Tr Settings_Light}" IsChecked="{Binding IsDark, Converter={x:Static local:InverseBool.Instance}}" GroupName="Theme" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Settings_Providers}" />
+          <CheckBox Content="{loc:Tr Settings_Nvidia}" IsChecked="{Binding EnableNvidia}" />
+          <CheckBox Content="{loc:Tr Settings_Amd}" IsChecked="{Binding EnableAmd}" />
+        </StackPanel>
+      </Border>
+
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Settings_Data}" />
+          <TextBox Text="{Binding DataFolder, Mode=OneWay}" IsReadOnly="True" Margin="0,0,0,8" />
+          <Button Content="{loc:Tr Settings_OpenData}" Command="{Binding OpenDataFolderCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+      </Border>
+
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Settings_About}" />
+          <TextBlock FontWeight="SemiBold"><Run Text="Nova Hardware " /><Run Text="{Binding Version, Mode=OneWay}" /></TextBlock>
+          <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr App_Tagline}" />
+          <TextBlock Style="{StaticResource Text.Muted}" Margin="0,8,0,0" Text="Sensor data: LibreHardwareMonitor (MPL-2.0), NVIDIA NVAPI, AMD ADLX. Charts: LiveCharts2 (MIT)." />
+        </StackPanel>
+      </Border>
+
+      <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+        <Button Style="{StaticResource Button.Primary}" Content="{loc:Tr Common_Save}" Command="{Binding SaveCommand}" MinWidth="120" />
+        <TextBlock Style="{StaticResource Text.Muted}" Text="{Binding Message}" VerticalAlignment="Center" Margin="12,0,0,0" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

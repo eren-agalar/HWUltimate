@@ -27,7 +27,7 @@ public class ReportTests
         var html = _svc.Render(Sample(), ReportFormat.Html);
         Assert.Contains("Test &lt;CPU&gt;", html, StringComparison.Ordinal);
         Assert.DoesNotContain("<CPU>", html, StringComparison.Ordinal);
-        Assert.Contains("61.25 °C", html, StringComparison.Ordinal);
+        Assert.Contains("61.3 °C", html, StringComparison.Ordinal);
         Assert.Contains("N/A", html, StringComparison.Ordinal);
         Assert.Contains("prefers-color-scheme", html, StringComparison.Ordinal);
     }
@@ -67,6 +67,7 @@ public class ReportTests
     [InlineData(4321.7, SensorUnit.Megahertz, "4322 MHz")]
     [InlineData(null, SensorUnit.Celsius, "N/A")]
     [InlineData(0.5, SensorUnit.None, "0.5")]
+    [InlineData(61.25, SensorUnit.Celsius, "61.3 °C")]
     public void Formats_values_with_units(double? value, SensorUnit unit, string expected) =>
         Assert.Equal(expected, ReportExportService.FormatValue(value, unit));
 

@@ -1,0 +1,64 @@
+<UserControl x:Class="NovaHardware.App.Views.AlertsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:NovaHardware.UI.Localization;assembly=NovaHardware.UI"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:local="clr-namespace:NovaHardware.App.Views"
+             xmlns:vm="clr-namespace:NovaHardware.App.ViewModels">
+  <Grid Margin="24,4,24,24">
+    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="1.2*" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+    <TextBlock Style="{StaticResource Text.PageTitle}" Text="{loc:Tr Nav_Alerts}" />
+
+    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,12">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+            <TextBlock Style="{StaticResource Text.Muted}" Text="{Binding Message}" VerticalAlignment="Center" Margin="0,0,12,0" />
+            <Button Content="{loc:Tr Common_Add}" Command="{Binding AddRuleCommand}" Margin="0,0,6,0" />
+            <Button Content="{loc:Tr Common_Remove}" Command="{Binding RemoveRuleCommand}" Margin="0,0,6,0" />
+            <Button Content="{loc:Tr Alerts_Defaults}" Command="{Binding RestoreDefaultsCommand}" Margin="0,0,6,0" />
+            <Button Style="{StaticResource Button.Primary}" Content="{loc:Tr Common_Save}" Command="{Binding SaveCommand}" />
+          </StackPanel>
+          <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Alerts_Rules}" VerticalAlignment="Center" Margin="0" />
+        </DockPanel>
+        <DataGrid ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule}" RowHeight="34">
+          <DataGrid.Columns>
+            <DataGridCheckBoxColumn Header="{loc:Tr Alerts_Enabled}" Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" Width="50" />
+            <DataGridTextColumn Header="{loc:Tr Alerts_Name}" Binding="{Binding Name}" Width="2*" />
+            <DataGridComboBoxColumn Header="{loc:Tr Common_Type}" SelectedItemBinding="{Binding SensorType}" Width="*"
+                                    ItemsSource="{x:Static vm:AlertsViewModel.SensorTypes}" />
+            <DataGridComboBoxColumn Header="{loc:Tr Alerts_Category}" SelectedItemBinding="{Binding DeviceCategory}" Width="*"
+                                    ItemsSource="{x:Static vm:AlertsViewModel.Categories}" />
+            <DataGridComboBoxColumn Header="{loc:Tr Alerts_Comparison}" SelectedItemBinding="{Binding Comparison}" Width="0.8*"
+                                    ItemsSource="{x:Static vm:AlertsViewModel.Comparisons}" />
+            <DataGridTextColumn Header="{loc:Tr Alerts_Threshold}" Binding="{Binding Threshold}" Width="0.7*" />
+            <DataGridTextColumn Header="{loc:Tr Alerts_Sustain}" Binding="{Binding SustainSeconds}" Width="0.7*" />
+            <DataGridComboBoxColumn Header="{loc:Tr Alerts_Severity}" SelectedItemBinding="{Binding Severity}" Width="0.9*"
+                                    ItemsSource="{x:Static vm:AlertsViewModel.Severities}" />
+          </DataGrid.Columns>
+        </DataGrid>
+      </DockPanel>
+    </Border>
+
+    <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+          <Button DockPanel.Dock="Right" Content="{loc:Tr Common_Clear}" Command="{Binding ClearEventsCommand}" />
+          <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Alerts_Events}" VerticalAlignment="Center" Margin="0" />
+        </DockPanel>
+        <Grid>
+          <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Alerts_None}" Visibility="{Binding Events.Count, Converter={x:Static local:ZeroToVisibility.Instance}}" />
+          <DataGrid ItemsSource="{Binding Events}" IsReadOnly="True">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="" Binding="{Binding Timestamp, StringFormat=G}" Width="170" />
+              <DataGridTextColumn Header="{loc:Tr Alerts_Severity}" Binding="{Binding Severity}" Width="100" />
+              <DataGridTextColumn Header="{loc:Tr Alerts_Name}" Binding="{Binding RuleName}" Width="*" />
+              <DataGridTextColumn Header="" Binding="{Binding State}" Width="90" />
+              <DataGridTextColumn Header="" Binding="{Binding Message}" Width="2*" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+      </DockPanel>
+    </Border>
+  </Grid>
+</UserControl>

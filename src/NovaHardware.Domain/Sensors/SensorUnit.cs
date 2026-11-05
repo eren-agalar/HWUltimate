@@ -52,6 +52,28 @@ public static class SensorUnitExtensions
         _ => string.Empty,
     };
 
+    /// <summary>
+    /// Formats a value with a precision suited to its unit. Missing values return <paramref name="missing"/>; values are never rescaled.
+    /// </summary>
+    public static string FormatValue(this SensorUnit unit, double? value, IFormatProvider? provider = null, string missing = "N/A", bool withUnit = true)
+    {
+        if (value is not { } v)
+        {
+            return missing;
+        }
+
+        var format = unit switch
+        {
+            SensorUnit.Volt or SensorUnit.Ampere => "0.000",
+            SensorUnit.Rpm or SensorUnit.Megahertz or SensorUnit.BytesPerSecond or SensorUnit.Hertz => "0",
+            SensorUnit.Celsius or SensorUnit.Percent or SensorUnit.Watt => "0.0",
+            _ => "0.##",
+        };
+        var text = v.ToString(format, provider ?? System.Globalization.CultureInfo.InvariantCulture);
+        var symbol = unit.ToSymbol();
+        return withUnit && symbol.Length > 0 ? $"{text} {symbol}" : text;
+    }
+
     /// <summary>Default unit for a sensor type when the provider does not state one explicitly.</summary>
     public static SensorUnit DefaultUnitFor(SensorType type) => type switch
     {

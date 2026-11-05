@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>NovaHardware.App</RootNamespace>
+    <AssemblyName>NovaHardware</AssemblyName>
+    <ApplicationIcon>Assets\nova.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>en;tr</SatelliteResourceLanguages>
+    <SelfContained>false</SelfContained>
+    <NoWarn>$(NoWarn);MVVMTK0045;CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NovaHardware.Core\NovaHardware.Core.csproj" />
+    <ProjectReference Include="..\NovaHardware.Hardware\NovaHardware.Hardware.csproj" />
+    <ProjectReference Include="..\NovaHardware.Hardware.Nvidia\NovaHardware.Hardware.Nvidia.csproj" />
+    <ProjectReference Include="..\NovaHardware.Hardware.Amd\NovaHardware.Hardware.Amd.csproj" />
+    <ProjectReference Include="..\NovaHardware.Infrastructure\NovaHardware.Infrastructure.csproj" />
+    <ProjectReference Include="..\NovaHardware.Storage\NovaHardware.Storage.csproj" />
+    <ProjectReference Include="..\NovaHardware.UI\NovaHardware.UI.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\nova.png" />
+    <Resource Include="Assets\nova.ico" />
+  </ItemGroup>
+</Project>

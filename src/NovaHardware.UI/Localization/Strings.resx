@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="App_Tagline" xml:space="preserve"><value>Your Hardware. Every Detail. One Place.</value></data>
+  <data name="Nav_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Nav_Sensors" xml:space="preserve"><value>Sensors</value></data>
+  <data name="Nav_Hardware" xml:space="preserve"><value>Hardware</value></data>
+  <data name="Nav_History" xml:space="preserve"><value>History</value></data>
+  <data name="Nav_Stability" xml:space="preserve"><value>Stability Test</value></data>
+  <data name="Nav_Alerts" xml:space="preserve"><value>Alerts</value></data>
+  <data name="Nav_Reports" xml:space="preserve"><value>Reports</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Common_NA" xml:space="preserve"><value>N/A</value></data>
+  <data name="Common_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Common_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Common_Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Common_Search" xml:space="preserve"><value>Search…</value></data>
+  <data name="Common_Loading" xml:space="preserve"><value>Detecting hardware…</value></data>
+  <data name="Common_Current" xml:space="preserve"><value>Current</value></data>
+  <data name="Common_Min" xml:space="preserve"><value>Min</value></data>
+  <data name="Common_Max" xml:space="preserve"><value>Max</value></data>
+  <data name="Common_Avg" xml:space="preserve"><value>Avg</value></data>
+  <data name="Common_Sensor" xml:space="preserve"><value>Sensor</value></data>
+  <data name="Common_Source" xml:space="preserve"><value>Source</value></data>
+  <data name="Common_Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Common_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Common_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Common_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Elevation_Banner" xml:space="preserve"><value>Running without administrator rights. Motherboard, voltage and some CPU sensors are unavailable.</value></data>
+  <data name="Elevation_Restart" xml:space="preserve"><value>Restart as administrator</value></data>
+  <data name="Dash_Processor" xml:space="preserve"><value>Processor</value></data>
+  <data name="Dash_Graphics" xml:space="preserve"><value>Graphics</value></data>
+  <data name="Dash_Memory" xml:space="preserve"><value>Memory</value></data>
+  <data name="Dash_Load" xml:space="preserve"><value>Load</value></data>
+  <data name="Dash_Temperature" xml:space="preserve"><value>Temperature</value></data>
+  <data name="Dash_Power" xml:space="preserve"><value>Power</value></data>
+  <data name="Dash_Clock" xml:space="preserve"><value>Clock</value></data>
+  <data name="Dash_Used" xml:space="preserve"><value>Used</value></data>
+  <data name="Dash_Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Dash_LoadChart" xml:space="preserve"><value>Utilization — last 2 minutes</value></data>
+  <data name="Dash_TempChart" xml:space="preserve"><value>Temperature — last 2 minutes</value></data>
+  <data name="Dash_Storage" xml:space="preserve"><value>Storage temperatures</value></data>
+  <data name="Dash_Fans" xml:space="preserve"><value>Fans &amp; pumps</value></data>
+  <data name="Dash_Providers" xml:space="preserve"><value>Sensor providers</value></data>
+  <data name="Dash_NoData" xml:space="preserve"><value>No sensors of this kind were reported.</value></data>
+  <data name="Dash_Poll" xml:space="preserve"><value>Poll {0:0} ms · {1} sensors</value></data>
+  <data name="Sensors_Reset" xml:space="preserve"><value>Reset min/max</value></data>
+  <data name="Sensors_Quality" xml:space="preserve"><value>Quality</value></data>
+  <data name="Sensors_Count" xml:space="preserve"><value>{0} sensors on {1} devices</value></data>
+  <data name="Hw_Summary" xml:space="preserve"><value>System summary</value></data>
+  <data name="Hw_Devices" xml:space="preserve"><value>Devices</value></data>
+  <data name="Hw_Computer" xml:space="preserve"><value>Computer</value></data>
+  <data name="Hw_OS" xml:space="preserve"><value>Operating system</value></data>
+  <data name="Hw_System" xml:space="preserve"><value>System</value></data>
+  <data name="Hw_Motherboard" xml:space="preserve"><value>Motherboard</value></data>
+  <data name="Hw_Bios" xml:space="preserve"><value>BIOS</value></data>
+  <data name="Hw_Processor" xml:space="preserve"><value>Processor</value></data>
+  <data name="Hw_Cores" xml:space="preserve"><value>Cores / threads</value></data>
+  <data name="Hw_Memory" xml:space="preserve"><value>Installed memory</value></data>
+  <data name="Hw_Graphics" xml:space="preserve"><value>Graphics</value></data>
+  <data name="Hw_Uptime" xml:space="preserve"><value>Uptime</value></data>
+  <data name="Hw_Collected" xml:space="preserve"><value>Collected {0:g}</value></data>
+  <data name="Hist_Range" xml:space="preserve"><value>Range</value></data>
+  <data name="Hist_15m" xml:space="preserve"><value>15 min</value></data>
+  <data name="Hist_1h" xml:space="preserve"><value>1 hour</value></data>
+  <data name="Hist_6h" xml:space="preserve"><value>6 hours</value></data>
+  <data name="Hist_24h" xml:space="preserve"><value>24 hours</value></data>
+  <data name="Hist_7d" xml:space="preserve"><value>7 days</value></data>
+  <data name="Hist_Empty" xml:space="preserve"><value>No history recorded for this sensor in the selected range.</value></data>
+  <data name="Hist_Pick" xml:space="preserve"><value>Select a sensor to view its history.</value></data>
+  <data name="Hist_Samples" xml:space="preserve"><value>{0:N0} samples</value></data>
+  <data name="Hist_Database" xml:space="preserve"><value>Database: {0:N0} samples stored</value></data>
+  <data name="Stress_Test" xml:space="preserve"><value>Test</value></data>
+  <data name="Stress_Cpu_Fp" xml:space="preserve"><value>CPU — floating point</value></data>
+  <data name="Stress_Cpu_Int" xml:space="preserve"><value>CPU — integer</value></data>
+  <data name="Stress_Cpu_Simd" xml:space="preserve"><value>CPU — SIMD / vector</value></data>
+  <data name="Stress_Memory" xml:space="preserve"><value>Memory (RAM)</value></data>
+  <data name="Stress_Gpu" xml:space="preserve"><value>Graphics (GPU)</value></data>
+  <data name="Stress_Duration" xml:space="preserve"><value>Duration</value></data>
+  <data name="Stress_Minutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="Stress_Threads" xml:space="preserve"><value>Threads</value></data>
+  <data name="Stress_AllThreads" xml:space="preserve"><value>All ({0})</value></data>
+  <data name="Stress_MemorySize" xml:space="preserve"><value>Memory to test (MB, 0 = auto)</value></data>
+  <data name="Stress_ThermalLimit" xml:space="preserve"><value>Thermal safety limit (°C)</value></data>
+  <data name="Stress_StopOnError" xml:space="preserve"><value>Stop at first error</value></data>
+  <data name="Stress_Warning" xml:space="preserve"><value>Stability tests drive components to full load. Make sure cooling is adequate. The test stops automatically at the thermal limit.</value></data>
+  <data name="Stress_Elapsed" xml:space="preserve"><value>Elapsed</value></data>
+  <data name="Stress_Iterations" xml:space="preserve"><value>Verified iterations</value></data>
+  <data name="Stress_Rate" xml:space="preserve"><value>Iterations / s</value></data>
+  <data name="Stress_Errors" xml:space="preserve"><value>Errors</value></data>
+  <data name="Stress_MaxTemp" xml:space="preserve"><value>Max temperature</value></data>
+  <data name="Stress_Results" xml:space="preserve"><value>Results this session</value></data>
+  <data name="Stress_Idle" xml:space="preserve"><value>Ready</value></data>
+  <data name="Stress_Running" xml:space="preserve"><value>Running…</value></data>
+  <data name="Alerts_Rules" xml:space="preserve"><value>Alert rules</value></data>
+  <data name="Alerts_Events" xml:space="preserve"><value>Recent alerts</value></data>
+  <data name="Alerts_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Alerts_Enabled" xml:space="preserve"><value>On</value></data>
+  <data name="Alerts_Category" xml:space="preserve"><value>Device</value></data>
+  <data name="Alerts_Comparison" xml:space="preserve"><value>When</value></data>
+  <data name="Alerts_Threshold" xml:space="preserve"><value>Threshold</value></data>
+  <data name="Alerts_Sustain" xml:space="preserve"><value>Sustain (s)</value></data>
+  <data name="Alerts_Severity" xml:space="preserve"><value>Severity</value></data>
+  <data name="Alerts_Defaults" xml:space="preserve"><value>Restore defaults</value></data>
+  <data name="Alerts_None" xml:space="preserve"><value>No alerts so far.</value></data>
+  <data name="Reports_Format" xml:space="preserve"><value>Format</value></data>
+  <data name="Reports_Sections" xml:space="preserve"><value>Include</value></data>
+  <data name="Reports_Summary" xml:space="preserve"><value>System summary</value></data>
+  <data name="Reports_Devices" xml:space="preserve"><value>Devices</value></data>
+  <data name="Reports_Sensors" xml:space="preserve"><value>Sensor readings</value></data>
+  <data name="Reports_Alerts" xml:space="preserve"><value>Alerts</value></data>
+  <data name="Reports_Stress" xml:space="preserve"><value>Stability tests</value></data>
+  <data name="Reports_Export" xml:space="preserve"><value>Export report…</value></data>
+  <data name="Reports_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="Reports_OpenFolder" xml:space="preserve"><value>Open reports folder</value></data>
+  <data name="Reports_Saved" xml:space="preserve"><value>Report saved to {0}</value></data>
+  <data name="Settings_Monitoring" xml:space="preserve"><value>Monitoring</value></data>
+  <data name="Settings_Interval" xml:space="preserve"><value>Polling interval (ms)</value></data>
+  <data name="Settings_History" xml:space="preserve"><value>Record sensor history</value></data>
+  <data name="Settings_SampleInterval" xml:space="preserve"><value>History sample interval (s)</value></data>
+  <data name="Settings_Retention" xml:space="preserve"><value>Keep history for (days)</value></data>
+  <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings_Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="Settings_Dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Settings_Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Settings_Providers" xml:space="preserve"><value>Vendor providers (restart required)</value></data>
+  <data name="Settings_Nvidia" xml:space="preserve"><value>Use NVIDIA NVAPI</value></data>
+  <data name="Settings_Amd" xml:space="preserve"><value>Use AMD ADLX</value></data>
+  <data name="Settings_Data" xml:space="preserve"><value>Data folder</value></data>
+  <data name="Settings_OpenData" xml:space="preserve"><value>Open data folder</value></data>
+  <data name="Settings_Saved" xml:space="preserve"><value>Settings saved.</value></data>
+  <data name="Settings_About" xml:space="preserve"><value>About</value></data>
+  <data name="Quality_Good" xml:space="preserve"><value>OK</value></data>
+  <data name="Quality_Stale" xml:space="preserve"><value>Stale</value></data>
+  <data name="Quality_Suspect" xml:space="preserve"><value>Suspect</value></data>
+  <data name="Quality_Missing" xml:space="preserve"><value>No data</value></data>
+</root>

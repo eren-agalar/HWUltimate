@@ -55,23 +55,7 @@ public sealed class ReportExportService : IReportExportService
         _ => throw new ArgumentOutOfRangeException(nameof(format), format, null),
     };
 
-    internal static string FormatValue(double? value, SensorUnit unit)
-    {
-        if (value is not { } v)
-        {
-            return "N/A";
-        }
-
-        var digits = unit switch
-        {
-            SensorUnit.Volt => "0.000",
-            SensorUnit.Ampere => "0.000",
-            SensorUnit.Rpm or SensorUnit.Megahertz or SensorUnit.BytesPerSecond => "0",
-            _ => "0.##",
-        };
-        var symbol = unit.ToSymbol();
-        return symbol.Length == 0 ? v.ToString(digits, Inv) : $"{v.ToString(digits, Inv)} {symbol}";
-    }
+    internal static string FormatValue(double? value, SensorUnit unit) => unit.FormatValue(value, Inv);
 
     private static string Bytes(ulong? bytes) => bytes is { } b ? $"{b / 1024d / 1024 / 1024:0.0} GB" : "N/A";
 
