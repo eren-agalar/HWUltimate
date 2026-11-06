@@ -16,6 +16,7 @@
     <ProjectReference Include="..\..\src\NovaHardware.Storage\NovaHardware.Storage.csproj" />
     <ProjectReference Include="..\..\src\NovaHardware.Infrastructure\NovaHardware.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\NovaHardware.Hardware.Nvidia\NovaHardware.Hardware.Nvidia.csproj" />
+    <ProjectReference Include="..\..\src\NovaHardware.Benchmark\NovaHardware.Benchmark.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

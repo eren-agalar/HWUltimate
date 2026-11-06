@@ -117,6 +117,7 @@ public sealed class NvidiaGpuDetailSource : IDeviceDiscoveryService
 
         Na(S.Advanced, "ASIC quality (NVIDIA)", "NVAPI and NVML do not expose an ASIC-quality / leakage value for NVIDIA GPUs. Nova does not estimate it.", "NVAPI, NVML");
 
-        return new DeviceInfo { Id = $"nvml:gpu{index}", Name = name, Category = HardwareCategory.Gpu, Manufacturer = "NVIDIA", Source = Nvml, Properties = props };
+        var key = nvml.Pci(d) is { } loc ? $"pci:{new PciLocation((int)loc.Domain, (int)loc.Bus, (int)loc.Device, 0)}" : null;
+        return new DeviceInfo { Id = $"nvml:gpu{index}", Name = name, Category = HardwareCategory.Gpu, Manufacturer = "NVIDIA", Source = Nvml, Properties = props, PhysicalKey = key };
     }
 }

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Stability / stress-test engine extracted from Nova Hardware v0.1.
+    Not referenced by the v0.2 application; kept as the starting point for the separate NOVA BENCHMARK product.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>NovaHardware.Benchmark</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NovaHardware.Core\NovaHardware.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="NovaHardware.Tests" />
+  </ItemGroup>
+</Project>

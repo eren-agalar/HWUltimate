@@ -22,9 +22,9 @@ internal sealed class FakeProvider : IHardwareProvider
     public IReadOnlyList<HardwareDevice> GetDevices() => Devices;
     public void Dispose() { }
 
-    public FakeProvider WithDevice(string id, HardwareCategory category, string? name = null)
+    public FakeProvider WithDevice(string id, HardwareCategory category, string? name = null, DeviceIdentity? identity = null)
     {
-        Devices.Add(new HardwareDevice(id, name ?? id, category, Name));
+        Devices.Add(new HardwareDevice(id, name ?? id, category, Name, Identity: identity));
         return this;
     }
 
@@ -47,7 +47,7 @@ internal sealed class ManualTimeProvider : TimeProvider
 internal static class Snapshots
 {
     public static SensorReading Reading(string id, string device, string name, SensorType type, double? value,
-        DataQuality quality = DataQuality.Good, DateTimeOffset? ts = null) => new()
+        DataQuality quality = DataQuality.Good, DateTimeOffset? ts = null, SensorKind kind = SensorKind.Measurement) => new()
     {
         SensorId = id,
         DeviceId = device,
@@ -58,6 +58,7 @@ internal static class Snapshots
         Timestamp = ts ?? DateTimeOffset.Now,
         ProviderName = "test",
         Quality = quality,
+        Kind = kind,
     };
 
     public static SensorSnapshot Of(DateTimeOffset ts, IEnumerable<HardwareDevice> devices, params SensorReading[] sensors) =>

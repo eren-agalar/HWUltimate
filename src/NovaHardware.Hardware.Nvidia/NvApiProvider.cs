@@ -26,7 +26,7 @@ public sealed class NvApiProvider : IHardwareProvider
     private List<HardwareDevice> _devices = [];
     private List<RawSensorReading> _readings = [];
 
-    private sealed record Gpu(nint? NvApi, nint? Nvml, string Id, string Name);
+    private sealed record Gpu(nint? NvApi, nint? Nvml, string Id, string Name, DeviceIdentity? Identity = null);
 
     public NvApiProvider(ILogger<NvApiProvider> logger)
     {
@@ -71,9 +71,9 @@ public sealed class NvApiProvider : IHardwareProvider
                 gpus.AddRange(nvmlHandles.Select((h, i) => new Gpu(null, h, $"nvapi:gpu{i}", _nvml!.Name(h) ?? $"NVIDIA GPU #{i}")));
             }
 
-            _gpus = [.. gpus];
+            _gpus = gpus.Select(g => g with { Identity = BuildIdentity(g) }).ToArray();
             DriverVersion = _api?.GetDriverVersion() ?? _nvml?.DriverVersion();
-            _devices = _gpus.Select(g => new HardwareDevice(g.Id, g.Name, HardwareCategory.Gpu, ProviderName, Vendor: "NVIDIA")).ToList();
+            _devices = _gpus.Select(g => new HardwareDevice(g.Id, g.Name, HardwareCategory.Gpu, ProviderName, Vendor: "NVIDIA", Identity: g.Identity)).ToList();
             var parts = new List<string> { $"{_gpus.Length} GPU(s)", $"driver {DriverVersion ?? "unknown"}" };
             if (_api is null) parts.Add("NVAPI unavailable");
             if (_nvml is null) parts.Add($"NVML unavailable: {nvmlReason}");
@@ -116,6 +116,40 @@ public sealed class NvApiProvider : IHardwareProvider
         }
     }
 
+    /// <summary>PCI identity: NVML reports segment / bus / device and ids; NVAPI reports bus, slot and ids.</summary>
+    private DeviceIdentity BuildIdentity(Gpu g)
+    {
+        PciLocation? location = null;
+        ushort? device = null, subVendor = null, subDevice = null;
+        if (_nvml is not null && g.Nvml is { } n && _nvml.Pci(n) is { } p)
+        {
+            location = new PciLocation((int)p.Domain, (int)p.Bus, (int)p.Device, 0);
+            device = (ushort)(p.PciDeviceId >> 16);
+            subDevice = (ushort)(p.PciSubSystemId >> 16);
+            subVendor = (ushort)(p.PciSubSystemId & 0xFFFF);
+        }
+        else if (_api is not null && g.NvApi is { } h && _api.GetBusId(h) is { } bus)
+        {
+            location = new PciLocation(0, (int)bus, (int)(_api.GetBusSlotId(h) ?? 0), 0);
+        }
+
+        if (_api is not null && g.NvApi is { } hh && _api.GetPciIdentifiers(hh) is { } ids)
+        {
+            device ??= (ushort)(ids.DeviceId >> 16);
+            subDevice ??= (ushort)(ids.SubSystemId >> 16);
+            subVendor ??= (ushort)(ids.SubSystemId & 0xFFFF);
+        }
+
+        return new DeviceIdentity
+        {
+            Location = location,
+            VendorId = 0x10DE,
+            DeviceId = device,
+            SubsystemVendorId = subVendor is 0 ? null : subVendor,
+            SubsystemId = subDevice is 0 ? null : subDevice,
+        };
+    }
+
     private static void ReadNvml(NvmlNative nvml, nint d, string id, List<RawSensorReading> list)
     {
         if (nvml.PowerUsageMw(d) is { } p) list.Add(Reading(id, "nvml/power", "GPU Board Power", SensorType.Power, SensorUnit.Watt, p / 1000.0));
@@ -145,6 +179,12 @@ public sealed class NvApiProvider : IHardwareProvider
         if (nvml.PcieThroughputKBps(d, 1) is { } rx) list.Add(Reading(id, "nvml/pcie/rx", "PCIe Receive", SensorType.Throughput, SensorUnit.BytesPerSecond, rx * 1024.0));
         if (nvml.PcieThroughputKBps(d, 0) is { } tx) list.Add(Reading(id, "nvml/pcie/tx", "PCIe Transmit", SensorType.Throughput, SensorUnit.BytesPerSecond, tx * 1024.0, 1));
         if (nvml.PerformanceState(d) is { } ps) list.Add(Reading(id, "nvml/pstate", "Performance State (P-state)", SensorType.Other, SensorUnit.None, ps, 2));
+
+        // Driver-reported thermal limits: exposed as metadata (never as live temperatures) so alerts can use them.
+        if (nvml.TemperatureThreshold(d, 1) is { } slow and > 0)
+            list.Add(Reading(id, "nvml/threshold/slowdown", "GPU Slowdown Temperature Threshold", SensorType.Temperature, SensorUnit.Celsius, slow, 10, SensorKind.Metadata));
+        if (nvml.TemperatureThreshold(d, 0) is { } shut and > 0)
+            list.Add(Reading(id, "nvml/threshold/shutdown", "GPU Shutdown Temperature Threshold", SensorType.Temperature, SensorUnit.Celsius, shut, 11, SensorKind.Metadata));
     }
 
     private static void ReadThermals(NvApiNative api, nint handle, string id, List<RawSensorReading> list)
@@ -198,8 +238,8 @@ public sealed class NvApiProvider : IHardwareProvider
         }
     }
 
-    private static RawSensorReading Reading(string deviceId, string suffix, string name, SensorType type, SensorUnit unit, double value, int index = 0) =>
-        new($"{deviceId}/{suffix}", deviceId, name, type, unit, value, ProviderName, SensorAvailability.Available, index);
+    private static RawSensorReading Reading(string deviceId, string suffix, string name, SensorType type, SensorUnit unit, double value, int index = 0, SensorKind? kind = null) =>
+        new($"{deviceId}/{suffix}", deviceId, name, type, unit, value, ProviderName, SensorAvailability.Available, index, kind);
 
     public IReadOnlyList<RawSensorReading> ReadSensors()
     {

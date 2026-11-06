@@ -130,7 +130,7 @@ public sealed class WmiDeviceDiscoveryService : IDeviceDiscoveryService, ISystem
     {
         var list = new List<DeviceInfo>();
         list.AddRange(Processors());
-        list.AddRange(VideoControllers());
+        // GPUs are described by GpuDiscoveryService (WMI + PCI + DXGI) so each adapter appears exactly once.
         list.AddRange(MemoryModules());
         list.AddRange(Disks());
         list.AddRange(NetworkAdapters());

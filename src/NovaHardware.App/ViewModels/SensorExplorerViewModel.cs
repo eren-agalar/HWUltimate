@@ -4,7 +4,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NovaHardware.App.Services;
 using NovaHardware.Core.Abstractions;
+using NovaHardware.Core.Alerts;
 using NovaHardware.Core.Explorer;
+using NovaHardware.Core.Settings;
+using NovaHardware.Domain.Alerts;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.Sensors;
 using NovaHardware.UI.Controls;
@@ -12,7 +15,7 @@ using NovaHardware.UI.Localization;
 
 namespace NovaHardware.App.ViewModels;
 
-/// <summary>Column widths and row height shared by the header and every row (rows bind to it through their DataContext).</summary>
+/// <summary>Column widths and row height shared by the header and every row.</summary>
 public sealed partial class ExplorerLayout : ObservableObject
 {
     [ObservableProperty] private GridLength _value;
@@ -22,25 +25,27 @@ public sealed partial class ExplorerLayout : ObservableObject
     [ObservableProperty] private GridLength _type;
     [ObservableProperty] private GridLength _provider;
     [ObservableProperty] private GridLength _quality;
-    [ObservableProperty] private double _rowHeight = 24;
-    [ObservableProperty] private bool _isDetailed;
+    [ObservableProperty] private GridLength _sensorId;
+    [ObservableProperty] private GridLength _samples;
+    [ObservableProperty] private bool _isAdvanced;
 
     public void Apply(SensorExplorerState state)
     {
         static GridLength W(bool visible, double width) => new(visible ? width : 0);
-        Value = W(state.IsColumnVisible(ExplorerColumns.Value), 112);
-        Minimum = W(state.IsColumnVisible(ExplorerColumns.Minimum), 100);
-        Maximum = W(state.IsColumnVisible(ExplorerColumns.Maximum), 100);
-        Average = W(state.IsColumnVisible(ExplorerColumns.Average), 100);
-        Type = W(state.IsColumnVisible(ExplorerColumns.Type), 110);
-        Provider = W(state.IsColumnVisible(ExplorerColumns.Provider), 170);
-        Quality = W(state.IsColumnVisible(ExplorerColumns.Quality), 80);
-        IsDetailed = state.DisplayMode == ExplorerDisplayMode.Detailed;
-        RowHeight = IsDetailed ? 40 : 24;
+        Value = W(state.IsColumnVisible(ExplorerColumns.Value), 100);
+        Minimum = W(state.IsColumnVisible(ExplorerColumns.Minimum), 88);
+        Maximum = W(state.IsColumnVisible(ExplorerColumns.Maximum), 88);
+        Average = W(state.IsColumnVisible(ExplorerColumns.Average), 88);
+        Type = W(state.IsColumnVisible(ExplorerColumns.Type), 100);
+        Provider = W(state.IsColumnVisible(ExplorerColumns.Provider), 150);
+        Quality = W(state.IsColumnVisible(ExplorerColumns.Quality), 76);
+        SensorId = W(state.IsColumnVisible(ExplorerColumns.SensorId), 220);
+        Samples = W(state.IsColumnVisible(ExplorerColumns.Samples), 76);
+        IsAdvanced = state.DisplayMode == ExplorerDisplayMode.Advanced;
     }
 }
 
-/// <summary>One visible row of the explorer. Rows are cached by stable key and updated in place.</summary>
+/// <summary>One visible row of the explorer, cached by stable key and updated in place.</summary>
 public sealed partial class ExplorerRow : ObservableObject
 {
     public ExplorerRow(string key, ExplorerLayout layout)
@@ -52,19 +57,21 @@ public sealed partial class ExplorerRow : ObservableObject
     public string Key { get; }
     public ExplorerLayout Layout { get; }
     public ExplorerNodeKind Kind { get; private set; }
-    public int Depth { get; private set; }
     public string? SensorId { get; private set; }
     public string? GroupKey { get; private set; }
     public bool IsContainer => Kind != ExplorerNodeKind.Sensor;
     public bool IsSensor => Kind == ExplorerNodeKind.Sensor;
-    public double Indent => Depth * 18;
-    public SensorUnit Unit { get; private set; }
+    public double Indent => Depth * 16;
+    public int Depth { get; private set; }
+    internal (double? Warning, double? Critical) Thresholds { get; set; }
 
     [ObservableProperty] private string _title = string.Empty;
     [ObservableProperty] private string _icon = "Other";
+    [ObservableProperty] private string? _subtitle;
     [ObservableProperty] private bool _isExpanded = true;
     [ObservableProperty] private int _childCount;
     [ObservableProperty] private bool _isFavorite;
+    [ObservableProperty] private bool _isPinned;
     [ObservableProperty] private bool _isHidden;
     [ObservableProperty] private bool _isAvailable = true;
     [ObservableProperty] private string _current = string.Empty;
@@ -73,7 +80,9 @@ public sealed partial class ExplorerRow : ObservableObject
     [ObservableProperty] private string _average = string.Empty;
     [ObservableProperty] private string _typeName = string.Empty;
     [ObservableProperty] private string _provider = string.Empty;
+    [ObservableProperty] private string _samples = string.Empty;
     [ObservableProperty] private DataQuality _quality;
+    [ObservableProperty] private NovaStatus _status;
     [ObservableProperty] private string _detail = string.Empty;
 
     internal void Configure(ExplorerNode node)
@@ -85,6 +94,7 @@ public sealed partial class ExplorerRow : ObservableObject
         IsExpanded = node.IsExpanded;
         ChildCount = node.ChildCount;
         IsFavorite = node.IsFavorite;
+        IsPinned = node.IsPinned;
         IsHidden = node.IsHidden;
         IsAvailable = node.IsAvailable;
         (Title, Icon) = node.Kind switch
@@ -95,6 +105,13 @@ public sealed partial class ExplorerRow : ObservableObject
             ExplorerNodeKind.Group => (Loc.Get($"Group_{node.Group}"), SensorExplorerViewModel.GroupIcon(node.Group!.Value)),
             _ => (node.Title, SensorExplorerViewModel.TypeIcon(node.Sensor!.Type)),
         };
+        if (node.Kind == ExplorerNodeKind.Device && node.Device is { } d)
+        {
+            // Identification line: PCI ids when known, plus every provider contributing to this physical device.
+            Subtitle = string.Join("  ·  ", new[] { d.Identity?.PciIdText, string.Join(" + ", d.Providers) }.Where(x => !string.IsNullOrEmpty(x)));
+            Status = node.IsAvailable ? NovaStatus.Normal : NovaStatus.Inactive;
+        }
+
         OnPropertyChanged(nameof(Kind));
         OnPropertyChanged(nameof(Indent));
         if (node.Sensor is { } s) Apply(s);
@@ -104,24 +121,33 @@ public sealed partial class ExplorerRow : ObservableObject
     {
         var c = Loc.Instance.Culture;
         var na = Loc.Get("Common_NA");
-        Unit = r.Unit;
         Current = Format(r.Unit, r.Value, c, na);
         Minimum = Format(r.Unit, r.Minimum, c, na);
         Maximum = Format(r.Unit, r.Maximum, c, na);
         Average = Format(r.Unit, r.Average, c, na);
         Quality = r.Quality;
         IsAvailable = r.Value.HasValue;
+        Samples = r.SampleCount.ToString("N0", c);
         if (TypeName.Length == 0)
         {
-            TypeName = r.Type.ToString();
-            Provider = r.ProviderName;
+            TypeName = Loc.Get($"SensorType_{r.Type}");
+            Provider = r.AlsoReportedBy.Count == 0 ? r.ProviderName : $"{r.ProviderName} (+{string.Join(", ", r.AlsoReportedBy)})";
+            Detail = r.Kind == SensorKind.Metadata
+                ? $"{r.SensorId}  ·  {Loc.Get("Explorer_MetadataNote")}"
+                : $"{r.SensorId}  ·  {Provider}";
         }
 
-        Detail = $"{r.SensorId}  ·  {Loc.Format("Explorer_Samples", r.SampleCount)}  ·  {r.UnitSymbol}";
+        Status = r.Quality switch
+        {
+            DataQuality.Suspect or DataQuality.Stale => NovaStatus.Warning,
+            _ when r.Value is { } v && Thresholds.Critical is { } crit && v >= crit => NovaStatus.Critical,
+            _ when r.Value is { } v && Thresholds.Warning is { } warn && v >= warn => NovaStatus.Warning,
+            _ => NovaStatus.Inactive,
+        };
     }
 
     private static string Format(SensorUnit unit, double? value, IFormatProvider culture, string na) =>
-        unit == SensorUnit.Flag && value is { } f ? (f != 0 ? "●" : "—") : unit.FormatValue(value, culture, na);
+        unit == SensorUnit.Flag && value is { } f ? (f != 0 ? Loc.Get("Explorer_FlagActive") : "—") : unit.FormatValue(value, culture, na);
 }
 
 public sealed record FilterOption<T>(T? Value, string Label);
@@ -130,51 +156,78 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
 {
     private readonly ISensorPollingService _polling;
     private readonly IPreferenceStore<SensorExplorerState> _store;
+    private readonly IAlertService _alerts;
     private readonly Dictionary<string, ExplorerRow> _cache = new(StringComparer.Ordinal);
     private readonly DispatcherTimer _timer;
-    private SensorSnapshot _latest = SensorSnapshot.Empty;
+    private volatile SensorSnapshot _latest = SensorSnapshot.Empty;
     private SensorSnapshot? _applied;
     private (int Sensors, int Devices, int Version) _signature = (-1, -1, -1);
     private int _version;
     private IReadOnlyList<ExplorerNode> _nodes = [];
 
-    public SensorExplorerViewModel(ISensorPollingService polling, IPreferenceStore<SensorExplorerState> store)
+    public SensorExplorerViewModel(ISensorPollingService polling, IPreferenceStore<SensorExplorerState> store, IAlertService alerts)
     {
         _polling = polling;
         _store = store;
-        State = store.Load().Sanitize();
-        _isDetailed = State.DisplayMode == ExplorerDisplayMode.Detailed;
+        _alerts = alerts;
+        var loaded = store.Load();
+        State = loaded.Sanitize();
+        _isAdvanced = State.DisplayMode == ExplorerDisplayMode.Advanced;
         _showHidden = State.ShowHidden;
         _refreshIntervalMs = State.RefreshIntervalMs;
         Layout.Apply(State);
 
+        SortOptions = Enum.GetValues<SensorSortColumn>().Select(c => new FilterOption<SensorSortColumn?>(c, Loc.Get($"Sort_{c}"))).ToList();
+        _sortOption = SortOptions.First(o => o.Value == State.SortColumn);
+        StatusFilters = Enum.GetValues<SensorStatusFilter>().Select(f => new FilterOption<SensorStatusFilter?>(f, Loc.Get($"StatusFilter_{f}"))).ToList();
+        _statusFilter = StatusFilters[0];
         GroupFilters = [new(null, Loc.Get("Explorer_AllGroups")), .. Enum.GetValues<SensorGroupKind>().Select(g => new FilterOption<SensorGroupKind?>(g, Loc.Get($"Group_{g}")))];
         CategoryFilters = [new(null, Loc.Get("Explorer_AllCategories")), .. SensorExplorerBuilder.CategoryOrder.Where(c => c is not HardwareCategory.SuperIo and not HardwareCategory.EmbeddedController)
             .Select(c => new FilterOption<HardwareCategory?>(c, Loc.Get($"Category_{c}")))];
         _groupFilter = GroupFilters[0];
         _categoryFilter = CategoryFilters[0];
+        _deviceFilter = new FilterOption<string>(null, Loc.Get("Explorer_AllDevices"));
+        _providerFilter = new FilterOption<string>(null, Loc.Get("Explorer_AllProviders"));
+        DeviceFilters.Add(_deviceFilter);
+        ProviderFilters.Add(_providerFilter);
 
         _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(_refreshIntervalMs) };
         _timer.Tick += (_, _) => ApplyLatest();
-        Loc.Instance.PropertyChanged += (_, _) => Invalidate();
+        Loc.Instance.PropertyChanged += (_, _) => { _cache.Clear(); Invalidate(); };
+        UI.Themes.ThemeManager.Changed += (_, _) => OnPropertyChanged(nameof(Layout));
     }
 
     public SensorExplorerState State { get; }
     public ExplorerLayout Layout { get; } = new();
     public RangeObservableCollection<ExplorerRow> Rows { get; } = [];
+    public IReadOnlyList<FilterOption<SensorSortColumn?>> SortOptions { get; }
+    public IReadOnlyList<FilterOption<SensorStatusFilter?>> StatusFilters { get; }
     public IReadOnlyList<FilterOption<SensorGroupKind?>> GroupFilters { get; }
     public IReadOnlyList<FilterOption<HardwareCategory?>> CategoryFilters { get; }
+    public RangeObservableCollection<FilterOption<string>> DeviceFilters { get; } = [];
+    public RangeObservableCollection<FilterOption<string>> ProviderFilters { get; } = [];
     public IReadOnlyList<int> RefreshIntervals => SensorExplorerState.RefreshIntervals;
 
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private FilterOption<SensorGroupKind?> _groupFilter;
     [ObservableProperty] private FilterOption<HardwareCategory?> _categoryFilter;
-    [ObservableProperty] private bool _isDetailed;
+    [ObservableProperty] private FilterOption<string> _deviceFilter;
+    [ObservableProperty] private FilterOption<string> _providerFilter;
+    [ObservableProperty] private FilterOption<SensorStatusFilter?> _statusFilter;
+    [ObservableProperty] private FilterOption<SensorSortColumn?> _sortOption;
+    [ObservableProperty] private bool _isAdvanced;
     [ObservableProperty] private bool _showHidden;
     [ObservableProperty] private int _refreshIntervalMs;
     [ObservableProperty] private string _summary = string.Empty;
     [ObservableProperty] private bool _isEmpty;
+    [ObservableProperty] private int _activeFilterCount;
     [ObservableProperty] private ExplorerRow? _selectedRow;
+
+    public bool SortDescending
+    {
+        get => State.SortDescending;
+        set { State.SortDescending = value; OnPropertyChanged(); Invalidate(); }
+    }
 
     public bool ShowValue { get => State.IsColumnVisible(ExplorerColumns.Value); set => SetColumn(ExplorerColumns.Value, value); }
     public bool ShowMinimum { get => State.IsColumnVisible(ExplorerColumns.Minimum); set => SetColumn(ExplorerColumns.Minimum, value); }
@@ -183,35 +236,23 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     public bool ShowType { get => State.IsColumnVisible(ExplorerColumns.Type); set => SetColumn(ExplorerColumns.Type, value); }
     public bool ShowProvider { get => State.IsColumnVisible(ExplorerColumns.Provider); set => SetColumn(ExplorerColumns.Provider, value); }
     public bool ShowQuality { get => State.IsColumnVisible(ExplorerColumns.Quality); set => SetColumn(ExplorerColumns.Quality, value); }
+    public bool ShowSensorId { get => State.IsColumnVisible(ExplorerColumns.SensorId); set => SetColumn(ExplorerColumns.SensorId, value); }
+    public bool ShowSamples { get => State.IsColumnVisible(ExplorerColumns.Samples); set => SetColumn(ExplorerColumns.Samples, value); }
 
-    public string SortIndicator(SensorSortColumn c) => State.SortColumn != c ? string.Empty : State.SortDescending ? " ▼" : " ▲";
-    public string NameHeader => Loc.Get("Explorer_Name") + SortIndicator(SensorSortColumn.Name);
-    public string ValueHeader => Loc.Get("Col_Value") + SortIndicator(SensorSortColumn.Value);
-    public string MinimumHeader => Loc.Get("Col_Minimum") + SortIndicator(SensorSortColumn.Minimum);
-    public string MaximumHeader => Loc.Get("Col_Maximum") + SortIndicator(SensorSortColumn.Maximum);
-    public string AverageHeader => Loc.Get("Col_Average") + SortIndicator(SensorSortColumn.Average);
-
-    /// <summary>True while the Sensors page is on screen; off-screen the explorer does no work.</summary>
+    /// <summary>True while the Sensors page is on screen; off-screen the explorer does no UI work.</summary>
     public bool IsActive
     {
         get => _timer.IsEnabled;
         set
         {
             if (value == _timer.IsEnabled) return;
-            if (value)
-            {
-                _timer.Start();
-                ApplyLatest();
-            }
-            else
-            {
-                _timer.Stop();
-            }
+            if (value) { _timer.Start(); ApplyLatest(); }
+            else _timer.Stop();
         }
     }
 
     // ------------------------------------------------------------------ data flow
-    /// <summary>Receives every snapshot; only the newest is applied on the next refresh tick.</summary>
+    /// <summary>Thread-safe: called from the polling thread; only the newest snapshot is applied on the next tick.</summary>
     public void Update(SensorSnapshot snapshot) => _latest = snapshot;
 
     private void ApplyLatest()
@@ -220,15 +261,19 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         if (ReferenceEquals(snap, _applied)) return;
         _applied = snap;
         var sig = (snap.Sensors.Count, snap.Devices.Count, _version);
-        // Value-based sorting re-orders rows as values change, so it needs a structural pass every tick.
-        if (sig != _signature || State.SortColumn is not (SensorSortColumn.Default or SensorSortColumn.Name))
+        var valueSorted = State.SortColumn is not (SensorSortColumn.Default or SensorSortColumn.Name);
+        if (sig != _signature || valueSorted)
         {
+            if (sig.Item1 != _signature.Sensors || sig.Item2 != _signature.Devices) UpdateFilterLists(snap);
             _signature = sig;
             Rebuild(snap);
         }
         else
         {
-            UpdateValues(snap);
+            foreach (var row in Rows)
+            {
+                if (row.SensorId is { } id && snap.Find(id) is { } reading) row.Apply(reading);
+            }
         }
     }
 
@@ -237,57 +282,82 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         _version++;
         _applied = null;
         ApplyLatest();
-        SaveState();
+        _store.Save(State);
     }
+
+    private ExplorerFilter CurrentFilter() => new(SearchText, GroupFilter.Value, CategoryFilter.Value, DeviceFilter.Value, ProviderFilter.Value,
+        StatusFilter.Value ?? SensorStatusFilter.All, IncludeMetadata: IsAdvanced);
 
     private void Rebuild(SensorSnapshot snap)
     {
-        var filter = new ExplorerFilter(SearchText, GroupFilter.Value, CategoryFilter.Value);
+        var filter = CurrentFilter();
         _nodes = SensorExplorerBuilder.Build(snap, State, filter);
+        var thresholds = ResolveThresholds(snap);
         var rows = new List<ExplorerRow>(_nodes.Count);
         foreach (var node in _nodes)
         {
-            if (!_cache.TryGetValue(node.Key, out var row))
-            {
-                row = new ExplorerRow(node.Key, Layout);
-                _cache[node.Key] = row;
-            }
-
+            if (!_cache.TryGetValue(node.Key, out var row)) _cache[node.Key] = row = new ExplorerRow(node.Key, Layout);
+            row.Thresholds = node.Sensor is { } s && thresholds.TryGetValue(s.SensorId, out var t) ? t : default;
             row.Configure(node);
             rows.Add(row);
         }
 
         Rows.ReplaceAll(rows);
         IsEmpty = rows.Count == 0;
-        Summary = Loc.Format("Explorer_Count", snap.Sensors.Count, snap.Devices.Count, State.HiddenSensors.Count, State.FavoriteSensors.Count);
-        OnPropertyChanged(nameof(NameHeader));
-        OnPropertyChanged(nameof(ValueHeader));
-        OnPropertyChanged(nameof(MinimumHeader));
-        OnPropertyChanged(nameof(MaximumHeader));
-        OnPropertyChanged(nameof(AverageHeader));
+        ActiveFilterCount = new object?[] { GroupFilter.Value, CategoryFilter.Value, DeviceFilter.Value, ProviderFilter.Value }.Count(v => v is not null)
+                            + (StatusFilter.Value is SensorStatusFilter.All or null ? 0 : 1);
+        Summary = Loc.Format("Explorer_Count", snap.Sensors.Count(s => s.IsMeasurement), snap.Devices.Count, State.HiddenSensors.Count, State.FavoriteSensors.Count);
     }
 
-    private void UpdateValues(SensorSnapshot snap)
+    /// <summary>Warning / critical limits for alert-target sensors, from the same component rules the alerts use.</summary>
+    private Dictionary<string, (double? Warning, double? Critical)> ResolveThresholds(SensorSnapshot snap)
     {
-        foreach (var row in Rows)
+        var result = new Dictionary<string, (double?, double?)>(StringComparer.Ordinal);
+        var byDevice = snap.Sensors.GroupBy(s => s.DeviceId).ToDictionary(g => g.Key, g => (IReadOnlyList<SensorReading>)g.ToList(), StringComparer.Ordinal);
+        foreach (var rule in _alerts.ComponentRules.Where(r => r.Role is not (ComponentRole.ThermalThrottling or ComponentRole.FanFailure)))
         {
-            if (row.SensorId is { } id && snap.Find(id) is { } reading)
+            foreach (var device in snap.Devices)
             {
-                row.Apply(reading);
+                if (!byDevice.TryGetValue(device.DeviceId, out var sensors)) continue;
+                foreach (var target in ThresholdResolver.Targets(rule.Role, device, sensors))
+                {
+                    var t = ThresholdResolver.Resolve(rule, device, sensors, target);
+                    result[target.SensorId] = (t.Warning?.Value, t.Critical?.Value);
+                }
             }
         }
+
+        return result;
     }
 
-    // ------------------------------------------------------------------ preferences
+    private void UpdateFilterLists(SensorSnapshot snap)
+    {
+        var device = DeviceFilter;
+        var provider = ProviderFilter;
+        DeviceFilters.ReplaceAll([DeviceFilters[0], .. snap.Devices.OrderBy(d => d.Category).Select(d => new FilterOption<string>(d.DeviceId, d.Name))]);
+        ProviderFilters.ReplaceAll([ProviderFilters[0], .. snap.Sensors.Select(s => s.ProviderName).Distinct().Order().Select(p => new FilterOption<string>(p, p))]);
+        DeviceFilter = DeviceFilters.FirstOrDefault(d => d.Value == device.Value) ?? DeviceFilters[0];
+        ProviderFilter = ProviderFilters.FirstOrDefault(p => p.Value == provider.Value) ?? ProviderFilters[0];
+    }
+
     partial void OnSearchTextChanged(string value) => Invalidate();
     partial void OnGroupFilterChanged(FilterOption<SensorGroupKind?> value) => Invalidate();
     partial void OnCategoryFilterChanged(FilterOption<HardwareCategory?> value) => Invalidate();
+    partial void OnDeviceFilterChanged(FilterOption<string> value) { if (value is not null) Invalidate(); }
+    partial void OnProviderFilterChanged(FilterOption<string> value) { if (value is not null) Invalidate(); }
+    partial void OnStatusFilterChanged(FilterOption<SensorStatusFilter?> value) => Invalidate();
 
-    partial void OnIsDetailedChanged(bool value)
+    partial void OnSortOptionChanged(FilterOption<SensorSortColumn?> value)
     {
-        State.DisplayMode = value ? ExplorerDisplayMode.Detailed : ExplorerDisplayMode.Compact;
+        State.SortColumn = value.Value ?? SensorSortColumn.Default;
+        Invalidate();
+    }
+
+    partial void OnIsAdvancedChanged(bool value)
+    {
+        State.DisplayMode = value ? ExplorerDisplayMode.Advanced : ExplorerDisplayMode.Compact;
         Layout.Apply(State);
-        SaveState();
+        Invalidate(); // metadata group appears / disappears
     }
 
     partial void OnShowHiddenChanged(bool value)
@@ -300,7 +370,7 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     {
         State.RefreshIntervalMs = value;
         _timer.Interval = TimeSpan.FromMilliseconds(value);
-        SaveState();
+        _store.Save(State);
     }
 
     private void SetColumn(string column, bool visible)
@@ -308,10 +378,8 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         State.SetColumnVisible(column, visible);
         Layout.Apply(State);
         OnPropertyChanged($"Show{column}");
-        SaveState();
+        _store.Save(State);
     }
-
-    private void SaveState() => _store.Save(State);
 
     // ------------------------------------------------------------------ commands
     [RelayCommand]
@@ -323,40 +391,35 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ExpandAll()
-    {
-        State.ExpandAll();
-        Invalidate();
-    }
+    private void ExpandAll() { State.ExpandAll(); Invalidate(); }
 
     [RelayCommand]
-    private void CollapseAll()
-    {
-        State.CollapseAll(SensorExplorerBuilder.ContainerKeys(_latest));
-        Invalidate();
-    }
+    private void CollapseAll() { State.CollapseAll(SensorExplorerBuilder.ContainerKeys(_latest)); Invalidate(); }
 
     [RelayCommand]
-    private void ToggleFavorite(ExplorerRow? row)
-    {
-        if (row?.SensorId is not { } id) return;
-        State.ToggleFavorite(id);
-        Invalidate();
-    }
+    private void ToggleFavorite(ExplorerRow? row) { if (row?.SensorId is { } id) { State.ToggleFavorite(id); Invalidate(); } }
 
     [RelayCommand]
-    private void ToggleHidden(ExplorerRow? row)
-    {
-        if (row?.SensorId is not { } id) return;
-        State.SetHidden(id, !State.IsHidden(id));
-        Invalidate();
-    }
+    private void TogglePinned(ExplorerRow? row) { if (row?.SensorId is { } id) { State.TogglePinned(id); Invalidate(); } }
 
     [RelayCommand]
-    private void UnhideAll()
+    private void ToggleHidden(ExplorerRow? row) { if (row?.SensorId is { } id) { State.SetHidden(id, !State.IsHidden(id)); Invalidate(); } }
+
+    [RelayCommand]
+    public void UnhideAll() { State.UnhideAll(); Invalidate(); }
+
+    [RelayCommand]
+    public void ClearFavorites() { State.FavoriteSensors.Clear(); State.PinnedSensors.Clear(); Invalidate(); }
+
+    [RelayCommand]
+    private void ClearFilters()
     {
-        State.UnhideAll();
-        Invalidate();
+        SearchText = string.Empty;
+        GroupFilter = GroupFilters[0];
+        CategoryFilter = CategoryFilters[0];
+        DeviceFilter = DeviceFilters[0];
+        ProviderFilter = ProviderFilters[0];
+        StatusFilter = StatusFilters[0];
     }
 
     [RelayCommand]
@@ -370,66 +433,31 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         if (row?.SensorId is not { } id || row.GroupKey is not { } group) return;
         if (State.SortColumn != SensorSortColumn.Default)
         {
-            // Manual ordering applies to the custom order; switch back to it so the move is visible.
-            State.SortColumn = SensorSortColumn.Default;
-            State.SortDescending = false;
+            // Manual ordering is the custom order; switch back to it so the move is visible.
+            SortOption = SortOptions[0];
+            SortDescending = false;
         }
 
         if (State.Move(group, SensorExplorerBuilder.GroupOrder(_nodes, group), id, delta)) Invalidate();
     }
 
     [RelayCommand]
-    private void ResetOrder()
-    {
-        State.ResetOrder();
-        Invalidate();
-    }
-
-    /// <summary>Cycles a column: ascending → descending → custom order.</summary>
-    [RelayCommand]
-    private void SortBy(string column)
-    {
-        var c = Enum.Parse<SensorSortColumn>(column);
-        if (State.SortColumn != c)
-        {
-            State.SortColumn = c;
-            State.SortDescending = false;
-        }
-        else if (!State.SortDescending)
-        {
-            State.SortDescending = true;
-        }
-        else
-        {
-            State.SortColumn = SensorSortColumn.Default;
-            State.SortDescending = false;
-        }
-
-        Invalidate();
-    }
+    public void ResetOrder() { State.ResetOrder(); Invalidate(); }
 
     [RelayCommand]
     private void ResetAll() => _polling.ResetStatistics();
 
     [RelayCommand]
-    private void ResetSensor(ExplorerRow? row)
-    {
-        if (row?.SensorId is { } id) _polling.ResetStatistics(id);
-    }
+    private void ResetSensor(ExplorerRow? row) { if (row?.SensorId is { } id) _polling.ResetStatistics(id); }
 
     [RelayCommand]
-    private static void CopyValue(ExplorerRow? row)
-    {
-        if (row is not null) ClipboardService.SetText(row.IsSensor ? row.Current : row.Title);
-    }
+    private static void CopyValue(ExplorerRow? row) { if (row is not null) ClipboardService.SetText(row.IsSensor ? row.Current : row.Title); }
 
     [RelayCommand]
     private static void CopyRow(ExplorerRow? row)
     {
         if (row is null) return;
-        ClipboardService.SetText(row.IsSensor
-            ? $"{row.Title}\t{row.Current}\t{row.Minimum}\t{row.Maximum}\t{row.Average}\t{row.Provider}"
-            : row.Title);
+        ClipboardService.SetText(row.IsSensor ? $"{row.Title}\t{row.Current}\t{row.Minimum}\t{row.Maximum}\t{row.Average}\t{row.Provider}" : row.Title);
     }
 
     // ------------------------------------------------------------------ icons

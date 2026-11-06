@@ -33,8 +33,9 @@ internal static class LibreHardwareMonitorMapping
         _ => (SensorType.Other, SensorUnit.None),
     };
 
-    public static HardwareCategory Map(Lhm.HardwareType type) => type switch
+    public static HardwareCategory Map(Lhm.HardwareType type, string? name = null) => type switch
     {
+        Lhm.HardwareType.Memory when name is not null && name.StartsWith("DIMM", StringComparison.OrdinalIgnoreCase) => HardwareCategory.MemoryModule,
         Lhm.HardwareType.Cpu => HardwareCategory.Cpu,
         Lhm.HardwareType.GpuNvidia or Lhm.HardwareType.GpuAmd or Lhm.HardwareType.GpuIntel => HardwareCategory.Gpu,
         Lhm.HardwareType.Motherboard => HardwareCategory.Motherboard,

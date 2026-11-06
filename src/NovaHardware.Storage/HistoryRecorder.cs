@@ -4,7 +4,7 @@ using NovaHardware.Core.Abstractions;
 using NovaHardware.Domain.History;
 using NovaHardware.Domain.Sensors;
 
-namespace NovaHardware.Core.History;
+namespace NovaHardware.Storage;
 
 /// <summary>
 /// Subscribes to the polling service and writes real sensor values to <see cref="IHistoricalDataService"/>

@@ -1,8 +1,32 @@
 namespace NovaHardware.Core.Explorer;
 
-public enum ExplorerDisplayMode { Compact = 0, Detailed }
+public enum ExplorerDisplayMode
+{
+    /// <summary>Dense rows, five core columns. The default.</summary>
+    Compact = 0,
+    /// <summary>Taller rows with sensor id, provider, kind and sample count; technical metadata group visible.</summary>
+    Advanced = 1,
+    /// <summary>v0.1 name of <see cref="Advanced"/>, kept so saved preferences still load.</summary>
+    Detailed = Advanced,
+}
 
-public enum SensorSortColumn { Default = 0, Name, Value, Minimum, Maximum, Average }
+public enum SensorSortColumn
+{
+    Default = 0,
+    Name,
+    Value,
+    Minimum,
+    Maximum,
+    Average,
+    /// <summary>Hottest first: temperature sensors by value, then the rest in default order; devices ordered by their hottest sensor.</summary>
+    Temperature,
+    /// <summary>Highest power first.</summary>
+    Power,
+    /// <summary>Highest utilisation first.</summary>
+    Utilization,
+}
+
+public enum SensorStatusFilter { All = 0, Reporting, NoData, Attention, Hidden, Pinned }
 
 public static class ExplorerColumns
 {
@@ -13,8 +37,10 @@ public static class ExplorerColumns
     public const string Type = "Type";
     public const string Provider = "Provider";
     public const string Quality = "Quality";
+    public const string SensorId = "SensorId";
+    public const string Samples = "Samples";
 
-    public static IReadOnlyList<string> All { get; } = [Value, Minimum, Maximum, Average, Type, Provider, Quality];
+    public static IReadOnlyList<string> All { get; } = [Value, Minimum, Maximum, Average, Type, Provider, Quality, SensorId, Samples];
     public static IReadOnlyList<string> Defaults { get; } = [Value, Minimum, Maximum, Average];
 }
 
@@ -34,6 +60,9 @@ public sealed class SensorExplorerState
 
     /// <summary>Favourite sensor ids, in display order.</summary>
     public List<string> FavoriteSensors { get; set; } = [];
+
+    /// <summary>Pinned sensors always appear first within their group, whatever the sort order.</summary>
+    public HashSet<string> PinnedSensors { get; set; } = new(StringComparer.Ordinal);
 
     /// <summary>Custom sensor order per group key. Sensors not listed follow in provider order.</summary>
     public Dictionary<string, List<string>> SensorOrder { get; set; } = new(StringComparer.Ordinal);
@@ -92,6 +121,17 @@ public sealed class SensorExplorerState
 
     public void ToggleFavorite(string sensorId) => SetFavorite(sensorId, !IsFavorite(sensorId));
 
+    // ------------------------------------------------------------------ pins
+    public bool IsPinned(string sensorId) => PinnedSensors.Contains(sensorId);
+
+    public void SetPinned(string sensorId, bool pinned)
+    {
+        if (pinned) PinnedSensors.Add(sensorId);
+        else PinnedSensors.Remove(sensorId);
+    }
+
+    public void TogglePinned(string sensorId) => SetPinned(sensorId, !IsPinned(sensorId));
+
     // ------------------------------------------------------------------ columns
     public bool IsColumnVisible(string column) => VisibleColumns.Contains(column, StringComparer.Ordinal);
 
@@ -138,10 +178,13 @@ public sealed class SensorExplorerState
     {
         CollapsedNodes = new HashSet<string>(CollapsedNodes ?? [], StringComparer.Ordinal);
         HiddenSensors = new HashSet<string>(HiddenSensors ?? [], StringComparer.Ordinal);
+        PinnedSensors = new HashSet<string>(PinnedSensors ?? [], StringComparer.Ordinal);
         FavoriteSensors = (FavoriteSensors ?? []).Distinct(StringComparer.Ordinal).ToList();
         SensorOrder = new Dictionary<string, List<string>>(SensorOrder ?? [], StringComparer.Ordinal);
         VisibleColumns = ExplorerColumns.All.Where((VisibleColumns ?? [.. ExplorerColumns.Defaults]).Contains).ToList();
         if (!RefreshIntervals.Contains(RefreshIntervalMs)) RefreshIntervalMs = 1000;
+        if (!Enum.IsDefined(DisplayMode)) DisplayMode = ExplorerDisplayMode.Compact;
+        if (!Enum.IsDefined(SortColumn)) SortColumn = SensorSortColumn.Default;
         return this;
     }
 }

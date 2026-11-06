@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NovaHardware.Domain\NovaHardware.Domain.csproj" />
+    <ProjectReference Include="..\NovaHardware.Core\NovaHardware.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Localization\Strings.resx" />

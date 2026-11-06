@@ -1,4 +1,4 @@
-namespace NovaHardware.Domain.Stress;
+namespace NovaHardware.Benchmark.Stress;
 
 public enum StressTestKind
 {

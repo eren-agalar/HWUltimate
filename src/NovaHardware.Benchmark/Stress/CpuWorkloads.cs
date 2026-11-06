@@ -1,7 +1,7 @@
 using System.Numerics;
-using NovaHardware.Domain.Stress;
 
-namespace NovaHardware.Core.Stress;
+
+namespace NovaHardware.Benchmark.Stress;
 
 /// <summary>Dense double-precision matrix multiply plus transcendental functions, verified bit-exactly.</summary>
 public sealed class FloatingPointWorkload : IStressWorkload

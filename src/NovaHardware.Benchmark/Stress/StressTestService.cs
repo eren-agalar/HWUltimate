@@ -3,9 +3,20 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using NovaHardware.Core.Abstractions;
 using NovaHardware.Core.Sensors;
-using NovaHardware.Domain.Stress;
 
-namespace NovaHardware.Core.Stress;
+namespace NovaHardware.Benchmark.Stress;
+
+public interface IStressTestService
+{
+    bool IsRunning { get; }
+    IReadOnlyList<StressTestResult> Results { get; }
+    bool IsSupported(StressTestKind kind, out string reason);
+
+    Task<StressTestResult> RunAsync(
+        StressTestOptions options,
+        IProgress<StressTestProgress>? progress = null,
+        CancellationToken cancellationToken = default);
+}
 
 /// <summary>Runs self-verifying stress workloads on dedicated threads with thermal protection.</summary>
 public sealed class StressTestService : IStressTestService

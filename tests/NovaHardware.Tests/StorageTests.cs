@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
-using NovaHardware.Core.History;
+
 using NovaHardware.Core.Sensors;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.History;

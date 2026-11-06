@@ -1,6 +1,6 @@
-using NovaHardware.Domain.Stress;
 
-namespace NovaHardware.Core.Stress;
+
+namespace NovaHardware.Benchmark.Stress;
 
 /// <summary>
 /// A deterministic, self-verifying workload. Each iteration recomputes a result whose correct value is known

@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NovaHardware.Core\NovaHardware.Core.csproj" />
+    <ProjectReference Include="..\NovaHardware.Hardware\NovaHardware.Hardware.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Management" />

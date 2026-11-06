@@ -57,6 +57,11 @@ public sealed record DeviceInfo
     public string? DriverVersion { get; init; }
     public required string Source { get; init; }
     public IReadOnlyList<HardwareProperty> Properties { get; init; } = [];
+    /// <summary>
+    /// Physical identity used when merging discovery sources (e.g. "pci:0000:01:00.0"). Devices with different keys are
+    /// never merged, even if their names are identical.
+    /// </summary>
+    public string? PhysicalKey { get; init; }
 }
 
 /// <summary>High-level overview of the machine.</summary>

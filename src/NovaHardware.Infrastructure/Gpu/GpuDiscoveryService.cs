@@ -29,7 +29,7 @@ public sealed class GpuDiscoveryService : IDeviceDiscoveryService
 
     public string SourceName => "GPU (WMI/PCI/DXGI/Vulkan)";
 
-    private sealed record WmiGpu(string Name, string? PnpId, string? Driver, string? DriverDate, string? Compat, string? VideoProcessor, string? Status);
+    private sealed record WmiGpu(string Name, string? PnpId, string? Driver, string? DriverDate, string? Compat, string? VideoProcessor, string? Status, string? Mode);
 
     public Task<IReadOnlyList<DeviceInfo>> DiscoverAsync(CancellationToken cancellationToken = default) => Task.Run<IReadOnlyList<DeviceInfo>>(() =>
     {
@@ -53,10 +53,11 @@ public sealed class GpuDiscoveryService : IDeviceDiscoveryService
     {
         try
         {
-            using var s = new ManagementObjectSearcher("SELECT Name, PNPDeviceID, DriverVersion, DriverDate, AdapterCompatibility, VideoProcessor, Status FROM Win32_VideoController");
+            using var s = new ManagementObjectSearcher("SELECT Name, PNPDeviceID, DriverVersion, DriverDate, AdapterCompatibility, VideoProcessor, Status, CurrentHorizontalResolution, CurrentVerticalResolution, CurrentRefreshRate FROM Win32_VideoController");
             return s.Get().Cast<ManagementBaseObject>()
                 .Select(o => new WmiGpu(o["Name"]?.ToString()?.Trim() ?? "Display adapter", o["PNPDeviceID"]?.ToString(), o["DriverVersion"]?.ToString(),
-                    o["DriverDate"]?.ToString(), o["AdapterCompatibility"]?.ToString(), o["VideoProcessor"]?.ToString(), o["Status"]?.ToString()))
+                    o["DriverDate"]?.ToString(), o["AdapterCompatibility"]?.ToString(), o["VideoProcessor"]?.ToString(), o["Status"]?.ToString(),
+                    o["CurrentHorizontalResolution"] is uint w && w > 0 ? $"{w} × {o["CurrentVerticalResolution"]} @ {o["CurrentRefreshRate"]} Hz" : null))
                 .ToList();
         }
         catch (Exception ex) when (ex is ManagementException or System.Runtime.InteropServices.COMException)
@@ -89,6 +90,7 @@ public sealed class GpuDiscoveryService : IDeviceDiscoveryService
         Add(S.Overview, "GPU", g.Name, "WMI Win32_VideoController");
         Add(S.Overview, "Manufacturer", pciId?.VendorName ?? g.Compat, pciId is not null ? "PCI vendor id" : "WMI");
         Add(S.Overview, "Status", g.Status, "WMI");
+        Add(S.Performance, "Current display mode", g.Mode, "WMI Win32_VideoController");
 
         // ---------------- Identification
         if (pciId is not null)
@@ -200,9 +202,11 @@ public sealed class GpuDiscoveryService : IDeviceDiscoveryService
             Add(S.Advanced, "DXGI dedicated system memory", $"{dxgi.DedicatedSystemMemory / 1024d / 1024:0} MB", "DXGI");
         }
 
+        var location = pci is not null ? PnpIdentityResolver.Location(pci) : null;
         return new DeviceInfo
         {
             Id = $"gpu:{index}",
+            PhysicalKey = location is { } loc ? $"pci:{loc}" : g.PnpId is { } pnp ? $"pnp:{pnp.ToUpperInvariant()}" : null,
             Name = g.Name,
             Category = HardwareCategory.Gpu,
             Manufacturer = pciId?.VendorName ?? g.Compat,

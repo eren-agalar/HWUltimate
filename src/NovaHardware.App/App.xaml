@@ -6,7 +6,6 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/NovaHardware.UI;component/Themes/Dark.xaml" />
         <ResourceDictionary Source="pack://application:,,,/NovaHardware.UI;component/Themes/Controls.xaml" />
       </ResourceDictionary.MergedDictionaries>
       <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
@@ -15,9 +14,7 @@
       <conv:NullToVisibilityConverter x:Key="NullToVisInv" Invert="True" />
       <conv:QualityToBrushConverter x:Key="QualityBrush" />
       <conv:QualityToTextConverter x:Key="QualityText" />
-      <conv:ThresholdToBrushConverter x:Key="ThresholdBrush" />
       <conv:EnumEqualsConverter x:Key="EnumEquals" />
-      <conv:BoolToGridLengthConverter x:Key="ColumnWidth" />
       <conv:IndentToMarginConverter x:Key="IndentMargin" />
     </ResourceDictionary>
   </Application.Resources>

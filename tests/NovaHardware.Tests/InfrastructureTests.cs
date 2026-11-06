@@ -145,12 +145,12 @@ public sealed class SettingsTests : IDisposable
         var svc = new JsonSettingsService(_path, NullLogger<JsonSettingsService>.Instance);
         AppSettings? changed = null;
         svc.Changed += (_, s) => changed = s;
-        await svc.SaveAsync(new AppSettings { PollingIntervalMs = 500, Language = "tr-TR", Theme = ThemeMode.Light }, TestContext.Current.CancellationToken);
+        await svc.SaveAsync(new AppSettings { Sensors = new() { PollingIntervalMs = 500 }, General = new() { Language = "tr-TR" }, Appearance = new() { Theme = NovaHardware.Core.Appearance.ThemeChoice.NovaLight } }, TestContext.Current.CancellationToken);
 
         var loaded = await new JsonSettingsService(_path, NullLogger<JsonSettingsService>.Instance).LoadAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(500, loaded.PollingIntervalMs);
-        Assert.Equal("tr-TR", loaded.Language);
-        Assert.Equal(ThemeMode.Light, loaded.Theme);
+        Assert.Equal(500, loaded.Sensors.PollingIntervalMs);
+        Assert.Equal("tr-TR", loaded.General.Language);
+        Assert.Equal(NovaHardware.Core.Appearance.ThemeChoice.NovaLight, loaded.Appearance.Theme);
         Assert.NotNull(changed);
     }
 
@@ -159,7 +159,7 @@ public sealed class SettingsTests : IDisposable
     {
         await File.WriteAllTextAsync(_path, "{ not json", TestContext.Current.CancellationToken);
         var loaded = await new JsonSettingsService(_path, NullLogger<JsonSettingsService>.Instance).LoadAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(new AppSettings().PollingIntervalMs, loaded.PollingIntervalMs);
+        Assert.Equal(new AppSettings().Sensors.PollingIntervalMs, loaded.Sensors.PollingIntervalMs);
         Assert.True(File.Exists(_path + ".bak"));
     }
 

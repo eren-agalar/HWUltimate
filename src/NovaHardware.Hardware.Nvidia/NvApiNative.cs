@@ -23,6 +23,8 @@ internal sealed unsafe class NvApiNative : IDisposable
     private const uint IdGpuGetAllClockFrequencies = 0xDCB616C3;
     private const uint IdSysGetDriverAndBranchVersion = 0x2926AAAD;
     private const uint IdGpuGetBusId = 0x1BE0B8E5;
+    private const uint IdGpuGetBusSlotId = 0x2A0A350F;
+    private const uint IdGpuGetPciIdentifiers = 0x2DDFB66E;
 
     private readonly nint _library;
     private readonly delegate* unmanaged[Cdecl]<int> _initialize;
@@ -35,6 +37,8 @@ internal sealed unsafe class NvApiNative : IDisposable
     private readonly delegate* unmanaged[Cdecl]<nint, NvClockFrequencies*, int> _getClocks;
     private readonly delegate* unmanaged[Cdecl]<uint*, byte*, int> _getDriverVersion;
     private readonly delegate* unmanaged[Cdecl]<nint, uint*, int> _getBusId;
+    private readonly delegate* unmanaged[Cdecl]<nint, uint*, int> _getBusSlotId;
+    private readonly delegate* unmanaged[Cdecl]<nint, uint*, uint*, uint*, uint*, int> _getPciIdentifiers;
 
     private NvApiNative(nint library, delegate* unmanaged[Cdecl]<uint, nint> query)
     {
@@ -49,6 +53,8 @@ internal sealed unsafe class NvApiNative : IDisposable
         _getClocks = (delegate* unmanaged[Cdecl]<nint, NvClockFrequencies*, int>)query(IdGpuGetAllClockFrequencies);
         _getDriverVersion = (delegate* unmanaged[Cdecl]<uint*, byte*, int>)query(IdSysGetDriverAndBranchVersion);
         _getBusId = (delegate* unmanaged[Cdecl]<nint, uint*, int>)query(IdGpuGetBusId);
+        _getBusSlotId = (delegate* unmanaged[Cdecl]<nint, uint*, int>)query(IdGpuGetBusSlotId);
+        _getPciIdentifiers = (delegate* unmanaged[Cdecl]<nint, uint*, uint*, uint*, uint*, int>)query(IdGpuGetPciIdentifiers);
     }
 
     /// <summary>Loads nvapi64.dll and calls NvAPI_Initialize. Returns null with a reason when unavailable.</summary>
@@ -166,6 +172,21 @@ internal sealed unsafe class NvApiNative : IDisposable
         if (_getBusId == null) return null;
         uint bus;
         return _getBusId(gpu, &bus) == Ok ? bus : null;
+    }
+
+    public uint? GetBusSlotId(nint gpu)
+    {
+        if (_getBusSlotId == null) return null;
+        uint slot;
+        return _getBusSlotId(gpu, &slot) == Ok ? slot : null;
+    }
+
+    /// <summary>NvAPI_GPU_GetPCIIdentifiers: deviceId = (device &lt;&lt; 16) | vendor, subSystemId = (subdevice &lt;&lt; 16) | subvendor.</summary>
+    public (uint DeviceId, uint SubSystemId, uint RevisionId)? GetPciIdentifiers(nint gpu)
+    {
+        if (_getPciIdentifiers == null) return null;
+        uint device, subsystem, revision, ext;
+        return _getPciIdentifiers(gpu, &device, &subsystem, &revision, &ext) == Ok ? (device, subsystem, revision) : null;
     }
 
     public bool TryGetCurrentClocks(nint gpu, out NvClockFrequencies clocks) => TryGetClocks(gpu, 0, out clocks);

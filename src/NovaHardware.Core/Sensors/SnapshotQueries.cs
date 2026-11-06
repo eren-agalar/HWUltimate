@@ -17,7 +17,7 @@ public static class SnapshotQueries
     {
         var deviceIds = snapshot.DevicesOf(category).Select(d => d.DeviceId).ToHashSet(StringComparer.Ordinal);
         var candidates = snapshot.Sensors
-            .Where(s => s.Type == type && deviceIds.Contains(s.DeviceId) && s.Value.HasValue)
+            .Where(s => s.Type == type && s.IsMeasurement && deviceIds.Contains(s.DeviceId) && s.Value.HasValue)
             .ToList();
 
         if (candidates.Count == 0)
@@ -50,7 +50,7 @@ public static class SnapshotQueries
     public static SensorReading? CpuClock(this SensorSnapshot s)
     {
         var deviceIds = s.DevicesOf(HardwareCategory.Cpu).Select(d => d.DeviceId).ToHashSet(StringComparer.Ordinal);
-        var cores = s.Sensors.Where(x => x.Type == SensorType.Clock && deviceIds.Contains(x.DeviceId)
+        var cores = s.Sensors.Where(x => x.Type == SensorType.Clock && x.IsMeasurement && deviceIds.Contains(x.DeviceId)
                                         && x.Value.HasValue && x.Name.Contains("Core", StringComparison.OrdinalIgnoreCase)).ToList();
         return cores.Count == 0 ? null : cores.MaxBy(x => x.Value);
     }
@@ -81,7 +81,7 @@ public static class SnapshotQueries
     {
         var ids = s.Devices.Where(d => d.Category is HardwareCategory.Cpu or HardwareCategory.Gpu)
                            .Select(d => d.DeviceId).ToHashSet(StringComparer.Ordinal);
-        var temps = s.Sensors.Where(x => x.Type == SensorType.Temperature && x.Unit == SensorUnit.Celsius
+        var temps = s.Sensors.Where(x => x.Type == SensorType.Temperature && x.IsMeasurement && x.Unit == SensorUnit.Celsius
                                          && ids.Contains(x.DeviceId) && x.Value.HasValue && x.Quality == DataQuality.Good)
                              .Select(x => x.Value!.Value).ToList();
         return temps.Count == 0 ? null : temps.Max();

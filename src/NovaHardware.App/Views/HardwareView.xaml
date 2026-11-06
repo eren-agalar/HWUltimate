@@ -4,133 +4,57 @@
              xmlns:loc="clr-namespace:NovaHardware.UI.Localization;assembly=NovaHardware.UI"
              xmlns:ui="clr-namespace:NovaHardware.UI.Controls;assembly=NovaHardware.UI"
              xmlns:local="clr-namespace:NovaHardware.App.Views">
-  <UserControl.Resources>
-    <Style x:Key="SmallAction" TargetType="Button">
-      <Setter Property="Width" Value="24" />
-      <Setter Property="Height" Value="24" />
-      <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
-      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border x:Name="Bd" Background="Transparent" CornerRadius="5"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.AccentSoft}" />
-                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}" />
-              </Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
-    <Style x:Key="SectionTab" TargetType="ListBoxItem">
-      <Setter Property="Margin" Value="0,0,6,0" />
-      <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="ListBoxItem">
-            <Border x:Name="Bd" Padding="12,6" CornerRadius="8" Background="Transparent" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="1">
-              <ContentPresenter />
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" /></Trigger>
-              <Trigger Property="IsSelected" Value="True">
-                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.AccentSoft}" />
-                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
-              </Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
-  </UserControl.Resources>
-
-  <Grid Margin="24,4,24,20">
+  <Grid Margin="20,2,20,16">
     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition /></Grid.RowDefinitions>
-    <Grid.ColumnDefinitions><ColumnDefinition Width="300" /><ColumnDefinition /></Grid.ColumnDefinitions>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="290" /><ColumnDefinition /></Grid.ColumnDefinitions>
 
-    <!-- Header -->
     <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,10">
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-        <Button Command="{Binding CopyAllCommand}" Margin="0,0,6,0">
-          <StackPanel Orientation="Horizontal"><ui:Icon Kind="Copy" Width="14" Height="14" Margin="0,0,6,0" /><TextBlock Text="{loc:Tr Hw_CopyAll}" /></StackPanel>
-        </Button>
-        <Button x:Name="ExportButton" Click="ExportButton_Click" Margin="0,0,6,0">
-          <StackPanel Orientation="Horizontal"><ui:Icon Kind="Export" Width="14" Height="14" Margin="0,0,6,0" /><TextBlock Text="{loc:Tr Hw_Export}" /></StackPanel>
-          <Button.ContextMenu>
+        <ui:NovaIconButton Icon="Copy" Label="{loc:Tr Hw_CopyAll}" Command="{Binding CopyAllCommand}" Style="{StaticResource Nova.IconButton.Bordered}" Margin="0,0,6,0" />
+        <ui:NovaIconButton x:Name="ExportButton" Icon="Export" Label="{loc:Tr Hw_Export}" Click="ExportButton_Click" Style="{StaticResource Nova.IconButton.Bordered}" Margin="0,0,6,0">
+          <ui:NovaIconButton.ContextMenu>
             <ContextMenu>
-              <MenuItem Header="Text (.txt)" Command="{Binding ExportCommand}" CommandParameter="{x:Static local:HardwareView.TextFormat}" />
-              <MenuItem Header="JSON (.json)" Command="{Binding ExportCommand}" CommandParameter="{x:Static local:HardwareView.JsonFormat}" />
               <MenuItem Header="HTML (.html)" Command="{Binding ExportCommand}" CommandParameter="{x:Static local:HardwareView.HtmlFormat}" />
+              <MenuItem Header="JSON (.json)" Command="{Binding ExportCommand}" CommandParameter="{x:Static local:HardwareView.JsonFormat}" />
+              <MenuItem Header="Text (.txt)" Command="{Binding ExportCommand}" CommandParameter="{x:Static local:HardwareView.TextFormat}" />
             </ContextMenu>
-          </Button.ContextMenu>
-        </Button>
-        <Button Command="{Binding RefreshCommand}" IsEnabled="{Binding IsBusy, Converter={x:Static local:InverseBool.Instance}}">
-          <StackPanel Orientation="Horizontal"><ui:Icon Kind="Refresh" Width="14" Height="14" Margin="0,0,6,0" /><TextBlock Text="{loc:Tr Common_Refresh}" /></StackPanel>
-        </Button>
+          </ui:NovaIconButton.ContextMenu>
+        </ui:NovaIconButton>
+        <ui:NovaIconButton Icon="Refresh" Label="{loc:Tr Common_Refresh}" Command="{Binding RefreshCommand}" Style="{StaticResource Nova.IconButton.Bordered}"
+                           IsEnabled="{Binding IsBusy, Converter={x:Static local:InverseBool.Instance}}" />
       </StackPanel>
-      <TextBlock Style="{StaticResource Text.PageTitle}" Text="{loc:Tr Nav_Hardware}" Margin="0" />
-      <TextBlock Style="{StaticResource Text.Muted}" Text="{Binding Collected}" VerticalAlignment="Center" Margin="16,6,0,0" />
+      <TextBlock Style="{StaticResource Text.PageTitle}" Text="{loc:Tr Nav_Hardware}" VerticalAlignment="Center" />
+      <TextBlock Style="{StaticResource Text.Small}" Text="{Binding Collected}" VerticalAlignment="Center" Margin="14,6,0,0" />
     </DockPanel>
 
-    <!-- Search -->
-    <DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,12">
-      <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="1" CornerRadius="8" Width="420">
-        <DockPanel>
-          <ui:Icon Kind="Search" Width="14" Height="14" Margin="10,0,4,0" Foreground="{DynamicResource Brush.TextMuted}" />
-          <TextBox BorderThickness="0" Background="Transparent" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=200}"
-                   ToolTip="{loc:Tr Hw_Search}" AutomationProperties.Name="{loc:Tr Hw_Search}" />
-        </DockPanel>
-      </Border>
-      <TextBlock Style="{StaticResource Text.Muted}" Text="{Binding SearchSummary}" VerticalAlignment="Center" Margin="12,0,0,0" />
+    <DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,10">
+      <ui:NovaSearchBox Width="420" Placeholder="{loc:Tr Hw_Search}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=200}" AutomationProperties.Name="{loc:Tr Hw_Search}" />
+      <TextBlock Style="{StaticResource Text.Small}" Text="{Binding SearchSummary}" VerticalAlignment="Center" Margin="12,0,0,0" />
       <TextBlock Text="{Binding Message}" Foreground="{DynamicResource Brush.Good}" VerticalAlignment="Center" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
     </DockPanel>
     <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" IsIndeterminate="True" Height="2" VerticalAlignment="Bottom" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
 
-    <!-- Device list -->
+    <!-- Devices -->
     <Border Grid.Row="2" Style="{StaticResource Card}" Padding="6">
-      <ListBox ItemsSource="{Binding DeviceView}" SelectedItem="{Binding SelectedDevice}" Background="Transparent" BorderThickness="0"
-               Foreground="{DynamicResource Brush.Text}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizingWhenGrouping="True">
+      <ListBox ItemsSource="{Binding DeviceView}" SelectedItem="{Binding SelectedDevice}" ItemContainerStyle="{StaticResource Nova.ListItem}" VirtualizingPanel.IsVirtualizingWhenGrouping="True">
         <ListBox.GroupStyle>
           <GroupStyle>
             <GroupStyle.HeaderTemplate>
-              <DataTemplate>
-                <TextBlock Margin="8,12,0,4" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Name}" />
-              </DataTemplate>
+              <DataTemplate><TextBlock Margin="8,12,0,4" FontSize="{DynamicResource Size.FontSmall}" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Name}" /></DataTemplate>
             </GroupStyle.HeaderTemplate>
           </GroupStyle>
         </ListBox.GroupStyle>
-        <ListBox.ItemContainerStyle>
-          <Style TargetType="ListBoxItem">
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-              <Setter.Value>
-                <ControlTemplate TargetType="ListBoxItem">
-                  <Border x:Name="Bd" Padding="8,6" CornerRadius="8" Background="Transparent"><ContentPresenter /></Border>
-                  <ControlTemplate.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.PanelHover}" /></Trigger>
-                    <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.AccentSoft}" /></Trigger>
-                  </ControlTemplate.Triggers>
-                </ControlTemplate>
-              </Setter.Value>
-            </Setter>
-          </Style>
-        </ListBox.ItemContainerStyle>
         <ListBox.ItemTemplate>
           <DataTemplate>
             <DockPanel>
-              <ui:Icon DockPanel.Dock="Left" Kind="{Binding Icon}" Width="18" Height="18" Margin="0,0,10,0" VerticalAlignment="Top" Foreground="{DynamicResource Brush.Accent}" />
+              <ui:Icon DockPanel.Dock="Left" Kind="{Binding Icon}" Width="17" Height="17" Margin="0,1,10,0" VerticalAlignment="Top" Foreground="{DynamicResource Brush.Accent}" />
               <Border DockPanel.Dock="Right" Padding="6,0" CornerRadius="8" Background="{DynamicResource Brush.Accent}" VerticalAlignment="Center"
                       Visibility="{Binding MatchCount, Converter={x:Static local:PositiveToVisibility.Instance}}">
                 <TextBlock FontSize="11" Foreground="{DynamicResource Brush.OnAccent}" Text="{Binding MatchCount}" />
               </Border>
               <StackPanel>
                 <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding Counts}" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBlock Style="{StaticResource Text.Small}" Text="{Binding Counts}" />
               </StackPanel>
             </DockPanel>
           </DataTemplate>
@@ -138,80 +62,75 @@
       </ListBox>
     </Border>
 
-    <!-- Device detail -->
+    <!-- Detail -->
     <Grid Grid.Row="2" Grid.Column="1">
       <TextBlock Style="{StaticResource Text.Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{loc:Tr Hw_SelectDevice}"
                  Visibility="{Binding SelectedDevice, Converter={StaticResource NullToVisInv}}" />
       <DockPanel Visibility="{Binding SelectedDevice, Converter={StaticResource NullToVis}}">
-        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,12">
+        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,10">
           <DockPanel>
-            <Button DockPanel.Dock="Right" Command="{Binding CopyDeviceCommand}" VerticalAlignment="Center">
-              <StackPanel Orientation="Horizontal"><ui:Icon Kind="Copy" Width="14" Height="14" Margin="0,0,6,0" /><TextBlock Text="{loc:Tr Hw_CopyDevice}" /></StackPanel>
-            </Button>
-            <ui:Icon DockPanel.Dock="Left" Kind="{Binding SelectedDevice.Icon}" Width="34" Height="34" Margin="0,0,16,0" Foreground="{DynamicResource Brush.Accent}" StrokeThickness="1.4" />
+            <ui:NovaIconButton DockPanel.Dock="Right" Icon="Copy" Label="{loc:Tr Hw_CopyDevice}" Command="{Binding CopyDeviceCommand}" Style="{StaticResource Nova.IconButton.Bordered}" VerticalAlignment="Center" />
+            <ui:Icon DockPanel.Dock="Left" Kind="{Binding SelectedDevice.Icon}" Width="32" Height="32" Margin="0,0,14,0" Foreground="{DynamicResource Brush.Accent}" StrokeThickness="1.4" />
             <StackPanel VerticalAlignment="Center">
-              <TextBlock FontFamily="{StaticResource Font.Display}" FontSize="19" FontWeight="SemiBold" Text="{Binding SelectedDevice.Name}" TextWrapping="Wrap" />
-              <TextBlock Style="{StaticResource Text.Muted}">
-                <Run Text="{Binding SelectedDevice.CategoryTitle, Mode=OneWay}" /><Run Text="  ·  " /><Run Text="{Binding SelectedDevice.Device.Source, Mode=OneWay}" />
-              </TextBlock>
+              <TextBlock FontFamily="{StaticResource Font.Display}" FontSize="18" FontWeight="SemiBold" Text="{Binding SelectedDevice.Name}" TextWrapping="Wrap" />
+              <TextBlock Style="{StaticResource Text.Small}"><Run Text="{Binding SelectedDevice.CategoryTitle, Mode=OneWay}" /><Run Text="  ·  " /><Run Text="{Binding SelectedDevice.Device.Source, Mode=OneWay}" /></TextBlock>
             </StackPanel>
           </DockPanel>
         </Border>
 
-        <!-- Section tabs -->
-        <ListBox DockPanel.Dock="Top" ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}" Background="Transparent" BorderThickness="0"
-                 ItemContainerStyle="{StaticResource SectionTab}" Foreground="{DynamicResource Brush.Text}" Margin="0,0,0,10"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <!-- Legend: where values come from -->
+        <WrapPanel DockPanel.Dock="Top" Margin="2,0,0,8">
+          <ui:NovaStatusIndicator Status="Info" Text="{loc:Tr Origin_Official}" Margin="0,0,16,0" />
+          <ui:NovaStatusIndicator Status="Normal" Text="{loc:Tr Origin_Detected}" Margin="0,0,16,0" />
+          <ui:NovaStatusIndicator Status="Warning" Text="{loc:Tr Origin_Live}" Margin="0,0,16,0" />
+          <ui:NovaStatusIndicator Status="Inactive" Text="{loc:Tr Origin_Unavailable}" />
+        </WrapPanel>
+
+        <ListBox DockPanel.Dock="Top" ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}" ItemContainerStyle="{StaticResource Nova.TabItem}" Margin="0,0,0,8">
           <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
           <ListBox.ItemTemplate>
-            <DataTemplate>
-              <TextBlock><Run Text="{Binding Title, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding Rows.Count, Mode=OneWay}" Foreground="{DynamicResource Brush.TextMuted}" /></TextBlock>
-            </DataTemplate>
+            <DataTemplate><TextBlock><Run Text="{Binding Title, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding Rows.Count, Mode=OneWay}" Foreground="{DynamicResource Brush.TextMuted}" /></TextBlock></DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
 
         <ScrollViewer>
           <StackPanel>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="8">
-              <ItemsControl ItemsSource="{Binding SelectedSection.Rows}">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="6">
+              <ItemsControl ItemsSource="{Binding SelectedSection.Rows}" AlternationCount="2">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
-                    <Border x:Name="RowBorder" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="0,0,0,1" Padding="8,6" Background="Transparent">
+                    <Border x:Name="RowBorder" Padding="10,6" CornerRadius="6" Background="Transparent">
                       <Grid>
                         <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="250" />
-                          <ColumnDefinition Width="*" />
-                          <ColumnDefinition Width="Auto" MaxWidth="260" />
-                          <ColumnDefinition Width="56" />
+                          <ColumnDefinition Width="240" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MaxWidth="240" /><ColumnDefinition Width="56" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Name}" TextWrapping="Wrap" Margin="0,0,12,0" />
-                        <StackPanel Grid.Column="1">
-                          <TextBox x:Name="ValueText" Text="{Binding Value, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" TextWrapping="Wrap" />
-                          <TextBlock x:Name="NoteText" Text="{Binding Note}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Brush.TextMuted}" Margin="0,2,0,0" Visibility="Collapsed" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                          <ui:NovaStatusIndicator x:Name="OriginDot" Status="Normal" Margin="0,0,8,0" VerticalAlignment="Top" ToolTip="{Binding Origin}" />
+                          <TextBlock Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Name}" TextWrapping="Wrap" />
                         </StackPanel>
-                        <TextBlock Grid.Column="2" Text="{Binding Source}" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" TextTrimming="CharacterEllipsis" Margin="12,2,8,0" ToolTip="{Binding Source}" />
-                        <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                          <Button Style="{StaticResource SmallAction}" ToolTip="{loc:Tr Explorer_CopyValue}"
-                                  Command="{Binding DataContext.CopyValueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
-                            <ui:Icon Kind="Copy" Width="13" Height="13" />
-                          </Button>
-                          <Button Style="{StaticResource SmallAction}" ToolTip="{loc:Tr Explorer_CopyRow}"
-                                  Command="{Binding DataContext.CopyPropertyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
-                            <ui:Icon Kind="Report" Width="13" Height="13" />
-                          </Button>
+                        <StackPanel Grid.Column="1">
+                          <TextBox x:Name="ValueText" Style="{StaticResource Text.Selectable}" Text="{Binding Value, Mode=OneWay}" />
+                          <TextBlock x:Name="NoteText" Style="{StaticResource Text.Small}" Text="{Binding Note}" Margin="0,2,0,0" Visibility="Collapsed" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Text.Small}" Text="{Binding Source}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="12,1,8,0" ToolTip="{Binding Source}" />
+                        <StackPanel x:Name="Actions" Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Visibility="Hidden">
+                          <ui:NovaIconButton Icon="Copy" IconSize="12" Padding="4" MinHeight="0" ToolTip="{loc:Tr Explorer_CopyValue}" Command="{Binding DataContext.CopyValueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
+                          <ui:NovaIconButton Icon="Report" IconSize="12" Padding="4" MinHeight="0" ToolTip="{loc:Tr Explorer_CopyRow}" Command="{Binding DataContext.CopyPropertyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
                         </StackPanel>
                       </Grid>
                     </Border>
                     <DataTemplate.Triggers>
+                      <Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource Brush.RowAlt}" /></Trigger>
+                      <DataTrigger Binding="{Binding OriginKey}" Value="Official"><Setter TargetName="OriginDot" Property="Status" Value="Info" /></DataTrigger>
                       <DataTrigger Binding="{Binding IsAvailable}" Value="False">
+                        <Setter TargetName="OriginDot" Property="Status" Value="Inactive" />
                         <Setter TargetName="ValueText" Property="FontStyle" Value="Italic" />
                         <Setter TargetName="ValueText" Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
                       </DataTrigger>
-                      <DataTrigger Binding="{Binding HasNote}" Value="True">
-                        <Setter TargetName="NoteText" Property="Visibility" Value="Visible" />
-                      </DataTrigger>
+                      <DataTrigger Binding="{Binding HasNote}" Value="True"><Setter TargetName="NoteText" Property="Visibility" Value="Visible" /></DataTrigger>
                       <Trigger Property="IsMouseOver" Value="True">
                         <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource Brush.PanelHover}" />
+                        <Setter TargetName="Actions" Property="Visibility" Value="Visible" />
                       </Trigger>
                     </DataTemplate.Triggers>
                   </DataTemplate>
@@ -219,30 +138,28 @@
               </ItemsControl>
             </Border>
 
-            <!-- Live sensors for this device -->
             <Border Style="{StaticResource Card}" Margin="0">
               <StackPanel>
                 <DockPanel Margin="0,0,0,8">
-                  <Button DockPanel.Dock="Right" Style="{StaticResource SmallAction}" Command="{Binding RefreshLiveSensorsCommand}" ToolTip="{loc:Tr Common_Refresh}">
-                    <ui:Icon Kind="Refresh" Width="13" Height="13" />
-                  </Button>
-                  <ui:Icon DockPanel.Dock="Left" Kind="Thermometer" Width="15" Height="15" Margin="0,0,8,0" Foreground="{DynamicResource Brush.Accent}" />
+                  <ui:NovaIconButton DockPanel.Dock="Right" Icon="Refresh" Command="{Binding RefreshLiveSensorsCommand}" ToolTip="{loc:Tr Common_Refresh}" />
+                  <ui:NovaStatusIndicator DockPanel.Dock="Left" Status="Warning" Margin="0,0,8,0" />
                   <TextBlock Style="{StaticResource Text.Section}" Margin="0" VerticalAlignment="Center" Text="{loc:Tr Hw_LiveSensors}" />
                 </DockPanel>
                 <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Hw_NoLiveSensors}" Visibility="{Binding HasLiveSensors, Converter={StaticResource BoolToVisInv}}" />
-                <ItemsControl ItemsSource="{Binding LiveSensors}">
+                <ItemsControl ItemsSource="{Binding LiveSensors}" AlternationCount="2">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <Grid Margin="0,2">
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="110" /><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /><ColumnDefinition Width="100" /><ColumnDefinition Width="100" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Group}" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                        <TextBlock Grid.Column="3" Text="{Binding Min}" Foreground="{DynamicResource Brush.TextMuted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                        <TextBlock Grid.Column="4" Text="{Binding Max}" Foreground="{DynamicResource Brush.TextMuted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                      </Grid>
+                      <Border x:Name="R" Padding="8,3" CornerRadius="5">
+                        <Grid>
+                          <Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /><ColumnDefinition Width="100" /><ColumnDefinition Width="90" /><ColumnDefinition Width="90" /></Grid.ColumnDefinitions>
+                          <TextBlock Text="{Binding Group}" Style="{StaticResource Text.Small}" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                          <TextBlock Grid.Column="3" Text="{Binding Min}" Foreground="{DynamicResource Brush.TextMuted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                          <TextBlock Grid.Column="4" Text="{Binding Max}" Foreground="{DynamicResource Brush.TextMuted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                        </Grid>
+                      </Border>
+                      <DataTemplate.Triggers><Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="R" Property="Background" Value="{DynamicResource Brush.RowAlt}" /></Trigger></DataTemplate.Triggers>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -250,9 +167,7 @@
             </Border>
 
             <ItemsControl ItemsSource="{Binding Warnings}" Margin="0,8,0,0">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate><TextBlock Style="{StaticResource Text.Muted}" Text="{Binding}" /></DataTemplate>
-              </ItemsControl.ItemTemplate>
+              <ItemsControl.ItemTemplate><DataTemplate><TextBlock Style="{StaticResource Text.Small}" Text="{Binding}" /></DataTemplate></ItemsControl.ItemTemplate>
             </ItemsControl>
           </StackPanel>
         </ScrollViewer>

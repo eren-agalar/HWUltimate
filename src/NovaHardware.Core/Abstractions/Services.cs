@@ -3,7 +3,6 @@ using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.History;
 using NovaHardware.Domain.Reports;
 using NovaHardware.Domain.Sensors;
-using NovaHardware.Domain.Stress;
 
 namespace NovaHardware.Core.Abstractions;
 
@@ -27,6 +26,7 @@ public interface ISystemSummaryProvider
     Task<SystemSummary> GetSummaryAsync(CancellationToken cancellationToken = default);
 }
 
+/// <summary>The single, central sensor polling loop. Every consumer (explorer, overlay, alerts) reads from it.</summary>
 public interface ISensorPollingService : IAsyncDisposable
 {
     TimeSpan Interval { get; set; }
@@ -50,6 +50,7 @@ public interface ISensorPollingService : IAsyncDisposable
     void ResetStatistics(string sensorId);
 }
 
+/// <summary>Sensor history repository (retained for existing databases; not used by the v0.2 application).</summary>
 public interface IHistoricalDataService
 {
     Task InitializeAsync(CancellationToken cancellationToken = default);
@@ -66,12 +67,14 @@ public interface IHistoricalDataService
 public interface IAlertService
 {
     IReadOnlyList<AlertRule> Rules { get; }
+    IReadOnlyList<ComponentAlertRule> ComponentRules { get; }
     IReadOnlyList<AlertEvent> RecentEvents { get; }
-    IReadOnlyCollection<Guid> ActiveRuleIds { get; }
+    int ActiveAlertCount { get; }
 
     event EventHandler<AlertEvent>? AlertRaised;
 
     void SetRules(IEnumerable<AlertRule> rules);
+    void SetComponentRules(IEnumerable<ComponentAlertRule> rules);
     IReadOnlyList<AlertEvent> Evaluate(SensorSnapshot snapshot);
     void ClearHistory();
 }
@@ -81,18 +84,6 @@ public interface IReportExportService
     IReadOnlyList<ReportFormat> SupportedFormats { get; }
     string Render(ReportData data, ReportFormat format);
     Task ExportAsync(ReportData data, ReportFormat format, string path, CancellationToken cancellationToken = default);
-}
-
-public interface IStressTestService
-{
-    bool IsRunning { get; }
-    IReadOnlyList<StressTestResult> Results { get; }
-    bool IsSupported(StressTestKind kind, out string reason);
-
-    Task<StressTestResult> RunAsync(
-        StressTestOptions options,
-        IProgress<StressTestProgress>? progress = null,
-        CancellationToken cancellationToken = default);
 }
 
 /// <summary>Loads and saves a small local preference document (JSON on disk in the default implementation).</summary>

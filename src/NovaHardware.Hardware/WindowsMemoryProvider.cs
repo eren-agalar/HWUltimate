@@ -18,7 +18,11 @@ public sealed partial class WindowsMemoryProvider : IHardwareProvider
     private const double Gb = 1024d * 1024 * 1024;
     private const double Mb = 1024d * 1024;
 
-    private static readonly HardwareDevice Device = new(DeviceId, "System Memory (Windows)", HardwareCategory.Memory, ProviderName);
+    /// <summary>Identity shared with LibreHardwareMonitor's "Total Memory" so both merge into one System Memory device.</summary>
+    public const string SystemMemoryKey = "system-memory";
+
+    private static readonly HardwareDevice Device = new(DeviceId, "System Memory", HardwareCategory.Memory, ProviderName,
+        Identity: new DeviceIdentity { SingletonKey = SystemMemoryKey });
     private List<RawSensorReading> _readings = [];
 
     public string Name => ProviderName;
@@ -60,10 +64,10 @@ public sealed partial class WindowsMemoryProvider : IHardwareProvider
         var ms = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
         if (GlobalMemoryStatusEx(ref ms))
         {
-            Add(list, "phys/load", "Physical Memory Load", SensorType.Utilization, SensorUnit.Percent, ms.MemoryLoad);
+            Add(list, "phys/load", "Memory", SensorType.Utilization, SensorUnit.Percent, ms.MemoryLoad);
             Add(list, "phys/total", "Physical Memory Total", SensorType.Memory, SensorUnit.Gigabyte, ms.TotalPhys / Gb);
-            Add(list, "phys/used", "Physical Memory Used", SensorType.Memory, SensorUnit.Gigabyte, (ms.TotalPhys - ms.AvailPhys) / Gb);
-            Add(list, "phys/available", "Physical Memory Available", SensorType.Memory, SensorUnit.Gigabyte, ms.AvailPhys / Gb);
+            Add(list, "phys/used", "Memory Used", SensorType.Memory, SensorUnit.Gigabyte, (ms.TotalPhys - ms.AvailPhys) / Gb);
+            Add(list, "phys/available", "Memory Available", SensorType.Memory, SensorUnit.Gigabyte, ms.AvailPhys / Gb);
         }
 
         var pi = new PerformanceInformation { Cb = (uint)Marshal.SizeOf<PerformanceInformation>() };

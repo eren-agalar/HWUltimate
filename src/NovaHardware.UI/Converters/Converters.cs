@@ -94,3 +94,36 @@ public sealed class IndentToMarginConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>"#RRGGBB" → brush (invalid input → transparent). MultiBinding variant takes [hex, opacity].</summary>
+public sealed class HexToBrushConverter : IValueConverter, IMultiValueConverter
+{
+    public static HexToBrushConverter Instance { get; } = new();
+
+    private static Brush Make(object? hex, double opacity)
+    {
+        if (hex is not string s || !NovaHardware.Core.Appearance.Rgb.TryParse(s, out var c)) return Brushes.Transparent;
+        var b = new SolidColorBrush(Color.FromArgb((byte)Math.Round(Math.Clamp(opacity, 0, 1) * 255), c.R, c.G, c.B));
+        b.Freeze();
+        return b;
+    }
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Make(value, 1);
+
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) =>
+        Make(values.Length > 0 ? values[0] : null, values.Length > 1 && values[1] is double o ? o : 1);
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
+/// <summary>0..1 → "72 %".</summary>
+public sealed class PercentConverter : IValueConverter
+{
+    public static PercentConverter Instance { get; } = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is double d ? $"{d * 100:0} %" : string.Empty;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}

@@ -70,36 +70,74 @@ public sealed class HardwareInventoryService : IHardwareInventoryService
         }
     }
 
+    /// <summary>
+    /// Merges devices reported by several sources. Devices with a <see cref="DeviceInfo.PhysicalKey"/> merge only with the
+    /// same key; a device without a key joins a keyed device of the same category and name only when exactly one such
+    /// keyed device exists. Earlier sources win on conflicting values; every property is kept.
+    /// </summary>
     internal static IReadOnlyList<DeviceInfo> Merge(IEnumerable<DeviceInfo> devices)
     {
+        var input = devices.ToList();
         var result = new List<DeviceInfo>();
-        var index = new Dictionary<(HardwareCategory, string), int>();
-        foreach (var d in devices)
-        {
-            var key = (d.Category, Normalize(d.Name));
-            if (!index.TryGetValue(key, out var at))
-            {
-                index[key] = result.Count;
-                result.Add(d);
-                continue;
-            }
+        var byKey = new Dictionary<(HardwareCategory, string), int>();
+        var byName = new Dictionary<(HardwareCategory, string), List<int>>();
 
-            var existing = result[at];
-            var names = existing.Properties.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            result[at] = existing with
-            {
-                Manufacturer = existing.Manufacturer ?? d.Manufacturer,
-                Model = existing.Model ?? d.Model,
-                SerialNumber = existing.SerialNumber ?? d.SerialNumber,
-                DriverVersion = existing.DriverVersion ?? d.DriverVersion,
-                Source = existing.Source.Contains(d.Source, StringComparison.Ordinal) ? existing.Source : $"{existing.Source}, {d.Source}",
-                Properties = existing.Properties.Concat(d.Properties.Where(p => !names.Contains(p.Name))).ToList(),
-            };
+        void Index(int at, DeviceInfo d)
+        {
+            if (d.PhysicalKey is { } k) byKey[(d.Category, k)] = at;
+            var nk = (d.Category, Normalize(d.Name));
+            if (!byName.TryGetValue(nk, out var l)) byName[nk] = l = [];
+            if (!l.Contains(at)) l.Add(at);
         }
 
-        return result.OrderBy(d => d.Category)
-            .Select(d => d with { Properties = d.Properties.Select(PropertySectionMap.Assign).ToList() })
+        // Keyed devices first so keyless ones can attach to them regardless of source order.
+        foreach (var d in input.Where(d => d.PhysicalKey is not null))
+        {
+            if (byKey.TryGetValue((d.Category, d.PhysicalKey!), out var at)) result[at] = Combine(result[at], d);
+            else { result.Add(d); Index(result.Count - 1, d); }
+        }
+
+        foreach (var d in input.Where(d => d.PhysicalKey is null))
+        {
+            var nk = (d.Category, Normalize(d.Name));
+            if (byName.TryGetValue(nk, out var candidates))
+            {
+                var keyed = candidates.Where(i => result[i].PhysicalKey is not null).ToList();
+                var keyless = candidates.Where(i => result[i].PhysicalKey is null).ToList();
+                if (keyed.Count == 1) { result[keyed[0]] = Combine(result[keyed[0]], d); continue; }
+                if (keyed.Count == 0 && keyless.Count == 1) { result[keyless[0]] = Combine(result[keyless[0]], d); continue; }
+                if (keyed.Count > 1) { result.Add(d); continue; } // ambiguous: several physical devices share this name
+            }
+
+            result.Add(d);
+            Index(result.Count - 1, d);
+        }
+
+        // Stable order: category, then first appearance.
+        return result
+            .Select((d, i) => (d, i))
+            .OrderBy(x => x.d.Category).ThenBy(x => x.i)
+            .Select(x => x.d with { Properties = x.d.Properties.Select(PropertySectionMap.Assign).ToList() })
             .ToList();
+    }
+
+    private static DeviceInfo Combine(DeviceInfo existing, DeviceInfo d)
+    {
+        var names = existing.Properties.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return existing with
+        {
+            Manufacturer = existing.Manufacturer ?? d.Manufacturer,
+            Model = existing.Model ?? d.Model,
+            SerialNumber = existing.SerialNumber ?? d.SerialNumber,
+            DriverVersion = existing.DriverVersion ?? d.DriverVersion,
+            PhysicalKey = existing.PhysicalKey ?? d.PhysicalKey,
+            Source = existing.Source.Contains(d.Source, StringComparison.Ordinal) ? existing.Source : $"{existing.Source}, {d.Source}",
+            // A source's "Not Available" entry is replaced when another source does provide the value.
+            Properties = existing.Properties
+                .Select(p => !p.IsAvailable && d.Properties.FirstOrDefault(q => q.IsAvailable && q.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)) is { } better ? better : p)
+                .Concat(d.Properties.Where(p => !names.Contains(p.Name)))
+                .ToList(),
+        };
     }
 
     private static string Normalize(string name) =>

@@ -20,13 +20,33 @@ public sealed record ExplorerNode(
     int ChildCount = 0,
     bool IsHidden = false,
     bool IsFavorite = false,
-    bool IsAvailable = true);
+    bool IsAvailable = true,
+    bool IsPinned = false,
+    HardwareDevice? Device = null);
 
-public sealed record ExplorerFilter(string? Search = null, SensorGroupKind? Group = null, HardwareCategory? Category = null)
+public sealed record ExplorerFilter(
+    string? Search = null,
+    SensorGroupKind? Group = null,
+    HardwareCategory? Category = null,
+    string? DeviceId = null,
+    string? Provider = null,
+    SensorStatusFilter Status = SensorStatusFilter.All,
+    bool IncludeMetadata = false)
 {
     public static ExplorerFilter None { get; } = new();
 
-    public bool IsActive => !string.IsNullOrWhiteSpace(Search) || Group is not null || Category is not null;
+    public bool IsActive => !string.IsNullOrWhiteSpace(Search) || Group is not null || Category is not null
+                            || DeviceId is not null || Provider is not null || Status != SensorStatusFilter.All;
+
+    public bool Accepts(SensorReading s, SensorExplorerState state) => Status switch
+    {
+        SensorStatusFilter.Reporting => s.Value.HasValue && s.Quality == DataQuality.Good,
+        SensorStatusFilter.NoData => !s.Value.HasValue,
+        SensorStatusFilter.Attention => s.Quality is DataQuality.Suspect or DataQuality.Stale,
+        SensorStatusFilter.Hidden => state.IsHidden(s.SensorId),
+        SensorStatusFilter.Pinned => state.IsPinned(s.SensorId),
+        _ => true,
+    };
 }
 
 /// <summary>
@@ -39,7 +59,7 @@ public static class SensorExplorerBuilder
     /// <summary>Display order of hardware categories.</summary>
     public static IReadOnlyList<HardwareCategory> CategoryOrder { get; } =
     [
-        HardwareCategory.Cpu, HardwareCategory.Gpu, HardwareCategory.Memory, HardwareCategory.Motherboard,
+        HardwareCategory.Cpu, HardwareCategory.Gpu, HardwareCategory.Memory, HardwareCategory.MemoryModule, HardwareCategory.Motherboard,
         HardwareCategory.SuperIo, HardwareCategory.EmbeddedController, HardwareCategory.Storage, HardwareCategory.Network,
         HardwareCategory.Cooler, HardwareCategory.PowerSupply, HardwareCategory.Battery, HardwareCategory.Other,
     ];
@@ -60,11 +80,12 @@ public static class SensorExplorerBuilder
         var nodes = new List<ExplorerNode>(snapshot.Sensors.Count + 64);
         var devices = Organize(snapshot, state, filter);
         var forceExpand = filter.IsActive;
+        var showMetadata = filter.IncludeMetadata;
 
         // Favourites (flat, user-ordered) — shown only when no filter narrows the view.
         if (!forceExpand && state.FavoriteSensors.Count > 0)
         {
-            var favs = state.FavoriteSensors.Select(snapshot.Find).OfType<SensorReading>().ToList();
+            var favs = state.FavoriteSensors.Select(snapshot.Find).OfType<SensorReading>().Where(s => showMetadata || s.IsMeasurement).ToList();
             if (favs.Count > 0)
             {
                 var expanded = state.IsExpanded(ExplorerKeys.Favorites);
@@ -83,6 +104,12 @@ public static class SensorExplorerBuilder
         foreach (var category in CategoryOrder)
         {
             var inCategory = devices.Where(d => ExplorerCategory(d.Device.Category) == category).ToList();
+            if (DeviceRank(state.SortColumn) is { } rankType)
+            {
+                // "Sort by temperature / power / utilisation" also orders devices by their highest such reading.
+                inCategory = inCategory.OrderByDescending(d => d.Groups.SelectMany(g => g.Sensors).Where(s => s.Type == rankType && s.Value.HasValue)
+                    .Select(s => s.Value!.Value).DefaultIfEmpty(double.MinValue).Max()).ToList();
+            }
             if (inCategory.Count == 0)
             {
                 continue;
@@ -105,7 +132,7 @@ public static class SensorExplorerBuilder
                 var sensorCount = entry.Groups.Sum(g => g.Sensors.Count);
                 var available = entry.Groups.Any(g => g.Sensors.Any(s => s.Value.HasValue));
                 nodes.Add(new ExplorerNode(devKey, ExplorerNodeKind.Device, 1, dev.Name, dev.Category, dev.DeviceId,
-                    IsExpanded: devExpanded, ChildCount: sensorCount, IsAvailable: available));
+                    IsExpanded: devExpanded, ChildCount: sensorCount, IsAvailable: available, Device: dev));
                 if (!devExpanded)
                 {
                     continue;
@@ -135,7 +162,15 @@ public static class SensorExplorerBuilder
 
     private static ExplorerNode SensorNode(string key, SensorReading s, int depth, string groupKey, SensorExplorerState state, SensorGroupKind? kind) =>
         new(key, ExplorerNodeKind.Sensor, depth, s.Name, HardwareCategory.Other, s.DeviceId, kind, groupKey, s,
-            IsHidden: state.IsHidden(s.SensorId), IsFavorite: state.IsFavorite(s.SensorId), IsAvailable: s.Value.HasValue);
+            IsHidden: state.IsHidden(s.SensorId), IsFavorite: state.IsFavorite(s.SensorId), IsAvailable: s.Value.HasValue, IsPinned: state.IsPinned(s.SensorId));
+
+    private static SensorType? DeviceRank(SensorSortColumn c) => c switch
+    {
+        SensorSortColumn.Temperature => SensorType.Temperature,
+        SensorSortColumn.Power => SensorType.Power,
+        SensorSortColumn.Utilization => SensorType.Utilization,
+        _ => null,
+    };
 
     private static List<DeviceEntry> Organize(SensorSnapshot snapshot, SensorExplorerState state, ExplorerFilter filter)
     {
@@ -146,6 +181,11 @@ public static class SensorExplorerBuilder
         foreach (var device in snapshot.Devices.DistinctBy(d => d.DeviceId))
         {
             if (filter.Category is { } fc && ExplorerCategory(device.Category) != ExplorerCategory(fc))
+            {
+                continue;
+            }
+
+            if (filter.DeviceId is { } fd && device.DeviceId != fd)
             {
                 continue;
             }
@@ -164,8 +204,15 @@ public static class SensorExplorerBuilder
                     continue;
                 }
 
+                if (g.Key == SensorGroupKind.Metadata && !filter.IncludeMetadata)
+                {
+                    continue;
+                }
+
                 var groupKey = ExplorerKeys.Group(device.DeviceId, g.Key);
-                var list = g.Where(s => state.ShowHidden || !state.IsHidden(s.SensorId))
+                var list = g.Where(s => state.ShowHidden || filter.Status == SensorStatusFilter.Hidden || !state.IsHidden(s.SensorId))
+                            .Where(s => filter.Provider is null || s.ProviderName == filter.Provider)
+                            .Where(s => filter.Accepts(s, state))
                             .Where(s => string.IsNullOrEmpty(search) || deviceMatches || Matches(s, search))
                             .ToList();
                 if (list.Count == 0)
@@ -207,9 +254,25 @@ public static class SensorExplorerBuilder
             ordered = sensors;
         }
 
+        return PinnedFirst(SortCore(ordered, state), state);
+    }
+
+    private static List<SensorReading> PinnedFirst(List<SensorReading> sorted, SensorExplorerState state) =>
+        state.PinnedSensors.Count == 0 ? sorted : sorted.Where(s => state.IsPinned(s.SensorId)).Concat(sorted.Where(s => !state.IsPinned(s.SensorId))).ToList();
+
+    private static List<SensorReading> SortCore(List<SensorReading> ordered, SensorExplorerState state)
+    {
         if (state.SortColumn == SensorSortColumn.Default)
         {
             return state.SortDescending ? Enumerable.Reverse(ordered).ToList() : ordered;
+        }
+
+        if (DeviceRank(state.SortColumn) is { } type)
+        {
+            // Matching sensors first, highest value first (or lowest when reversed); others keep their default order.
+            var matching = ordered.Where(s => s.Type == type && s.Value.HasValue);
+            var sortedMatching = state.SortDescending ? matching.OrderBy(s => s.Value) : matching.OrderByDescending(s => s.Value);
+            return sortedMatching.Concat(ordered.Where(s => !(s.Type == type && s.Value.HasValue))).ToList();
         }
 
         Func<SensorReading, double?> numeric = state.SortColumn switch

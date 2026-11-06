@@ -32,6 +32,8 @@ public enum SensorGroupKind
     Energy,
     Timings,
     Other,
+    /// <summary>Thresholds, limits and other static values reported through the sensor API (advanced view only).</summary>
+    Metadata,
 }
 
 /// <summary>
@@ -49,7 +51,7 @@ public static partial class SensorClassifier
     public static bool IsPerCore(string name) => PerCoreName().IsMatch(name);
 
     public static SensorGroupKind Classify(SensorReading sensor, HardwareCategory category) =>
-        Classify(sensor.Type, sensor.Name, category);
+        sensor.Kind == SensorKind.Metadata ? SensorGroupKind.Metadata : Classify(sensor.Type, sensor.Name, category);
 
     public static SensorGroupKind Classify(SensorType type, string name, HardwareCategory category)
     {

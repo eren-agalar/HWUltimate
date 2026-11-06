@@ -5,21 +5,19 @@
         xmlns:v="clr-namespace:NovaHardware.App.Views"
         xmlns:loc="clr-namespace:NovaHardware.UI.Localization;assembly=NovaHardware.UI"
         xmlns:ui="clr-namespace:NovaHardware.UI.Controls;assembly=NovaHardware.UI"
-        Title="Nova Hardware" Width="1360" Height="860" MinWidth="980" MinHeight="620"
+        Title="Nova Hardware" Width="1360" Height="860" MinWidth="1000" MinHeight="620"
         WindowStartupLocation="CenterScreen" Icon="/Assets/nova.ico"
         Background="{DynamicResource Brush.Background}" Foreground="{DynamicResource Brush.Text}"
-        FontFamily="{StaticResource Font.Ui}" FontSize="13"
-        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True">
+        FontFamily="{StaticResource Font.Ui}" FontSize="{DynamicResource Size.Font}"
+        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True" SnapsToDevicePixels="True">
   <WindowChrome.WindowChrome>
-    <WindowChrome CaptionHeight="40" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    <WindowChrome CaptionHeight="38" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
   </WindowChrome.WindowChrome>
 
   <Window.Resources>
-    <DataTemplate DataType="{x:Type vm:DashboardViewModel}"><v:DashboardView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:SensorExplorerViewModel}"><v:SensorExplorerView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:HardwareViewModel}"><v:HardwareView /></DataTemplate>
-    <DataTemplate DataType="{x:Type vm:HistoryViewModel}"><v:HistoryView /></DataTemplate>
-    <DataTemplate DataType="{x:Type vm:StabilityViewModel}"><v:StabilityView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:OverlayViewModel}"><v:OverlayView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:AlertsViewModel}"><v:AlertsView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:ReportsViewModel}"><v:ReportsView /></DataTemplate>
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><v:SettingsView /></DataTemplate>
@@ -27,37 +25,39 @@
 
   <Grid x:Name="Root">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="232" />
+      <ColumnDefinition Width="216" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
 
-    <!-- Sidebar -->
+    <!-- NovaNavigation -->
     <Border Background="{DynamicResource Brush.Sidebar}" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="0,0,1,0">
       <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,18,12,26">
-          <Image Source="/Assets/nova.png" Width="34" Height="34" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="18,16,12,22">
+          <Image Source="/Assets/nova.png" Width="30" Height="30" RenderOptions.BitmapScalingMode="HighQuality" />
           <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-            <TextBlock FontFamily="{StaticResource Font.Display}" FontSize="16" FontWeight="Bold">
+            <TextBlock FontFamily="{StaticResource Font.Display}" FontSize="15" FontWeight="Bold">
               <Run Text="NOVA" /><Run Text=" HARDWARE" Foreground="{DynamicResource Brush.Accent}" />
             </TextBlock>
             <TextBlock Text="{Binding Version, StringFormat=v{0}}" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
           </StackPanel>
         </StackPanel>
 
-        <TextBlock DockPanel.Dock="Bottom" Margin="20,12,16,18" Text="{loc:Tr App_Tagline}" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
+        <TextBlock DockPanel.Dock="Bottom" Margin="18,10,14,16" Text="{loc:Tr App_Tagline}" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
 
-        <ItemsControl ItemsSource="{Binding Pages}" KeyboardNavigation.TabNavigation="Once">
+        <ItemsControl ItemsSource="{Binding Pages}" KeyboardNavigation.TabNavigation="Once" Focusable="False">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <RadioButton Style="{StaticResource NavItem}" GroupName="Nav"
-                           Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                           CommandParameter="{Binding Key}"
-                           AutomationProperties.Name="{Binding Title}"
-                           IsChecked="{Binding IsSelected, Mode=OneWay}">
-                <StackPanel Orientation="Horizontal">
-                  <ui:Icon Kind="{Binding Glyph}" Width="17" Height="17" Margin="0,0,12,0" />
+              <RadioButton Style="{StaticResource NovaNavigation}" GroupName="Nav" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                           Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding Key}"
+                           AutomationProperties.Name="{Binding Title}">
+                <DockPanel>
+                  <Border DockPanel.Dock="Right" Padding="6,0" CornerRadius="8" Background="{DynamicResource Brush.Bad}" VerticalAlignment="Center"
+                          Visibility="{Binding Badge, Converter={x:Static v:PositiveToVisibility.Instance}}">
+                    <TextBlock Text="{Binding Badge}" FontSize="10.5" Foreground="{DynamicResource Brush.OnAccent}" FontWeight="SemiBold" />
+                  </Border>
+                  <ui:Icon Kind="{Binding Icon}" Width="16" Height="16" Margin="0,0,12,0" />
                   <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
-                </StackPanel>
+                </DockPanel>
               </RadioButton>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
@@ -65,25 +65,24 @@
       </DockPanel>
     </Border>
 
-    <!-- Content -->
     <DockPanel Grid.Column="1">
       <!-- Title bar -->
-      <Grid DockPanel.Dock="Top" Height="40">
-        <TextBlock Margin="24,0" VerticalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" FontSize="12" Text="{Binding StatusText}" />
+      <Grid DockPanel.Dock="Top" Height="38">
+        <TextBlock Margin="20,0" VerticalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" FontSize="{DynamicResource Size.FontSmall}" Text="{Binding StatusText}" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True">
-          <Button Style="{StaticResource Button.Chrome}" Content="&#xE921;" Click="Minimize_Click" ToolTip="Minimize" />
-          <Button Style="{StaticResource Button.Chrome}" x:Name="MaxButton" Content="&#xE922;" Click="Maximize_Click" ToolTip="Maximize" />
-          <Button Style="{StaticResource Button.Chrome}" Content="&#xE8BB;" Click="Close_Click" ToolTip="Close" />
+          <Button Style="{StaticResource Nova.Button.Chrome}" Click="Minimize_Click" ToolTip="{loc:Tr Window_Minimize}"><ui:Icon Kind="Minimize" Width="10" Height="10" /></Button>
+          <Button Style="{StaticResource Nova.Button.Chrome}" Click="Maximize_Click" ToolTip="{loc:Tr Window_Maximize}"><ui:Icon x:Name="MaxIcon" Kind="Maximize" Width="10" Height="10" /></Button>
+          <Button Style="{StaticResource Nova.Button.Chrome}" Click="Close_Click" ToolTip="{loc:Tr Window_Close}"><ui:Icon Kind="Close" Width="10" Height="10" /></Button>
         </StackPanel>
       </Grid>
 
       <!-- Elevation banner -->
-      <Border DockPanel.Dock="Top" Margin="24,0,24,12" Padding="14,10" CornerRadius="10"
-              Background="{DynamicResource Brush.PanelHover}" BorderBrush="{DynamicResource Brush.Warn}" BorderThickness="1"
+      <Border DockPanel.Dock="Top" Margin="20,0,20,10" Padding="12,8" CornerRadius="{StaticResource Radius.Card}"
+              Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Warn}" BorderThickness="1"
               Visibility="{Binding IsElevated, Converter={StaticResource BoolToVisInv}}">
         <DockPanel>
           <Button DockPanel.Dock="Right" Content="{loc:Tr Elevation_Restart}" Command="{Binding RestartElevatedCommand}" />
-          <ui:Icon Kind="Throttle" Width="18" Height="18" Foreground="{DynamicResource Brush.Warn}" Margin="0,0,10,0" />
+          <ui:Icon Kind="Throttle" Width="16" Height="16" Foreground="{DynamicResource Brush.Warn}" Margin="0,0,10,0" />
           <TextBlock Text="{loc:Tr Elevation_Banner}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0" />
         </DockPanel>
       </Border>
@@ -91,29 +90,32 @@
       <Grid>
         <ContentControl Content="{Binding SelectedPage.ViewModel}" Focusable="False" />
 
-        <!-- Loading overlay -->
         <Border Background="{DynamicResource Brush.Background}" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
           <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <Image Source="/Assets/nova.png" Width="72" Height="72" />
-            <TextBlock Margin="0,16,0,8" HorizontalAlignment="Center" FontSize="15" Text="{loc:Tr Common_Loading}" />
-            <ProgressBar IsIndeterminate="True" Width="220" Height="3" />
+            <Image Source="/Assets/nova.png" Width="64" Height="64" />
+            <TextBlock Margin="0,14,0,8" HorizontalAlignment="Center" Text="{loc:Tr Common_Loading}" />
+            <ProgressBar IsIndeterminate="True" Width="200" Height="3" />
           </StackPanel>
         </Border>
 
-        <!-- Alert toasts -->
-        <ItemsControl ItemsSource="{Binding Toasts}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,24" Width="360">
+        <ItemsControl ItemsSource="{Binding Toasts}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20" Width="380" Focusable="False">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Border Style="{StaticResource Card}" Margin="0,8,0,0" Padding="14" BorderBrush="{DynamicResource Brush.Warn}">
+              <Border Style="{StaticResource Popup.Card}" Margin="0,8,0,0" Padding="14,12">
                 <DockPanel>
-                  <Button DockPanel.Dock="Right" Style="{StaticResource Button.Chrome}" Width="28" Height="28" Content="&#xE8BB;" VerticalAlignment="Top"
-                          Command="{Binding DataContext.DismissToastCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                  <ui:NovaIconButton DockPanel.Dock="Right" Icon="Close" IconSize="10" Padding="4" MinHeight="0" VerticalAlignment="Top"
+                                     Command="{Binding DataContext.DismissToastCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                  <ui:NovaStatusIndicator x:Name="Dot" DockPanel.Dock="Left" Status="Warning" Margin="0,4,10,0" VerticalAlignment="Top" />
                   <StackPanel>
                     <TextBlock FontWeight="SemiBold" Text="{Binding Title}" />
-                    <TextBlock Style="{StaticResource Text.Muted}" Text="{Binding Message}" Margin="0,4,0,0" />
+                    <TextBlock Style="{StaticResource Text.Muted}" Text="{Binding Message}" Margin="0,3,0,0" />
                   </StackPanel>
                 </DockPanel>
               </Border>
+              <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Severity}" Value="Critical"><Setter TargetName="Dot" Property="Status" Value="Critical" /></DataTrigger>
+                <DataTrigger Binding="{Binding Severity}" Value="Information"><Setter TargetName="Dot" Property="Status" Value="Info" /></DataTrigger>
+              </DataTemplate.Triggers>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>

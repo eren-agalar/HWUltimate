@@ -33,8 +33,20 @@ public sealed class JsonSettingsService : ISettingsService
         {
             if (File.Exists(_path))
             {
-                await using var stream = File.OpenRead(_path);
-                Current = await JsonSerializer.DeserializeAsync<AppSettings>(stream, Options, cancellationToken).ConfigureAwait(false) ?? new AppSettings();
+                var text = await File.ReadAllTextAsync(_path, cancellationToken).ConfigureAwait(false);
+                using var doc = JsonDocument.Parse(text);
+                if (SettingsMigration.IsLegacy(doc.RootElement))
+                {
+                    // v0.1 flat file: keep a copy, convert, and write the v0.2 structure.
+                    File.Copy(_path, Path.ChangeExtension(_path, ".v1.json"), overwrite: true);
+                    Current = SettingsMigration.FromV1(doc.RootElement);
+                    _logger.LogInformation("Migrated v0.1 settings to schema {Schema}", AppSettings.CurrentSchema);
+                    await SaveAsync(Current, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    Current = doc.RootElement.Deserialize<AppSettings>(Options) ?? new AppSettings();
+                }
             }
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)

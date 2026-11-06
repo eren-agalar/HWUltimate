@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 using Microsoft.Extensions.Logging;
 using NovaHardware.Core.Abstractions;
+using NovaHardware.Core.Identity;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.Sensors;
 using Lhm = LibreHardwareMonitor.Hardware;
@@ -99,9 +100,9 @@ public sealed class LibreHardwareMonitorProvider : IHardwareProvider
         }
 
         var deviceId = $"lhm:{hw.Identifier}";
-        var category = LibreHardwareMonitorMapping.Map(hw.HardwareType);
+        var category = LibreHardwareMonitorMapping.Map(hw.HardwareType, hw.Name);
         // Sub-hardware (e.g. Super I/O under a motherboard) is shown as its own device.
-        devices.Add(new HardwareDevice(deviceId, hw.Name, category, ProviderName, parentId, LibreHardwareMonitorMapping.Vendor(hw.HardwareType)));
+        devices.Add(new HardwareDevice(deviceId, hw.Name, category, ProviderName, parentId, LibreHardwareMonitorMapping.Vendor(hw.HardwareType), Identity(hw)));
 
         foreach (var sensor in hw.Sensors)
         {
@@ -123,6 +124,23 @@ public sealed class LibreHardwareMonitorProvider : IHardwareProvider
         {
             Visit(sub, deviceId, devices, readings);
         }
+    }
+
+    /// <summary>Physical identity: GPUs expose their PnP device path; "Total Memory" is the system-memory singleton.</summary>
+    private static DeviceIdentity? Identity(Lhm.IHardware hw)
+    {
+        if (hw is Lhm.Gpu.GenericGpu gpu && !string.IsNullOrEmpty(gpu.DeviceId))
+        {
+            var id = PnpPath.FromPath(gpu.DeviceId);
+            return id.IsEmpty ? null : id;
+        }
+
+        if (hw.HardwareType == Lhm.HardwareType.Memory && hw.Name.Equals("Total Memory", StringComparison.OrdinalIgnoreCase))
+        {
+            return new DeviceIdentity { SingletonKey = WindowsMemoryProvider.SystemMemoryKey };
+        }
+
+        return null;
     }
 
     public IReadOnlyList<RawSensorReading> ReadSensors()

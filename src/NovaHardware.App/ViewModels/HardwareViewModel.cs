@@ -29,6 +29,13 @@ public sealed record PropertyRow(HardwareProperty Property)
     public string? Note => Property.Note;
     public bool IsAvailable => Property.IsAvailable;
     public bool HasNote => !string.IsNullOrEmpty(Property.Note);
+
+    /// <summary>Official manufacturer specification (catalog), detected from the system, or unavailable.</summary>
+    public string OriginKey => !Property.IsAvailable ? "Unavailable"
+        : Property.Source == GpuChipCatalog.SourceLabel ? "Official"
+        : "Detected";
+
+    public string Origin => Loc.Get($"Origin_{OriginKey}");
 }
 
 public sealed record PropertySection(string Key, string Title, IReadOnlyList<PropertyRow> Rows);
@@ -215,9 +222,9 @@ public sealed partial class HardwareViewModel : ObservableObject
         var matches = snap.Devices.Where(x => x.Category == d.Category && (Normalize(x.Name) == name || Normalize(x.Name).Contains(name, StringComparison.Ordinal) || name.Contains(Normalize(x.Name), StringComparison.Ordinal)))
             .Select(x => x.DeviceId).ToHashSet(StringComparer.Ordinal);
         var c = Loc.Instance.Culture;
-        foreach (var s in snap.Sensors.Where(s => matches.Contains(s.DeviceId)))
+        foreach (var s in snap.Sensors.Where(s => matches.Contains(s.DeviceId) && s.IsMeasurement))
         {
-            LiveSensors.Add(new LiveSensorRow(s.Type.ToString(), s.Name, s.Unit.FormatValue(s.Value, c, Loc.Get("Common_NA")),
+            LiveSensors.Add(new LiveSensorRow(Loc.Get($"SensorType_{s.Type}"), s.Name, s.Unit.FormatValue(s.Value, c, Loc.Get("Common_NA")),
                 s.Unit.FormatValue(s.Minimum, c, "—"), s.Unit.FormatValue(s.Maximum, c, "—")));
         }
 

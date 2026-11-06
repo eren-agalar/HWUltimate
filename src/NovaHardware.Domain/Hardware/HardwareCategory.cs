@@ -18,4 +18,5 @@ public enum HardwareCategory
     Audio,
     Display,
     Usb,
+    MemoryModule,
 }

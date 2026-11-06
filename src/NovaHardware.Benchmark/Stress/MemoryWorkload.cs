@@ -1,6 +1,6 @@
-using NovaHardware.Domain.Stress;
 
-namespace NovaHardware.Core.Stress;
+
+namespace NovaHardware.Benchmark.Stress;
 
 /// <summary>
 /// User-mode RAM test: writes and verifies classic patterns (solid, checkerboard, walking ones,

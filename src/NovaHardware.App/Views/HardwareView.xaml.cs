@@ -17,7 +17,7 @@ public partial class HardwareView : UserControl
 
     private void ExportButton_Click(object sender, RoutedEventArgs e)
     {
-        if (ExportButton.ContextMenu is { } menu)
+        if (ExportButton.ContextMenu is { } menu && sender is FrameworkElement)
         {
             menu.DataContext = DataContext;
             menu.PlacementTarget = ExportButton;

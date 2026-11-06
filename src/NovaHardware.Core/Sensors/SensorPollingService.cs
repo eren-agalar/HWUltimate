@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using NovaHardware.Core.Abstractions;
+using NovaHardware.Core.Identity;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.Sensors;
 
@@ -23,6 +24,16 @@ public sealed class SensorPollingService : ISensorPollingService
     private readonly Dictionary<string, (SensorReading Reading, DateTimeOffset LastGood)> _lastGood = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ProviderStatus> _statuses = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _consecutiveFailures = new(StringComparer.Ordinal);
+    private readonly IDeviceIdentityResolver _identity;
+    private readonly Dictionary<string, int> _priority = new(StringComparer.Ordinal);
+
+    // Merge results are cached and recomputed only when the set of devices / sensors changes.
+    private int _deviceSignature = int.MinValue;
+    private DeviceMergeResult _merge = new([], new Dictionary<string, string>());
+    private int _sensorSignature = int.MinValue;
+    private HashSet<string> _suppressed = new(StringComparer.Ordinal);
+    private Dictionary<string, List<string>> _alsoReportedBy = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SensorKind> _kinds = new(StringComparer.Ordinal);
 
     private TimeSpan _interval = TimeSpan.FromSeconds(1);
     private CancellationTokenSource? _cts;
@@ -33,9 +44,12 @@ public sealed class SensorPollingService : ISensorPollingService
         IEnumerable<IHardwareProvider> providers,
         SensorStatisticsTracker stats,
         ILogger<SensorPollingService> logger,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        IDeviceIdentityResolver? identityResolver = null)
     {
         _providers = providers.OrderBy(p => p.Priority).ToList();
+        _identity = identityResolver ?? NullIdentityResolver.Instance;
+        for (var i = 0; i < _providers.Count; i++) _priority.TryAdd(_providers[i].Name, i);
         _stats = stats;
         _logger = logger;
         _time = timeProvider ?? TimeProvider.System;
@@ -144,6 +158,9 @@ public sealed class SensorPollingService : ISensorPollingService
         }
     }
 
+    /// <summary>Unified physical devices of the latest poll (exposed for diagnostics and tests).</summary>
+    public IReadOnlyList<HardwareDevice> PhysicalDevices => _merge.Devices;
+
     public SensorSnapshot PollOnce()
     {
         lock (_pollGate)
@@ -151,7 +168,8 @@ public sealed class SensorPollingService : ISensorPollingService
             var sw = Stopwatch.StartNew();
             var now = _time.GetLocalNow();
             var devices = new List<HardwareDevice>();
-            var readings = new List<SensorReading>();
+            var raw = new List<RawSensorReading>(_current.Sensors.Count + 16);
+            var stale = new List<SensorReading>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
 
             foreach (var provider in _providers)
@@ -162,14 +180,17 @@ public sealed class SensorPollingService : ISensorPollingService
                     continue;
                 }
 
-                IReadOnlyList<RawSensorReading> raw;
                 try
                 {
                     provider.Update();
-                    raw = provider.ReadSensors();
+                    var readings = provider.ReadSensors();
                     devices.AddRange(provider.GetDevices());
                     _consecutiveFailures[provider.Name] = 0;
                     _statuses[provider.Name] = provider.Status;
+                    foreach (var r in readings)
+                    {
+                        if (seen.Add(r.SensorId)) raw.Add(r); // a higher-priority provider already reported this id
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -181,36 +202,76 @@ public sealed class SensorPollingService : ISensorPollingService
                     }
 
                     _statuses[provider.Name] = ProviderStatus.Unavailable($"Read error: {ex.Message}");
-                    readings.AddRange(StaleReadingsFor(provider.Name, now, seen));
-                    continue;
-                }
-
-                foreach (var r in raw)
-                {
-                    if (!seen.Add(r.SensorId))
-                    {
-                        continue; // a higher-priority provider already reported this id
-                    }
-
-                    readings.Add(Normalize(r, now));
+                    stale.AddRange(StaleReadingsFor(provider.Name, now, seen));
                 }
             }
 
-            var snapshot = new SensorSnapshot(now, devices, readings, sw.Elapsed);
+            var previousDevices = _merge.Devices;
+            UpdateMerge(devices, raw);
+            var physicalDevices = _merge.Devices.ToList();
+            if (stale.Count > 0)
+            {
+                // Stale readings keep the physical device they belonged to in the previous poll.
+                var present = physicalDevices.Select(d => d.DeviceId).ToHashSet(StringComparer.Ordinal);
+                var staleDevices = stale.Select(r => r.DeviceId).ToHashSet(StringComparer.Ordinal);
+                physicalDevices.AddRange(previousDevices.Where(d => staleDevices.Contains(d.DeviceId) && !present.Contains(d.DeviceId)));
+            }
+            var readingsOut = new List<SensorReading>(raw.Count + stale.Count);
+            foreach (var r in raw)
+            {
+                if (_suppressed.Contains(r.SensorId)) continue;
+                readingsOut.Add(Normalize(r, now));
+            }
+
+            readingsOut.AddRange(stale);
+            var snapshot = new SensorSnapshot(now, physicalDevices, readingsOut, sw.Elapsed);
             _current = snapshot;
             RaiseSnapshot(snapshot);
             return snapshot;
         }
     }
 
+    private int ProviderPriority(string name) => _priority.GetValueOrDefault(name, int.MaxValue);
+
+    private void UpdateMerge(List<HardwareDevice> devices, List<RawSensorReading> raw)
+    {
+        var deviceSig = devices.Count;
+        foreach (var d in devices) deviceSig = HashCode.Combine(deviceSig, StringComparer.Ordinal.GetHashCode(d.DeviceId));
+        if (deviceSig != _deviceSignature)
+        {
+            _deviceSignature = deviceSig;
+            _merge = PhysicalDeviceMerger.Merge(devices, ProviderPriority, _identity);
+            _sensorSignature = int.MinValue;
+            if (_merge.Devices.Count < devices.Count)
+            {
+                _logger.LogInformation("Merged {Provided} provider devices into {Physical} physical devices", devices.Count, _merge.Devices.Count);
+            }
+        }
+
+        var sensorSig = HashCode.Combine(raw.Count, deviceSig);
+        foreach (var r in raw) sensorSig ^= StringComparer.Ordinal.GetHashCode(r.SensorId);
+        if (sensorSig != _sensorSignature)
+        {
+            _sensorSignature = sensorSig;
+            (_suppressed, _alsoReportedBy) = PhysicalDeviceMerger.FindDuplicateSensors(raw, _merge.PhysicalIdOf, ProviderPriority);
+        }
+    }
+
     private SensorReading Normalize(RawSensorReading r, DateTimeOffset now)
     {
+        if (!_kinds.TryGetValue(r.SensorId, out var kind))
+        {
+            kind = r.Kind ?? SensorKindClassifier.Classify(r.Type, r.Name);
+            _kinds[r.SensorId] = kind;
+        }
+
         var value = r.Value is { } v && double.IsFinite(v) ? v : (double?)null;
         var stats = _stats.Record(r.SensorId, value);
 
         var quality = value switch
         {
             null => DataQuality.Missing,
+            _ when kind == SensorKind.Metadata => DataQuality.Good,
             { } x when !SensorPlausibility.IsPlausible(r.Type, r.Unit, x) => DataQuality.Suspect,
             _ => DataQuality.Good,
         };
@@ -222,7 +283,7 @@ public sealed class SensorPollingService : ISensorPollingService
         var reading = new SensorReading
         {
             SensorId = r.SensorId,
-            DeviceId = r.DeviceId,
+            DeviceId = _merge.PhysicalIdOf.GetValueOrDefault(r.DeviceId, r.DeviceId),
             Name = r.Name,
             Type = r.Type,
             Unit = r.Unit,
@@ -236,6 +297,8 @@ public sealed class SensorPollingService : ISensorPollingService
             Availability = availability,
             Quality = quality,
             Index = r.Index,
+            Kind = kind,
+            AlsoReportedBy = _alsoReportedBy.TryGetValue(r.SensorId, out var also) ? also : [],
         };
 
         if (value is not null)

@@ -5,98 +5,23 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="App_Tagline" xml:space="preserve"><value>Donanımınız. Her Ayrıntı. Tek Yerde.</value></data>
-  <data name="Nav_Dashboard" xml:space="preserve"><value>Gösterge Paneli</value></data>
   <data name="Nav_Sensors" xml:space="preserve"><value>Sensörler</value></data>
   <data name="Nav_Hardware" xml:space="preserve"><value>Donanım</value></data>
-  <data name="Nav_History" xml:space="preserve"><value>Geçmiş</value></data>
-  <data name="Nav_Stability" xml:space="preserve"><value>Kararlılık Testi</value></data>
   <data name="Nav_Alerts" xml:space="preserve"><value>Uyarılar</value></data>
   <data name="Nav_Reports" xml:space="preserve"><value>Raporlar</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>Ayarlar</value></data>
   <data name="Common_NA" xml:space="preserve"><value>Yok</value></data>
   <data name="Common_Refresh" xml:space="preserve"><value>Yenile</value></data>
   <data name="Common_Save" xml:space="preserve"><value>Kaydet</value></data>
-  <data name="Common_Start" xml:space="preserve"><value>Başlat</value></data>
-  <data name="Common_Stop" xml:space="preserve"><value>Durdur</value></data>
   <data name="Common_Search" xml:space="preserve"><value>Ara…</value></data>
   <data name="Common_Loading" xml:space="preserve"><value>Donanım algılanıyor…</value></data>
-  <data name="Common_Current" xml:space="preserve"><value>Anlık</value></data>
-  <data name="Common_Min" xml:space="preserve"><value>Min</value></data>
-  <data name="Common_Max" xml:space="preserve"><value>Maks</value></data>
-  <data name="Common_Avg" xml:space="preserve"><value>Ort</value></data>
-  <data name="Common_Sensor" xml:space="preserve"><value>Sensör</value></data>
-  <data name="Common_Source" xml:space="preserve"><value>Kaynak</value></data>
   <data name="Common_Type" xml:space="preserve"><value>Tür</value></data>
   <data name="Common_Add" xml:space="preserve"><value>Ekle</value></data>
   <data name="Common_Remove" xml:space="preserve"><value>Kaldır</value></data>
   <data name="Common_Clear" xml:space="preserve"><value>Temizle</value></data>
   <data name="Elevation_Banner" xml:space="preserve"><value>Yönetici hakları olmadan çalışıyor. Anakart, voltaj ve bazı CPU sensörleri kullanılamıyor.</value></data>
   <data name="Elevation_Restart" xml:space="preserve"><value>Yönetici olarak yeniden başlat</value></data>
-  <data name="Dash_Processor" xml:space="preserve"><value>İşlemci</value></data>
-  <data name="Dash_Graphics" xml:space="preserve"><value>Ekran Kartı</value></data>
-  <data name="Dash_Memory" xml:space="preserve"><value>Bellek</value></data>
-  <data name="Dash_Load" xml:space="preserve"><value>Yük</value></data>
-  <data name="Dash_Temperature" xml:space="preserve"><value>Sıcaklık</value></data>
-  <data name="Dash_Power" xml:space="preserve"><value>Güç</value></data>
-  <data name="Dash_Clock" xml:space="preserve"><value>Saat Hızı</value></data>
-  <data name="Dash_Used" xml:space="preserve"><value>Kullanılan</value></data>
-  <data name="Dash_Available" xml:space="preserve"><value>Boş</value></data>
-  <data name="Dash_LoadChart" xml:space="preserve"><value>Kullanım — son 2 dakika</value></data>
-  <data name="Dash_TempChart" xml:space="preserve"><value>Sıcaklık — son 2 dakika</value></data>
-  <data name="Dash_Storage" xml:space="preserve"><value>Depolama sıcaklıkları</value></data>
-  <data name="Dash_Fans" xml:space="preserve"><value>Fanlar ve pompalar</value></data>
-  <data name="Dash_Providers" xml:space="preserve"><value>Sensör sağlayıcıları</value></data>
-  <data name="Dash_NoData" xml:space="preserve"><value>Bu türde sensör bildirilmedi.</value></data>
-  <data name="Dash_Poll" xml:space="preserve"><value>Okuma {0:0} ms · {1} sensör</value></data>
-  <data name="Sensors_Reset" xml:space="preserve"><value>Min/maks sıfırla</value></data>
-  <data name="Sensors_Quality" xml:space="preserve"><value>Kalite</value></data>
-  <data name="Sensors_Count" xml:space="preserve"><value>{1} cihazda {0} sensör</value></data>
-  <data name="Hw_Summary" xml:space="preserve"><value>Sistem özeti</value></data>
-  <data name="Hw_Devices" xml:space="preserve"><value>Cihazlar</value></data>
-  <data name="Hw_Computer" xml:space="preserve"><value>Bilgisayar</value></data>
-  <data name="Hw_OS" xml:space="preserve"><value>İşletim sistemi</value></data>
-  <data name="Hw_System" xml:space="preserve"><value>Sistem</value></data>
-  <data name="Hw_Motherboard" xml:space="preserve"><value>Anakart</value></data>
-  <data name="Hw_Bios" xml:space="preserve"><value>BIOS</value></data>
-  <data name="Hw_Processor" xml:space="preserve"><value>İşlemci</value></data>
-  <data name="Hw_Cores" xml:space="preserve"><value>Çekirdek / iş parçacığı</value></data>
-  <data name="Hw_Memory" xml:space="preserve"><value>Takılı bellek</value></data>
-  <data name="Hw_Graphics" xml:space="preserve"><value>Ekran kartı</value></data>
-  <data name="Hw_Uptime" xml:space="preserve"><value>Çalışma süresi</value></data>
   <data name="Hw_Collected" xml:space="preserve"><value>Toplanma: {0:g}</value></data>
-  <data name="Hist_Range" xml:space="preserve"><value>Aralık</value></data>
-  <data name="Hist_15m" xml:space="preserve"><value>15 dk</value></data>
-  <data name="Hist_1h" xml:space="preserve"><value>1 saat</value></data>
-  <data name="Hist_6h" xml:space="preserve"><value>6 saat</value></data>
-  <data name="Hist_24h" xml:space="preserve"><value>24 saat</value></data>
-  <data name="Hist_7d" xml:space="preserve"><value>7 gün</value></data>
-  <data name="Hist_Empty" xml:space="preserve"><value>Seçilen aralıkta bu sensör için kayıt yok.</value></data>
-  <data name="Hist_Pick" xml:space="preserve"><value>Geçmişini görmek için bir sensör seçin.</value></data>
-  <data name="Hist_Samples" xml:space="preserve"><value>{0:N0} örnek</value></data>
-  <data name="Hist_Database" xml:space="preserve"><value>Veritabanı: {0:N0} örnek kayıtlı</value></data>
-  <data name="Stress_Test" xml:space="preserve"><value>Test</value></data>
-  <data name="Stress_Cpu_Fp" xml:space="preserve"><value>CPU — kayan nokta</value></data>
-  <data name="Stress_Cpu_Int" xml:space="preserve"><value>CPU — tamsayı</value></data>
-  <data name="Stress_Cpu_Simd" xml:space="preserve"><value>CPU — SIMD / vektör</value></data>
-  <data name="Stress_Memory" xml:space="preserve"><value>Bellek (RAM)</value></data>
-  <data name="Stress_Gpu" xml:space="preserve"><value>Ekran kartı (GPU)</value></data>
-  <data name="Stress_Duration" xml:space="preserve"><value>Süre</value></data>
-  <data name="Stress_Minutes" xml:space="preserve"><value>{0} dk</value></data>
-  <data name="Stress_Threads" xml:space="preserve"><value>İş parçacıkları</value></data>
-  <data name="Stress_AllThreads" xml:space="preserve"><value>Tümü ({0})</value></data>
-  <data name="Stress_MemorySize" xml:space="preserve"><value>Test edilecek bellek (MB, 0 = otomatik)</value></data>
-  <data name="Stress_ThermalLimit" xml:space="preserve"><value>Termal güvenlik sınırı (°C)</value></data>
-  <data name="Stress_StopOnError" xml:space="preserve"><value>İlk hatada durdur</value></data>
-  <data name="Stress_Warning" xml:space="preserve"><value>Kararlılık testleri bileşenleri tam yüke çıkarır. Soğutmanın yeterli olduğundan emin olun. Test, termal sınırda otomatik olarak durur.</value></data>
-  <data name="Stress_Elapsed" xml:space="preserve"><value>Geçen süre</value></data>
-  <data name="Stress_Iterations" xml:space="preserve"><value>Doğrulanan döngü</value></data>
-  <data name="Stress_Rate" xml:space="preserve"><value>Döngü / sn</value></data>
-  <data name="Stress_Errors" xml:space="preserve"><value>Hatalar</value></data>
-  <data name="Stress_MaxTemp" xml:space="preserve"><value>Maks sıcaklık</value></data>
-  <data name="Stress_Results" xml:space="preserve"><value>Bu oturumdaki sonuçlar</value></data>
-  <data name="Stress_Idle" xml:space="preserve"><value>Hazır</value></data>
-  <data name="Stress_Running" xml:space="preserve"><value>Çalışıyor…</value></data>
-  <data name="Alerts_Rules" xml:space="preserve"><value>Uyarı kuralları</value></data>
   <data name="Alerts_Events" xml:space="preserve"><value>Son uyarılar</value></data>
   <data name="Alerts_Name" xml:space="preserve"><value>Ad</value></data>
   <data name="Alerts_Enabled" xml:space="preserve"><value>Açık</value></data>
@@ -109,25 +34,12 @@
   <data name="Alerts_None" xml:space="preserve"><value>Henüz uyarı yok.</value></data>
   <data name="Reports_Format" xml:space="preserve"><value>Biçim</value></data>
   <data name="Reports_Sections" xml:space="preserve"><value>İçerik</value></data>
-  <data name="Reports_Summary" xml:space="preserve"><value>Sistem özeti</value></data>
-  <data name="Reports_Devices" xml:space="preserve"><value>Cihazlar</value></data>
-  <data name="Reports_Sensors" xml:space="preserve"><value>Sensör değerleri</value></data>
-  <data name="Reports_Alerts" xml:space="preserve"><value>Uyarılar</value></data>
-  <data name="Reports_Stress" xml:space="preserve"><value>Kararlılık testleri</value></data>
   <data name="Reports_Export" xml:space="preserve"><value>Raporu dışa aktar…</value></data>
   <data name="Reports_Preview" xml:space="preserve"><value>Önizleme</value></data>
   <data name="Reports_OpenFolder" xml:space="preserve"><value>Rapor klasörünü aç</value></data>
   <data name="Reports_Saved" xml:space="preserve"><value>Rapor kaydedildi: {0}</value></data>
-  <data name="Settings_Monitoring" xml:space="preserve"><value>İzleme</value></data>
-  <data name="Settings_Interval" xml:space="preserve"><value>Okuma aralığı (ms)</value></data>
-  <data name="Settings_History" xml:space="preserve"><value>Sensör geçmişini kaydet</value></data>
-  <data name="Settings_SampleInterval" xml:space="preserve"><value>Geçmiş örnekleme aralığı (sn)</value></data>
-  <data name="Settings_Retention" xml:space="preserve"><value>Geçmişi sakla (gün)</value></data>
-  <data name="Settings_Appearance" xml:space="preserve"><value>Görünüm</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Dil</value></data>
   <data name="Settings_Theme" xml:space="preserve"><value>Tema</value></data>
-  <data name="Settings_Dark" xml:space="preserve"><value>Koyu</value></data>
-  <data name="Settings_Light" xml:space="preserve"><value>Açık</value></data>
   <data name="Settings_Providers" xml:space="preserve"><value>Üretici sağlayıcıları (yeniden başlatma gerekir)</value></data>
   <data name="Settings_Nvidia" xml:space="preserve"><value>NVIDIA NVAPI kullan</value></data>
   <data name="Settings_Amd" xml:space="preserve"><value>AMD ADLX kullan</value></data>
@@ -147,14 +59,11 @@
   <data name="Explorer_ResetOrder" xml:space="preserve"><value>Sensör sırasını sıfırla</value></data>
   <data name="Explorer_Columns" xml:space="preserve"><value>Sütunlar</value></data>
   <data name="Explorer_Compact" xml:space="preserve"><value>Kompakt</value></data>
-  <data name="Explorer_Detailed" xml:space="preserve"><value>Ayrıntılı</value></data>
   <data name="Explorer_Interval" xml:space="preserve"><value>Yenileme</value></data>
   <data name="Explorer_AllCategories" xml:space="preserve"><value>Tüm donanım</value></data>
   <data name="Explorer_AllGroups" xml:space="preserve"><value>Tüm sensör türleri</value></data>
   <data name="Explorer_Favorite" xml:space="preserve"><value>Favorilere ekle</value></data>
-  <data name="Explorer_Unfavorite" xml:space="preserve"><value>Favorilerden çıkar</value></data>
   <data name="Explorer_Hide" xml:space="preserve"><value>Sensörü gizle</value></data>
-  <data name="Explorer_Unhide" xml:space="preserve"><value>Sensörü göster</value></data>
   <data name="Explorer_MoveUp" xml:space="preserve"><value>Yukarı taşı</value></data>
   <data name="Explorer_MoveDown" xml:space="preserve"><value>Aşağı taşı</value></data>
   <data name="Explorer_ResetSensor" xml:space="preserve"><value>Min/maks sıfırla</value></data>
@@ -163,11 +72,7 @@
   <data name="Explorer_Count" xml:space="preserve"><value>{0} sensör · {1} cihaz · {2} gizli · {3} favori</value></data>
   <data name="Explorer_Favorites" xml:space="preserve"><value>Favoriler</value></data>
   <data name="Explorer_Name" xml:space="preserve"><value>Sensör</value></data>
-  <data name="Explorer_Samples" xml:space="preserve"><value>{0:N0} örnek</value></data>
   <data name="Explorer_NoSensors" xml:space="preserve"><value>Mevcut filtrelerle eşleşen sensör yok.</value></data>
-  <data name="Explorer_SortHint" xml:space="preserve"><value>Sıralamak için sütun başlığına tıklayın; tekrar tıklamak yönü çevirir; üçüncü tıklama özel sıranıza döner.</value></data>
-  <data name="Explorer_Available" xml:space="preserve"><value>Veri veriyor</value></data>
-  <data name="Explorer_Unavailable" xml:space="preserve"><value>Veri yok</value></data>
   <data name="Col_Value" xml:space="preserve"><value>Anlık</value></data>
   <data name="Col_Minimum" xml:space="preserve"><value>Min</value></data>
   <data name="Col_Maximum" xml:space="preserve"><value>Maks</value></data>
@@ -221,9 +126,6 @@
   <data name="Hw_CopyAll" xml:space="preserve"><value>Tümünü kopyala</value></data>
   <data name="Hw_Export" xml:space="preserve"><value>Dışa aktar…</value></data>
   <data name="Hw_LiveSensors" xml:space="preserve"><value>Canlı sensörler</value></data>
-  <data name="Hw_Property" xml:space="preserve"><value>Özellik</value></data>
-  <data name="Hw_Value" xml:space="preserve"><value>Değer</value></data>
-  <data name="Hw_Source" xml:space="preserve"><value>Kaynak</value></data>
   <data name="Hw_Copied" xml:space="preserve"><value>Panoya kopyalandı.</value></data>
   <data name="Hw_Exported" xml:space="preserve"><value>Dışa aktarıldı: {0}</value></data>
   <data name="Hw_Matches" xml:space="preserve"><value>{1} cihazda {0} eşleşen özellik</value></data>
@@ -239,4 +141,222 @@
   <data name="Section_PerformanceCapabilities" xml:space="preserve"><value>Performans yetenekleri</value></data>
   <data name="Section_FirmwareDrivers" xml:space="preserve"><value>Ürün yazılımı ve sürücüler</value></data>
   <data name="Section_AdvancedDetails" xml:space="preserve"><value>Gelişmiş ayrıntılar</value></data>
+  <data name="App_AlreadyRunning" xml:space="preserve"><value>Nova Hardware zaten çalışıyor.</value></data>
+  <data name="App_UnexpectedError" xml:space="preserve"><value>Beklenmeyen bir hata oluştu ve günlüğe kaydedildi.</value></data>
+  <data name="Nav_Overlay" xml:space="preserve"><value>Mini Overlay</value></data>
+  <data name="Status_Poll" xml:space="preserve"><value>Okuma {0:0} ms · {1} sensör · {2} cihaz</value></data>
+  <data name="Status_Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Status_Warning" xml:space="preserve"><value>Uyarı</value></data>
+  <data name="Status_Critical" xml:space="preserve"><value>Kritik</value></data>
+  <data name="Window_Minimize" xml:space="preserve"><value>Simge durumuna küçült</value></data>
+  <data name="Window_Maximize" xml:space="preserve"><value>Ekranı kapla</value></data>
+  <data name="Window_Close" xml:space="preserve"><value>Kapat</value></data>
+  <data name="Common_Browse" xml:space="preserve"><value>Gözat…</value></data>
+  <data name="Category_MemoryModule" xml:space="preserve"><value>Bellek modülleri</value></data>
+  <data name="Group_Metadata" xml:space="preserve"><value>Teknik meta veriler</value></data>
+  <data name="Col_SensorId" xml:space="preserve"><value>Sensör kimliği</value></data>
+  <data name="Col_Samples" xml:space="preserve"><value>Örnek</value></data>
+  <data name="Explorer_Advanced" xml:space="preserve"><value>Gelişmiş</value></data>
+  <data name="Explorer_AdvancedHint" xml:space="preserve"><value>Sensör kimliği ve sağlayıcılarla daha yüksek satırlar; limit ve eşik gibi teknik meta verileri gösterir.</value></data>
+  <data name="Explorer_CompactHint" xml:space="preserve"><value>Çok sayıda sensörü aynı anda izlemek için yoğun satırlar.</value></data>
+  <data name="Explorer_AllDevices" xml:space="preserve"><value>Tüm cihazlar</value></data>
+  <data name="Explorer_AllProviders" xml:space="preserve"><value>Tüm sağlayıcılar</value></data>
+  <data name="Explorer_ClearFilters" xml:space="preserve"><value>Filtreleri temizle</value></data>
+  <data name="Explorer_FilterCategory" xml:space="preserve"><value>Sensör kategorisi</value></data>
+  <data name="Explorer_FilterDevice" xml:space="preserve"><value>Cihaz</value></data>
+  <data name="Explorer_FilterHardware" xml:space="preserve"><value>Donanım türü</value></data>
+  <data name="Explorer_FilterProvider" xml:space="preserve"><value>Sağlayıcı</value></data>
+  <data name="Explorer_FilterStatus" xml:space="preserve"><value>Sensör durumu</value></data>
+  <data name="Explorer_Filters" xml:space="preserve"><value>Filtreler</value></data>
+  <data name="Explorer_FlagActive" xml:space="preserve"><value>Etkin</value></data>
+  <data name="Explorer_MetadataNote" xml:space="preserve"><value>cihazın bildirdiği sabit değer, canlı ölçüm değil</value></data>
+  <data name="Explorer_More" xml:space="preserve"><value>Diğer işlemler</value></data>
+  <data name="Explorer_Pin" xml:space="preserve"><value>Grubun en üstüne sabitle</value></data>
+  <data name="Explorer_SearchPlaceholder" xml:space="preserve"><value>Sensörlerde ara…</value></data>
+  <data name="Explorer_Sort" xml:space="preserve"><value>Sıralama</value></data>
+  <data name="Explorer_SortReverse" xml:space="preserve"><value>Sırayı ters çevir</value></data>
+  <data name="Sort_Default" xml:space="preserve"><value>Özel sıra</value></data>
+  <data name="Sort_Name" xml:space="preserve"><value>Ad</value></data>
+  <data name="Sort_Value" xml:space="preserve"><value>Anlık değer</value></data>
+  <data name="Sort_Minimum" xml:space="preserve"><value>Minimum</value></data>
+  <data name="Sort_Maximum" xml:space="preserve"><value>Maksimum</value></data>
+  <data name="Sort_Average" xml:space="preserve"><value>Ortalama</value></data>
+  <data name="Sort_Temperature" xml:space="preserve"><value>En sıcak önce</value></data>
+  <data name="Sort_Power" xml:space="preserve"><value>En yüksek güç önce</value></data>
+  <data name="Sort_Utilization" xml:space="preserve"><value>En yüksek yük önce</value></data>
+  <data name="StatusFilter_All" xml:space="preserve"><value>Tüm sensörler</value></data>
+  <data name="StatusFilter_Reporting" xml:space="preserve"><value>Veri veren</value></data>
+  <data name="StatusFilter_NoData" xml:space="preserve"><value>Veri yok</value></data>
+  <data name="StatusFilter_Attention" xml:space="preserve"><value>Şüpheli veya eski</value></data>
+  <data name="StatusFilter_Hidden" xml:space="preserve"><value>Gizli</value></data>
+  <data name="StatusFilter_Pinned" xml:space="preserve"><value>Sabitlenmiş</value></data>
+  <data name="SensorType_Other" xml:space="preserve"><value>Diğer</value></data>
+  <data name="SensorType_Temperature" xml:space="preserve"><value>Sıcaklık</value></data>
+  <data name="SensorType_Voltage" xml:space="preserve"><value>Voltaj</value></data>
+  <data name="SensorType_Current" xml:space="preserve"><value>Akım</value></data>
+  <data name="SensorType_Power" xml:space="preserve"><value>Güç</value></data>
+  <data name="SensorType_Clock" xml:space="preserve"><value>Saat hızı</value></data>
+  <data name="SensorType_Utilization" xml:space="preserve"><value>Kullanım</value></data>
+  <data name="SensorType_FanSpeed" xml:space="preserve"><value>Fan hızı</value></data>
+  <data name="SensorType_FanControl" xml:space="preserve"><value>Fan kontrolü</value></data>
+  <data name="SensorType_Flow" xml:space="preserve"><value>Akış</value></data>
+  <data name="SensorType_Level" xml:space="preserve"><value>Seviye</value></data>
+  <data name="SensorType_Factor" xml:space="preserve"><value>Çarpan</value></data>
+  <data name="SensorType_Memory" xml:space="preserve"><value>Veri</value></data>
+  <data name="SensorType_MemorySmall" xml:space="preserve"><value>Veri</value></data>
+  <data name="SensorType_Throughput" xml:space="preserve"><value>Aktarım hızı</value></data>
+  <data name="SensorType_Frequency" xml:space="preserve"><value>Frekans</value></data>
+  <data name="SensorType_Energy" xml:space="preserve"><value>Enerji</value></data>
+  <data name="SensorType_Noise" xml:space="preserve"><value>Gürültü</value></data>
+  <data name="SensorType_Humidity" xml:space="preserve"><value>Nem</value></data>
+  <data name="SensorType_Conductivity" xml:space="preserve"><value>İletkenlik</value></data>
+  <data name="SensorType_Duration" xml:space="preserve"><value>Süre</value></data>
+  <data name="SensorType_Timing" xml:space="preserve"><value>Zamanlama</value></data>
+  <data name="SensorType_PerformanceLimit" xml:space="preserve"><value>Sınırlayıcı</value></data>
+  <data name="Origin_Official" xml:space="preserve"><value>Resmî özellik (katalog)</value></data>
+  <data name="Origin_Detected" xml:space="preserve"><value>Sistemden algılandı</value></data>
+  <data name="Origin_Live" xml:space="preserve"><value>Canlı ölçüm</value></data>
+  <data name="Origin_Unavailable" xml:space="preserve"><value>Mevcut değil</value></data>
+  <data name="Overlay_Show" xml:space="preserve"><value>Overlay'i göster</value></data>
+  <data name="Overlay_Hide" xml:space="preserve"><value>Overlay'i gizle</value></data>
+  <data name="Overlay_Visible" xml:space="preserve"><value>Overlay görünür</value></data>
+  <data name="Overlay_Intro" xml:space="preserve"><value>Oyun ve diğer tam ekran işler için canlı değerleri gösteren, her zaman üstte duran küçük bir pencere. Nova'nın geri kalanıyla aynı sensör motorunu okur; donanımı ayrıca sorgulamaz.</value></data>
+  <data name="Overlay_Metrics" xml:space="preserve"><value>Metrikler</value></data>
+  <data name="Overlay_Preset_Minimal" xml:space="preserve"><value>Minimal</value></data>
+  <data name="Overlay_Preset_Gaming" xml:space="preserve"><value>Oyun</value></data>
+  <data name="Overlay_Preset_FullHardware" xml:space="preserve"><value>Tüm donanım</value></data>
+  <data name="Overlay_Preset_Custom" xml:space="preserve"><value>Özel</value></data>
+  <data name="Overlay_Gpu" xml:space="preserve"><value>Ekran kartı</value></data>
+  <data name="Overlay_GpuAuto" xml:space="preserve"><value>Otomatik (harici GPU)</value></data>
+  <data name="Overlay_Appearance" xml:space="preserve"><value>Görünüm</value></data>
+  <data name="Overlay_Opacity" xml:space="preserve"><value>Arka plan opaklığı</value></data>
+  <data name="Overlay_Scale" xml:space="preserve"><value>Ölçek</value></data>
+  <data name="Overlay_FontSize" xml:space="preserve"><value>Yazı boyutu</value></data>
+  <data name="Overlay_TextColor" xml:space="preserve"><value>Değer rengi</value></data>
+  <data name="Overlay_AccentColor" xml:space="preserve"><value>Etiket ve grafik rengi</value></data>
+  <data name="Overlay_BackgroundColor" xml:space="preserve"><value>Arka plan rengi</value></data>
+  <data name="Overlay_ShowLabels" xml:space="preserve"><value>Etiketler</value></data>
+  <data name="Overlay_ShowGraphs" xml:space="preserve"><value>Grafikler</value></data>
+  <data name="Overlay_Horizontal" xml:space="preserve"><value>Yatay düzen</value></data>
+  <data name="Overlay_Behaviour" xml:space="preserve"><value>Davranış</value></data>
+  <data name="Overlay_ClickThrough" xml:space="preserve"><value>Tıklamaları geçir</value></data>
+  <data name="Overlay_ClickThroughHint" xml:space="preserve"><value>Fare tıklamaları overlay'den alttaki pencereye geçer. Overlay'i sürükleyip konumlandırmak için kapatın.</value></data>
+  <data name="Overlay_ShowOnStartup" xml:space="preserve"><value>Nova açıldığında overlay'i göster</value></data>
+  <data name="Overlay_AutoHideNova" xml:space="preserve"><value>Nova penceresi etkinken gizle</value></data>
+  <data name="Overlay_AutoHideGame" xml:space="preserve"><value>Kare üreten bir oyun yokken gizle</value></data>
+  <data name="Overlay_Hotkey" xml:space="preserve"><value>Göster / gizle kısayolu</value></data>
+  <data name="Overlay_HotkeyActive" xml:space="preserve"><value>{0} sistem genelinde etkin.</value></data>
+  <data name="Overlay_HotkeyInUse" xml:space="preserve"><value>{0} başka bir uygulama tarafından kullanılıyor. Farklı bir kısayol seçin.</value></data>
+  <data name="Overlay_Refresh" xml:space="preserve"><value>Overlay yenileme</value></data>
+  <data name="Overlay_ResetPosition" xml:space="preserve"><value>Konumu sıfırla</value></data>
+  <data name="Overlay_FpsSource" xml:space="preserve"><value>FPS ve kare süresi</value></data>
+  <data name="Overlay_FpsExplain" xml:space="preserve"><value>Kare hızı, Windows sunum olaylarını ETW ile okuyan PresentMon'dan (MIT lisansı) gelir. Oyunlara hiçbir şey enjekte edilmez. PresentMon Nova ile birlikte dağıtılmaz: kurun veya aşağıdan PresentMon.exe dosyasını gösterin. Yönetici hakları gerekir. PresentMon yoksa FPS 'Yok' görünür — Nova asla tahmin etmez.</value></data>
+  <data name="Overlay_PresentMonPath" xml:space="preserve"><value>PresentMon.exe yolu (isteğe bağlı)</value></data>
+  <data name="Overlay_PresentMonFound" xml:space="preserve"><value>Bulundu: {0}</value></data>
+  <data name="Overlay_PresentMonMissing" xml:space="preserve"><value>PresentMon bulunamadı.</value></data>
+  <data name="Overlay_GetPresentMon" xml:space="preserve"><value>PresentMon'u indir</value></data>
+  <data name="Overlay_Preview" xml:space="preserve"><value>Canlı önizleme</value></data>
+  <data name="Overlay_PreviewHint" xml:space="preserve"><value>Değerler ortak sensör motorundan güncellenir. FPS yalnızca overlay görünürken gösterilir.</value></data>
+  <data name="Overlay_Metric_CpuTemperature" xml:space="preserve"><value>CPU</value></data>
+  <data name="Overlay_Metric_CpuUtilization" xml:space="preserve"><value>CPU yükü</value></data>
+  <data name="Overlay_Metric_CpuClock" xml:space="preserve"><value>CPU saati</value></data>
+  <data name="Overlay_Metric_GpuTemperature" xml:space="preserve"><value>GPU</value></data>
+  <data name="Overlay_Metric_GpuHotspot" xml:space="preserve"><value>Sıcak nokta</value></data>
+  <data name="Overlay_Metric_GpuUtilization" xml:space="preserve"><value>GPU yükü</value></data>
+  <data name="Overlay_Metric_GpuClock" xml:space="preserve"><value>GPU saati</value></data>
+  <data name="Overlay_Metric_GpuPower" xml:space="preserve"><value>GPU gücü</value></data>
+  <data name="Overlay_Metric_GpuVram" xml:space="preserve"><value>VRAM</value></data>
+  <data name="Overlay_Metric_GpuFan" xml:space="preserve"><value>GPU fanı</value></data>
+  <data name="Overlay_Metric_RamUsed" xml:space="preserve"><value>RAM</value></data>
+  <data name="Overlay_Metric_RamUtilization" xml:space="preserve"><value>RAM yükü</value></data>
+  <data name="Overlay_Metric_Fps" xml:space="preserve"><value>FPS</value></data>
+  <data name="Overlay_Metric_FrameTime" xml:space="preserve"><value>Kare süresi</value></data>
+  <data name="Alerts_Intro" xml:space="preserve"><value>Yerleşik kurallar algılanan her bileşen için eşik kullanır: cihazın kendi bildirdiği limitler (TjMax, sürücü yavaşlama sıcaklığı, NVMe uyarı / kritik sıcaklığı) veya belgelenmiş üretici varsayılanları. Kendi değerlerinizi girmek için Otomatik'i kapatın.</value></data>
+  <data name="Alerts_Notifications" xml:space="preserve"><value>Bildirimleri göster</value></data>
+  <data name="Alerts_Automatic" xml:space="preserve"><value>Otomatik eşikler</value></data>
+  <data name="Alerts_Warning" xml:space="preserve"><value>Uyarı</value></data>
+  <data name="Alerts_Critical" xml:space="preserve"><value>Kritik</value></data>
+  <data name="Alerts_InEffect" xml:space="preserve"><value>Geçerli (uyarı / kritik)</value></data>
+  <data name="Alerts_Hysteresis" xml:space="preserve"><value>Histerezis</value></data>
+  <data name="Alerts_Cooldown" xml:space="preserve"><value>Bekleme (dk)</value></data>
+  <data name="Alerts_CustomRules" xml:space="preserve"><value>Özel kurallar</value></data>
+  <data name="Alerts_NewRule" xml:space="preserve"><value>Yeni kural</value></data>
+  <data name="Rule_Detected" xml:space="preserve"><value>Donanımın bildirdiği durumu kullanır.</value></data>
+  <data name="Rule_NoSensor" xml:space="preserve"><value>Bu sistemde eşleşen sensör yok.</value></data>
+  <data name="Rule_CpuTemperature" xml:space="preserve"><value>CPU sıcaklığı</value></data>
+  <data name="Rule_CpuTemperature_Desc" xml:space="preserve"><value>Paket / Tctl sıcaklığı, TjMax'a veya üretici limitlerine göre.</value></data>
+  <data name="Rule_GpuTemperature" xml:space="preserve"><value>GPU sıcaklığı</value></data>
+  <data name="Rule_GpuTemperature_Desc" xml:space="preserve"><value>GPU çekirdek sıcaklığı, sürücünün yavaşlama sıcaklığına veya üretici varsayılanlarına göre.</value></data>
+  <data name="Rule_GpuHotspot" xml:space="preserve"><value>GPU sıcak nokta</value></data>
+  <data name="Rule_GpuHotspot_Desc" xml:space="preserve"><value>Mevcutsa GPU kalıbındaki en sıcak nokta.</value></data>
+  <data name="Rule_GpuMemoryTemperature" xml:space="preserve"><value>GPU bellek sıcaklığı</value></data>
+  <data name="Rule_GpuMemoryTemperature_Desc" xml:space="preserve"><value>Mevcutsa bellek bağlantı sıcaklığı.</value></data>
+  <data name="Rule_StorageTemperature" xml:space="preserve"><value>Sürücü sıcaklığı</value></data>
+  <data name="Rule_StorageTemperature_Desc" xml:space="preserve"><value>Bildiriliyorsa sürücünün kendi uyarı ve kritik sıcaklıklarını kullanır; bunları asla karıştırmaz.</value></data>
+  <data name="Rule_MemoryUtilization" xml:space="preserve"><value>Bellek kullanımı</value></data>
+  <data name="Rule_MemoryUtilization_Desc" xml:space="preserve"><value>Fiziksel bellek yükü.</value></data>
+  <data name="Rule_ThermalThrottling" xml:space="preserve"><value>Termal kısma</value></data>
+  <data name="Rule_ThermalThrottling_Desc" xml:space="preserve"><value>Donanım termal yavaşlama bildirdiğinde tetiklenir.</value></data>
+  <data name="Rule_FanFailure" xml:space="preserve"><value>Fan arızası</value></data>
+  <data name="Rule_FanFailure_Desc" xml:space="preserve"><value>Dönmekte olan bir fan durur. 60 °C altındaki GPU sıfır devir modu yok sayılır.</value></data>
+  <data name="Severity_Information" xml:space="preserve"><value>Bilgi</value></data>
+  <data name="Severity_Warning" xml:space="preserve"><value>Uyarı</value></data>
+  <data name="Severity_Critical" xml:space="preserve"><value>Kritik</value></data>
+  <data name="AlertKind_WarningThreshold" xml:space="preserve"><value>Uyarı eşiği aşıldı</value></data>
+  <data name="AlertKind_CriticalThreshold" xml:space="preserve"><value>Kritik eşik aşıldı</value></data>
+  <data name="AlertKind_DeviceReportedLimit" xml:space="preserve"><value>Cihazın bildirdiği limite ulaşıldı</value></data>
+  <data name="AlertKind_UserThreshold" xml:space="preserve"><value>Sizin eşiğiniz aşıldı</value></data>
+  <data name="AlertKind_Throttling" xml:space="preserve"><value>Termal kısma</value></data>
+  <data name="AlertKind_FanFailure" xml:space="preserve"><value>Fan durdu</value></data>
+  <data name="ReportSection_Summary" xml:space="preserve"><value>Sistem özeti</value></data>
+  <data name="ReportSection_Inventory" xml:space="preserve"><value>Donanım envanteri</value></data>
+  <data name="ReportSection_Cpu" xml:space="preserve"><value>CPU bilgileri</value></data>
+  <data name="ReportSection_Gpu" xml:space="preserve"><value>GPU bilgileri</value></data>
+  <data name="ReportSection_Memory" xml:space="preserve"><value>Bellek bilgileri</value></data>
+  <data name="ReportSection_Storage" xml:space="preserve"><value>Depolama bilgileri</value></data>
+  <data name="ReportSection_Sensors" xml:space="preserve"><value>Güncel sensör değerleri</value></data>
+  <data name="ReportSection_Alerts" xml:space="preserve"><value>Uyarı geçmişi</value></data>
+  <data name="Reports_Failed" xml:space="preserve"><value>Dışa aktarma başarısız: {0}</value></data>
+  <data name="Reports_NothingSelected" xml:space="preserve"><value>Raporu önizlemek için en az bir bölüm seçin.</value></data>
+  <data name="Reports_OpenLast" xml:space="preserve"><value>Dışa aktarılan raporu aç</value></data>
+  <data name="SettingsSection_Appearance" xml:space="preserve"><value>Görünüm</value></data>
+  <data name="SettingsSection_Sensors" xml:space="preserve"><value>Sensörler</value></data>
+  <data name="SettingsSection_Overlay" xml:space="preserve"><value>Overlay</value></data>
+  <data name="SettingsSection_Alerts" xml:space="preserve"><value>Uyarılar</value></data>
+  <data name="SettingsSection_General" xml:space="preserve"><value>Genel</value></data>
+  <data name="Theme_NovaDark" xml:space="preserve"><value>Nova Koyu</value></data>
+  <data name="Theme_NovaLight" xml:space="preserve"><value>Nova Açık</value></data>
+  <data name="Theme_NovaMidnight" xml:space="preserve"><value>Nova Gece</value></data>
+  <data name="Theme_NovaOcean" xml:space="preserve"><value>Nova Okyanus</value></data>
+  <data name="Theme_System" xml:space="preserve"><value>Windows'u izle</value></data>
+  <data name="Settings_SystemThemeHint" xml:space="preserve"><value>“Windows'u izle”, Windows uygulama moduna göre Nova Açık ile Nova Koyu arasında anında geçiş yapar.</value></data>
+  <data name="Settings_Accent" xml:space="preserve"><value>Vurgu rengi</value></data>
+  <data name="Settings_ResetDefault" xml:space="preserve"><value>Varsayılan</value></data>
+  <data name="Settings_StatusColors" xml:space="preserve"><value>Durum renkleri</value></data>
+  <data name="Settings_StatusHint" xml:space="preserve"><value>Yalnızca durumun bir anlam taşıdığı yerlerde kullanılır: eşikler, uyarılar, sağlayıcı durumu. Tema varsayılanı için boş bırakın.</value></data>
+  <data name="Settings_Interface" xml:space="preserve"><value>Arayüz</value></data>
+  <data name="Settings_Animations" xml:space="preserve"><value>Animasyonlar</value></data>
+  <data name="Settings_Comfortable" xml:space="preserve"><value>Rahat yoğunluk (daha büyük kontroller)</value></data>
+  <data name="Settings_Typography" xml:space="preserve"><value>Yazı boyutu</value></data>
+  <data name="Typography_Small" xml:space="preserve"><value>Küçük</value></data>
+  <data name="Typography_Default" xml:space="preserve"><value>Varsayılan</value></data>
+  <data name="Typography_Large" xml:space="preserve"><value>Büyük</value></data>
+  <data name="Settings_Polling" xml:space="preserve"><value>Sensör okuma aralığı</value></data>
+  <data name="Settings_PollingHint" xml:space="preserve"><value>Tek bir merkezi döngü tüm sağlayıcıları bu aralıkta okur; tüm görünümler ve overlay bunu paylaşır.</value></data>
+  <data name="Settings_ExplorerRefresh" xml:space="preserve"><value>Sensör tablosu yenileme</value></data>
+  <data name="Settings_DisplayMode" xml:space="preserve"><value>Sensör tablosu</value></data>
+  <data name="Settings_AdvancedDefault" xml:space="preserve"><value>Gelişmiş görünüm (varsayılan Kompakt)</value></data>
+  <data name="Settings_SensorPrefs" xml:space="preserve"><value>Sensör tercihleri</value></data>
+  <data name="Settings_ClearFavorites" xml:space="preserve"><value>Favorileri ve sabitlemeleri temizle</value></data>
+  <data name="Settings_OpenOverlayPage" xml:space="preserve"><value>Tüm overlay seçenekleri…</value></data>
+  <data name="Settings_AlertsHint" xml:space="preserve"><value>Eşikler, bekleme süreleri ve histerezis Uyarılar sayfasında bileşen bazında düzenlenir.</value></data>
+  <data name="Settings_OpenAlertsPage" xml:space="preserve"><value>Uyarı kurallarını düzenle…</value></data>
+  <data name="Settings_Startup" xml:space="preserve"><value>Başlangıç</value></data>
+  <data name="Settings_LaunchWithWindows" xml:space="preserve"><value>Windows ile başlat</value></data>
+  <data name="Settings_StartMinimized" xml:space="preserve"><value>Küçültülmüş başlat</value></data>
+  <data name="Settings_VerboseLogging" xml:space="preserve"><value>Ayrıntılı günlük (yeniden başlatma gerekir)</value></data>
+  <data name="Settings_OpenLogs" xml:space="preserve"><value>Günlükleri aç</value></data>
+  <data name="Settings_Restart" xml:space="preserve"><value>Nova'yı yeniden başlat</value></data>
+  <data name="Settings_RestartRequired" xml:space="preserve"><value>Kaydedildi. Bazı değişiklikler yeniden başlatmadan sonra geçerli olur.</value></data>
+  <data name="Settings_Licenses" xml:space="preserve"><value>Sensör verisi: LibreHardwareMonitor (MPL-2.0), NVIDIA NVAPI / NVML, AMD ADLX. İsteğe bağlı FPS: PresentMon (MIT, dahil değildir).</value></data>
 </root>

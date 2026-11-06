@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NovaHardware.Core.Abstractions;
 using NovaHardware.Core.Sensors;
-using NovaHardware.Core.Stress;
+using NovaHardware.Benchmark.Stress;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.Sensors;
-using NovaHardware.Domain.Stress;
+
 
 namespace NovaHardware.Tests;
 

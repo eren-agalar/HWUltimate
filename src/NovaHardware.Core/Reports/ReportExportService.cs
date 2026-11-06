@@ -4,13 +4,23 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using NovaHardware.Core.Abstractions;
+using NovaHardware.Core.HardwareInfo;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.Reports;
 using NovaHardware.Domain.Sensors;
 
 namespace NovaHardware.Core.Reports;
 
-/// <summary>Renders hardware reports to HTML, JSON, plain text and CSV. Missing values are written as "N/A".</summary>
+/// <summary>One row of the in-app report preview.</summary>
+public sealed record PreviewRow(string Label, string Value, string? Detail = null, bool IsAvailable = true);
+
+/// <summary>A titled block of the in-app report preview (optionally one per device).</summary>
+public sealed record PreviewSection(string Title, string? Subtitle, IReadOnlyList<PreviewRow> Rows);
+
+/// <summary>
+/// Renders Nova hardware reports (HTML, JSON, CSV, plain text) and a structured preview of the same content.
+/// Unavailable values are written as "N/A" / "Not Available"; nothing is estimated.
+/// </summary>
 public sealed class ReportExportService : IReportExportService
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
@@ -23,43 +33,49 @@ public sealed class ReportExportService : IReportExportService
         Converters = { new JsonStringEnumConverter() },
     };
 
-    public IReadOnlyList<ReportFormat> SupportedFormats { get; } = [ReportFormat.Html, ReportFormat.Json, ReportFormat.Text, ReportFormat.Csv];
+    public static IReadOnlyList<(ReportSections Section, HardwareCategory[] Categories, string Title)> ComponentSections { get; } =
+    [
+        (ReportSections.Cpu, [HardwareCategory.Cpu], "Processor"),
+        (ReportSections.Gpu, [HardwareCategory.Gpu], "Graphics"),
+        (ReportSections.Memory, [HardwareCategory.Memory], "Memory"),
+        (ReportSections.Storage, [HardwareCategory.Storage], "Storage"),
+    ];
+
+    public IReadOnlyList<ReportFormat> SupportedFormats { get; } = [ReportFormat.Html, ReportFormat.Csv, ReportFormat.Json, ReportFormat.Text];
 
     public static string FileExtension(ReportFormat format) => format switch
     {
         ReportFormat.Html => ".html",
         ReportFormat.Json => ".json",
-        ReportFormat.Text => ".txt",
         ReportFormat.Csv => ".csv",
         _ => ".txt",
     };
 
+    /// <summary>Writes the report, reads it back and validates it. Throws <see cref="InvalidDataException"/> if validation fails.</summary>
     public async Task ExportAsync(ReportData data, ReportFormat format, string path, CancellationToken cancellationToken = default)
     {
         var content = Render(data, format);
         var dir = Path.GetDirectoryName(Path.GetFullPath(path));
-        if (!string.IsNullOrEmpty(dir))
-        {
-            Directory.CreateDirectory(dir);
-        }
-
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         await File.WriteAllTextAsync(path, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: format == ReportFormat.Csv), cancellationToken).ConfigureAwait(false);
+
+        var written = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
+        var (ok, error) = ReportValidator.Validate(format, written);
+        if (!ok) throw new InvalidDataException($"The exported {format} file failed validation: {error}");
     }
 
     public string Render(ReportData data, ReportFormat format) => format switch
     {
         ReportFormat.Html => RenderHtml(data),
         ReportFormat.Json => RenderJson(data),
-        ReportFormat.Text => RenderText(data),
         ReportFormat.Csv => RenderCsv(data),
+        ReportFormat.Text => RenderText(data),
         _ => throw new ArgumentOutOfRangeException(nameof(format), format, null),
     };
 
     internal static string FormatValue(double? value, SensorUnit unit) => unit.FormatValue(value, Inv);
 
-    private static string Bytes(ulong? bytes) => bytes is { } b ? $"{b / 1024d / 1024 / 1024:0.0} GB" : "N/A";
-
-    private static IEnumerable<(string Key, string? Value)> SummaryRows(SystemSummary s) =>
+    public static IEnumerable<(string Key, string? Value)> SummaryRows(SystemSummary s) =>
     [
         ("Computer", s.ComputerName),
         ("Operating system", s.OperatingSystem),
@@ -69,7 +85,7 @@ public sealed class ReportExportService : IReportExportService
         ("BIOS", Join(s.BiosVersion, s.BiosDate)),
         ("Processor", s.Processor),
         ("Cores / threads", s.PhysicalCores is null ? null : $"{s.PhysicalCores} / {s.LogicalProcessors}"),
-        ("Installed memory", s.TotalMemoryBytes is null ? null : Bytes(s.TotalMemoryBytes)),
+        ("Installed memory", s.TotalMemoryBytes is { } b ? $"{b / 1024d / 1024 / 1024:0.0} GB" : null),
         ("Graphics", s.Gpus.Count == 0 ? null : string.Join("; ", s.Gpus)),
         ("Uptime", s.Uptime is { } u ? $"{(int)u.TotalDays}d {u.Hours}h {u.Minutes}m" : null),
     ];
@@ -80,7 +96,66 @@ public sealed class ReportExportService : IReportExportService
     private static string DeviceName(ReportData data, string deviceId) =>
         data.Sensors.Devices.FirstOrDefault(d => d.DeviceId == deviceId)?.Name ?? deviceId;
 
-    // ---------------------------------------------------------------- JSON
+    private static IEnumerable<SensorReading> ReportSensors(ReportData d) => d.Sensors.Sensors;
+
+    private static IEnumerable<(string Title, IReadOnlyList<DeviceInfo> Devices)> Components(ReportData d) =>
+        ComponentSections.Where(c => d.Sections.HasFlag(c.Section))
+            .Select(c => (c.Title, (IReadOnlyList<DeviceInfo>)d.Inventory.Devices.Where(x => c.Categories.Contains(x.Category)).ToList()));
+
+    // ================================================================ preview
+    /// <summary>Structured preview of exactly the content that will be exported, for native rendering in the app.</summary>
+    public static IReadOnlyList<PreviewSection> BuildPreview(ReportData d)
+    {
+        var list = new List<PreviewSection>();
+        if (d.Sections.HasFlag(ReportSections.Summary))
+        {
+            list.Add(new PreviewSection("System summary", null,
+                SummaryRows(d.Inventory.Summary).Select(r => new PreviewRow(r.Key, r.Value ?? "N/A", IsAvailable: r.Value is not null)).ToList()));
+        }
+
+        if (d.Sections.HasFlag(ReportSections.Inventory))
+        {
+            list.Add(new PreviewSection("Hardware inventory", $"{d.Inventory.Devices.Count} devices",
+                d.Inventory.Devices.Select(x => new PreviewRow(x.Name, x.Category.ToString(), x.Source)).ToList()));
+        }
+
+        foreach (var (title, devices) in Components(d))
+        {
+            if (devices.Count == 0)
+            {
+                list.Add(new PreviewSection(title, null, [new PreviewRow("Devices", "None detected", IsAvailable: false)]));
+                continue;
+            }
+
+            foreach (var dev in devices)
+            {
+                list.Add(new PreviewSection($"{title} — {dev.Name}", dev.Source,
+                    dev.Properties.Select(p => new PreviewRow(p.Name, HardwareInfoExporter.FormatValue(p), p.Source, p.IsAvailable)).ToList()));
+            }
+        }
+
+        if (d.Sections.HasFlag(ReportSections.Sensors))
+        {
+            foreach (var g in ReportSensors(d).GroupBy(s => s.DeviceId))
+            {
+                list.Add(new PreviewSection($"Sensors — {DeviceName(d, g.Key)}", null,
+                    g.Select(s => new PreviewRow(s.Name, FormatValue(s.Value, s.Unit),
+                        $"min {FormatValue(s.Minimum, s.Unit)} · max {FormatValue(s.Maximum, s.Unit)} · avg {FormatValue(s.Average, s.Unit)} · {s.ProviderName}", s.Value.HasValue)).ToList()));
+            }
+        }
+
+        if (d.Sections.HasFlag(ReportSections.Alerts))
+        {
+            list.Add(new PreviewSection("Alert history", $"{d.Alerts.Count} events",
+                d.Alerts.Count == 0
+                    ? [new PreviewRow("Alerts", "No alerts recorded", IsAvailable: false)]
+                    : d.Alerts.Select(a => new PreviewRow(a.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", Inv), a.Message, $"{a.Severity} · {a.RuleName}")).ToList()));
+        }
+
+        return list;
+    }
+
+    // ================================================================ JSON
     private static string RenderJson(ReportData d)
     {
         var doc = new
@@ -89,9 +164,12 @@ public sealed class ReportExportService : IReportExportService
             version = d.ApplicationVersion,
             generatedAt = d.GeneratedAt,
             summary = d.Sections.HasFlag(ReportSections.Summary) ? d.Inventory.Summary : null,
-            devices = d.Sections.HasFlag(ReportSections.Devices) ? d.Inventory.Devices : null,
+            inventory = d.Sections.HasFlag(ReportSections.Inventory)
+                ? d.Inventory.Devices.Select(x => new { x.Name, x.Category, x.Manufacturer, x.Model, x.Source })
+                : null,
+            components = Components(d).ToDictionary(c => c.Title, c => c.Devices),
             sensors = d.Sections.HasFlag(ReportSections.Sensors)
-                ? d.Sensors.Sensors.Select(s => new
+                ? ReportSensors(d).Select(s => new
                 {
                     s.SensorId,
                     device = DeviceName(d, s.DeviceId),
@@ -106,138 +184,95 @@ public sealed class ReportExportService : IReportExportService
                     provider = s.ProviderName,
                     s.Availability,
                     s.Quality,
+                    s.Kind,
                     s.Timestamp,
                 })
                 : null,
             alerts = d.Sections.HasFlag(ReportSections.Alerts) ? d.Alerts : null,
-            stressTests = d.Sections.HasFlag(ReportSections.StressTests) ? d.StressTests : null,
             warnings = d.Inventory.Warnings.Count > 0 ? d.Inventory.Warnings : null,
         };
         return JsonSerializer.Serialize(doc, JsonOptions);
     }
 
-    // ---------------------------------------------------------------- CSV
+    // ================================================================ CSV
+    public const string CsvHeader = "Section,Device,Group,Name,Value,Minimum,Maximum,Average,Unit,Source,Status";
+
     private static string RenderCsv(ReportData d)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Device,Sensor,Type,Value,Minimum,Maximum,Average,Unit,Provider,Quality,Timestamp,SensorId");
-        foreach (var s in d.Sensors.Sensors)
+        sb.AppendLine(CsvHeader);
+        void Row(params string?[] cells) => sb.AppendLine(string.Join(',', cells.Select(c => Csv(c ?? string.Empty))));
+        static string Num(double? v) => v?.ToString("R", Inv) ?? string.Empty;
+
+        if (d.Sections.HasFlag(ReportSections.Summary))
         {
-            sb.AppendJoin(',',
-                Csv(DeviceName(d, s.DeviceId)), Csv(s.Name), s.Type,
-                Num(s.Value), Num(s.Minimum), Num(s.Maximum), Num(s.Average),
-                Csv(s.UnitSymbol), Csv(s.ProviderName), s.Quality,
-                s.Timestamp.ToString("O", Inv), Csv(s.SensorId));
-            sb.AppendLine();
+            foreach (var (k, v) in SummaryRows(d.Inventory.Summary)) Row("Summary", "", "", k, v ?? "N/A", "", "", "", "", "WMI", v is null ? "NotAvailable" : "Available");
+        }
+
+        if (d.Sections.HasFlag(ReportSections.Inventory))
+        {
+            foreach (var x in d.Inventory.Devices) Row("Inventory", x.Name, x.Category.ToString(), "Device", x.Model ?? x.Name, "", "", "", "", x.Source, "Available");
+        }
+
+        foreach (var (title, devices) in Components(d))
+        {
+            foreach (var dev in devices)
+                foreach (var p in dev.Properties)
+                    Row(title, dev.Name, HardwareInfoExporter.SectionOf(p), p.Name, HardwareInfoExporter.FormatValue(p), "", "", "", "", p.Source, p.Status.ToString());
+        }
+
+        if (d.Sections.HasFlag(ReportSections.Sensors))
+        {
+            foreach (var s in ReportSensors(d))
+            {
+                Row("Sensors", DeviceName(d, s.DeviceId), s.Type.ToString(), s.Name, Num(s.Value), Num(s.Minimum), Num(s.Maximum), Num(s.Average), s.UnitSymbol, s.ProviderName, s.Quality.ToString());
+            }
+        }
+
+        if (d.Sections.HasFlag(ReportSections.Alerts))
+        {
+            foreach (var a in d.Alerts) Row("Alerts", a.DeviceName, a.Severity.ToString(), a.RuleName, a.Message, "", "", "", a.Unit.ToSymbol(), a.Kind.ToString(), a.State.ToString());
         }
 
         return sb.ToString();
-
-        static string Num(double? v) => v?.ToString("R", Inv) ?? string.Empty;
     }
 
-    internal static string Csv(string value) =>
+    public static string Csv(string value) =>
         value.IndexOfAny([',', '"', '\n', '\r']) >= 0 ? $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"" : value;
 
-    // ---------------------------------------------------------------- TEXT
+    // ================================================================ TEXT
     private static string RenderText(ReportData d)
     {
         var sb = new StringBuilder();
         sb.AppendLine("NOVA HARDWARE — SYSTEM REPORT");
         sb.AppendLine($"Generated: {d.GeneratedAt:yyyy-MM-dd HH:mm:ss zzz}    Version: {d.ApplicationVersion}");
         sb.AppendLine(new string('=', 78));
-
-        if (d.Sections.HasFlag(ReportSections.Summary))
+        foreach (var section in BuildPreview(d))
         {
-            Section(sb, "SYSTEM SUMMARY");
-            foreach (var (k, v) in SummaryRows(d.Inventory.Summary))
+            sb.AppendLine();
+            sb.AppendLine(section.Title.ToUpperInvariant() + (section.Subtitle is null ? "" : $"  ({section.Subtitle})"));
+            sb.AppendLine(new string('-', Math.Min(78, section.Title.Length)));
+            foreach (var r in section.Rows)
             {
-                sb.AppendLine($"  {k,-20} {v ?? "N/A"}");
-            }
-        }
-
-        if (d.Sections.HasFlag(ReportSections.Devices))
-        {
-            Section(sb, "DEVICES");
-            foreach (var group in d.Inventory.Devices.GroupBy(x => x.Category).OrderBy(g => g.Key))
-            {
-                sb.AppendLine($"  [{group.Key}]");
-                foreach (var dev in group)
-                {
-                    sb.AppendLine($"    {dev.Name}");
-                    foreach (var p in dev.Properties)
-                    {
-                        sb.AppendLine($"      {p.Name,-28} {p.Value}");
-                    }
-                }
-            }
-        }
-
-        if (d.Sections.HasFlag(ReportSections.Sensors))
-        {
-            Section(sb, "SENSORS");
-            foreach (var group in d.Sensors.Sensors.GroupBy(s => s.DeviceId))
-            {
-                sb.AppendLine($"  {DeviceName(d, group.Key)}");
-                foreach (var s in group)
-                {
-                    sb.AppendLine($"    {s.Name,-32} {FormatValue(s.Value, s.Unit),14}  min {FormatValue(s.Minimum, s.Unit),12}  max {FormatValue(s.Maximum, s.Unit),12}  avg {FormatValue(s.Average, s.Unit),12}");
-                }
-            }
-        }
-
-        if (d.Sections.HasFlag(ReportSections.Alerts))
-        {
-            Section(sb, "ALERTS");
-            if (d.Alerts.Count == 0) sb.AppendLine("  No alerts recorded.");
-            foreach (var a in d.Alerts)
-            {
-                sb.AppendLine($"  {a.Timestamp:yyyy-MM-dd HH:mm:ss} [{a.Severity}] {a.RuleName}: {a.Message}");
-            }
-        }
-
-        if (d.Sections.HasFlag(ReportSections.StressTests))
-        {
-            Section(sb, "STABILITY TESTS");
-            if (d.StressTests.Count == 0) sb.AppendLine("  No stability tests run in this session.");
-            foreach (var t in d.StressTests)
-            {
-                sb.AppendLine($"  {t.StartedAt:yyyy-MM-dd HH:mm} {t.Kind,-18} {t.Outcome,-15} {t.Summary}");
+                sb.Append("  ").Append(r.Label.PadRight(34)).Append(' ').Append(r.Value);
+                if (r.Detail is not null) sb.Append("   [").Append(r.Detail).Append(']');
+                sb.AppendLine();
             }
         }
 
         return sb.ToString();
-
-        static void Section(StringBuilder sb, string title)
-        {
-            sb.AppendLine();
-            sb.AppendLine(title);
-            sb.AppendLine(new string('-', title.Length));
-        }
     }
 
-    // ---------------------------------------------------------------- HTML
+    // ================================================================ HTML
     /// <summary>Escapes markup-significant characters only; the document is UTF-8 so symbols like °C stay readable.</summary>
     public static string H(string? s)
     {
         s ??= "N/A";
-        if (s.AsSpan().IndexOfAny("&<>\"'") < 0)
-        {
-            return s;
-        }
-
+        if (s.AsSpan().IndexOfAny("&<>\"'") < 0) return s;
         var sb = new StringBuilder(s.Length + 16);
         foreach (var c in s)
         {
-            sb.Append(c switch
-            {
-                '&' => "&amp;",
-                '<' => "&lt;",
-                '>' => "&gt;",
-                '"' => "&quot;",
-                '\'' => "&#39;",
-                _ => c.ToString(),
-            });
+            sb.Append(c switch { '&' => "&amp;", '<' => "&lt;", '>' => "&gt;", '"' => "&quot;", '\'' => "&#39;", _ => c.ToString() });
         }
 
         return sb.ToString();
@@ -251,127 +286,127 @@ public sealed class ReportExportService : IReportExportService
             <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
             <title>Nova Hardware Report</title>
             <style>
-            :root{--bg:#0b0e14;--panel:#121722;--line:#232b3a;--text:#e6ebf5;--muted:#8a96ad;--accent:#5b8cff;--ok:#3ccf91;--bad:#ff5d6c;--warn:#ffb547}
-            @media (prefers-color-scheme: light){:root{--bg:#f5f7fb;--panel:#fff;--line:#e2e7f0;--text:#141a26;--muted:#5c6880}}
-            *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Segoe UI",system-ui,sans-serif}
-            main{max-width:1100px;margin:0 auto;padding:32px 16px}
-            header h1{margin:0;font-size:28px;letter-spacing:.08em}header p{margin:4px 0 0;color:var(--muted)}
-            .accent{color:var(--accent)}section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:20px}
-            h2{margin:0 0 12px;font-size:16px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
-            h3{margin:18px 0 8px;font-size:15px}table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-            th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--muted);font-weight:600}
-            td.n{text-align:right;white-space:nowrap}.wrap{overflow-x:auto}.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line)}
-            .Passed{color:var(--ok)}.Failed,.Critical,.AbortedThermal{color:var(--bad)}.Warning{color:var(--warn)}.muted{color:var(--muted)}
+            :root{--bg:#11151d;--panel:#191f2a;--surface:#202838;--line:#2a3443;--text:#f3f5f8;--muted:#929dae;--accent:#6595ff;--ok:#36c991;--warn:#e9ac4b;--bad:#e45d65}
+            @media (prefers-color-scheme: light){:root{--bg:#f4f6f9;--panel:#fff;--surface:#f0f3f7;--line:#dfe4eb;--text:#151a22;--muted:#5d6878;--accent:#2f6bff}}
+            *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+            main{max-width:1120px;margin:0 auto;padding:40px 16px}
+            header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line);padding-bottom:18px}
+            header h1{margin:0;font-size:26px;letter-spacing:.12em;font-weight:600}header h1 span{color:var(--accent)}
+            header p{margin:0;color:var(--muted);font-size:13px}
+            section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:18px}
+            h2{margin:0 0 2px;font-size:15px;font-weight:600}.sub{color:var(--muted);font-size:12px;margin-bottom:10px}
+            table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+            th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+            th{color:var(--muted);font-weight:500;width:34%}td.n{text-align:right;white-space:nowrap}
+            tr:last-child td,tr:last-child th{border-bottom:0}.na{color:var(--muted);font-style:italic}.src{color:var(--muted);font-size:12px}
+            .wrap{overflow-x:auto}.Warning{color:var(--warn)}.Critical{color:var(--bad)}.Information{color:var(--accent)}
+            footer{color:var(--muted);font-size:12px;margin-top:28px;text-align:center}
             </style></head><body><main>
             """);
-        sb.Append(CultureInfo.InvariantCulture, $"<header><h1>NOVA <span class=\"accent\">HARDWARE</span></h1><p>System report · generated {H(d.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss zzz", Inv))} · v{H(d.ApplicationVersion)}</p></header>");
+        sb.Append(Inv, $"<header><h1>NOVA <span>HARDWARE</span></h1><p>System report · {H(d.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss zzz", Inv))} · v{H(d.ApplicationVersion)}</p></header>");
 
-        if (d.Sections.HasFlag(ReportSections.Summary))
+        foreach (var section in BuildPreview(d))
         {
-            sb.Append("<section><h2>System summary</h2><table>");
-            foreach (var (k, v) in SummaryRows(d.Inventory.Summary))
+            var isSensors = section.Title.StartsWith("Sensors — ", StringComparison.Ordinal);
+            sb.Append(Inv, $"<section><h2>{H(section.Title)}</h2>");
+            if (section.Subtitle is not null) sb.Append(Inv, $"<div class=\"sub\">{H(section.Subtitle)}</div>");
+            sb.Append("<div class=\"wrap\"><table>");
+            foreach (var r in section.Rows)
             {
-                sb.Append(Inv, $"<tr><th>{H(k)}</th><td>{H(v)}</td></tr>");
+                var cls = r.IsAvailable ? (isSensors ? " class=\"n\"" : "") : " class=\"na\"";
+                var detail = r.Detail is null ? "" : $"<div class=\"src\">{H(r.Detail)}</div>";
+                sb.Append(Inv, $"<tr><th>{H(r.Label)}</th><td{cls}>{H(r.Value)}{detail}</td></tr>");
             }
 
-            sb.Append("</table></section>");
-        }
-
-        if (d.Sections.HasFlag(ReportSections.Devices))
-        {
-            sb.Append("<section><h2>Devices</h2>");
-            foreach (var group in d.Inventory.Devices.GroupBy(x => x.Category).OrderBy(g => g.Key))
-            {
-                foreach (var dev in group)
-                {
-                    sb.Append(Inv, $"<h3>{H(dev.Name)} <span class=\"tag\">{H(group.Key.ToString())}</span></h3>");
-                    if (dev.Properties.Count > 0)
-                    {
-                        sb.Append("<div class=\"wrap\"><table>");
-                        foreach (var p in dev.Properties)
-                        {
-                            sb.Append(Inv, $"<tr><th>{H(p.Name)}</th><td>{H(p.Value)}</td></tr>");
-                        }
-
-                        sb.Append("</table></div>");
-                    }
-                }
-            }
-
-            sb.Append("</section>");
-        }
-
-        if (d.Sections.HasFlag(ReportSections.Sensors))
-        {
-            sb.Append("<section><h2>Sensors</h2>");
-            foreach (var group in d.Sensors.Sensors.GroupBy(s => s.DeviceId))
-            {
-                sb.Append(Inv, $"<h3>{H(DeviceName(d, group.Key))}</h3><div class=\"wrap\"><table><tr><th>Sensor</th><th>Type</th><th>Current</th><th>Min</th><th>Max</th><th>Avg</th><th>Source</th></tr>");
-                foreach (var s in group)
-                {
-                    sb.Append(Inv, $"<tr><td>{H(s.Name)}</td><td class=\"muted\">{H(s.Type.ToString())}</td><td class=\"n\">{H(FormatValue(s.Value, s.Unit))}</td><td class=\"n\">{H(FormatValue(s.Minimum, s.Unit))}</td><td class=\"n\">{H(FormatValue(s.Maximum, s.Unit))}</td><td class=\"n\">{H(FormatValue(s.Average, s.Unit))}</td><td class=\"muted\">{H(s.ProviderName)}</td></tr>");
-                }
-
-                sb.Append("</table></div>");
-            }
-
-            sb.Append("</section>");
-        }
-
-        if (d.Sections.HasFlag(ReportSections.Alerts))
-        {
-            sb.Append("<section><h2>Alerts</h2>");
-            if (d.Alerts.Count == 0)
-            {
-                sb.Append("<p class=\"muted\">No alerts recorded.</p>");
-            }
-            else
-            {
-                sb.Append("<div class=\"wrap\"><table><tr><th>Time</th><th>Severity</th><th>Rule</th><th>Detail</th></tr>");
-                foreach (var a in d.Alerts)
-                {
-                    sb.Append(Inv, $"<tr><td>{H(a.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", Inv))}</td><td class=\"{a.Severity}\">{a.Severity}</td><td>{H(a.RuleName)}</td><td>{H(a.Message)}</td></tr>");
-                }
-
-                sb.Append("</table></div>");
-            }
-
-            sb.Append("</section>");
-        }
-
-        if (d.Sections.HasFlag(ReportSections.StressTests))
-        {
-            sb.Append("<section><h2>Stability tests</h2>");
-            if (d.StressTests.Count == 0)
-            {
-                sb.Append("<p class=\"muted\">No stability tests run in this session.</p>");
-            }
-            else
-            {
-                sb.Append("<div class=\"wrap\"><table><tr><th>Started</th><th>Test</th><th>Result</th><th>Duration</th><th>Iterations</th><th>Errors</th><th>Max temp</th></tr>");
-                foreach (var t in d.StressTests)
-                {
-                    sb.Append(Inv, $"<tr><td>{H(t.StartedAt.ToString("yyyy-MM-dd HH:mm", Inv))}</td><td>{t.Kind}</td><td class=\"{t.Outcome}\">{t.Outcome}</td><td class=\"n\">{t.Elapsed:hh\\:mm\\:ss}</td><td class=\"n\">{t.Iterations.ToString("N0", Inv)}</td><td class=\"n\">{t.Errors.ToString("N0", Inv)}</td><td class=\"n\">{H(FormatValue(t.MaxTemperature, SensorUnit.Celsius))}</td></tr>");
-                }
-
-                sb.Append("</table></div>");
-            }
-
-            sb.Append("</section>");
+            sb.Append("</table></div></section>");
         }
 
         if (d.Inventory.Warnings.Count > 0)
         {
             sb.Append("<section><h2>Collection notes</h2><ul>");
-            foreach (var w in d.Inventory.Warnings)
-            {
-                sb.Append(Inv, $"<li class=\"muted\">{H(w)}</li>");
-            }
-
+            foreach (var w in d.Inventory.Warnings) sb.Append(Inv, $"<li class=\"src\">{H(w)}</li>");
             sb.Append("</ul></section>");
         }
 
-        sb.Append("</main></body></html>");
+        sb.Append("<footer>Generated by Nova Hardware. Values marked Not Available were not exposed by the system; nothing is estimated.</footer></main></body></html>");
         return sb.ToString();
+    }
+}
+
+/// <summary>Checks that an exported report is well-formed before success is reported to the user.</summary>
+public static class ReportValidator
+{
+    public static (bool Ok, string? Error) Validate(ReportFormat format, string content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return (false, "file is empty");
+        switch (format)
+        {
+            case ReportFormat.Json:
+                try
+                {
+                    using var doc = JsonDocument.Parse(content);
+                    return doc.RootElement.TryGetProperty("product", out _) ? (true, null) : (false, "missing product header");
+                }
+                catch (JsonException ex)
+                {
+                    return (false, ex.Message);
+                }
+
+            case ReportFormat.Html:
+                return content.Contains("<html", StringComparison.OrdinalIgnoreCase) && content.TrimEnd().EndsWith("</html>", StringComparison.OrdinalIgnoreCase)
+                    ? (true, null) : (false, "HTML document is incomplete");
+
+            case ReportFormat.Csv:
+                var lines = SplitCsvRecords(content.TrimStart('﻿'));
+                if (lines.Count == 0 || lines[0] != ReportExportService.CsvHeader) return (false, "missing CSV header");
+                var expected = CountFields(lines[0]);
+                for (var i = 1; i < lines.Count; i++)
+                {
+                    if (CountFields(lines[i]) != expected) return (false, $"row {i + 1} has the wrong number of columns");
+                }
+
+                return (true, null);
+
+            default:
+                return content.StartsWith("NOVA HARDWARE", StringComparison.Ordinal) ? (true, null) : (false, "missing report header");
+        }
+    }
+
+    /// <summary>Splits CSV into records, honouring quoted newlines.</summary>
+    internal static List<string> SplitCsvRecords(string content)
+    {
+        var records = new List<string>();
+        var sb = new StringBuilder();
+        var quoted = false;
+        for (var i = 0; i < content.Length; i++)
+        {
+            var c = content[i];
+            if (c == '"') quoted = !quoted;
+            if (!quoted && (c == '\n' || c == '\r'))
+            {
+                if (c == '\r' && i + 1 < content.Length && content[i + 1] == '\n') i++;
+                if (sb.Length > 0) records.Add(sb.ToString());
+                sb.Clear();
+                continue;
+            }
+
+            sb.Append(c);
+        }
+
+        if (sb.Length > 0) records.Add(sb.ToString());
+        return records;
+    }
+
+    internal static int CountFields(string record)
+    {
+        var count = 1;
+        var quoted = false;
+        foreach (var c in record)
+        {
+            if (c == '"') quoted = !quoted;
+            else if (c == ',' && !quoted) count++;
+        }
+
+        return count;
     }
 }
