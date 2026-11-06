@@ -31,17 +31,15 @@ public sealed partial class ReportsViewModel : ObservableObject
     private readonly IReportExportService _export;
     private readonly IHardwareInventoryService _inventory;
     private readonly ISensorPollingService _polling;
-    private readonly IAlertService _alerts;
     private readonly AppPaths _paths;
 
-    public ReportsViewModel(IReportExportService export, IHardwareInventoryService inventory, ISensorPollingService polling, IAlertService alerts, AppPaths paths)
+    public ReportsViewModel(IReportExportService export, IHardwareInventoryService inventory, ISensorPollingService polling, AppPaths paths)
     {
         _export = export;
         _inventory = inventory;
         _polling = polling;
-        _alerts = alerts;
         _paths = paths;
-        foreach (var s in new[] { ReportSections.Summary, ReportSections.Inventory, ReportSections.Cpu, ReportSections.Gpu, ReportSections.Memory, ReportSections.Storage, ReportSections.Sensors, ReportSections.Alerts })
+        foreach (var s in new[] { ReportSections.Summary, ReportSections.Inventory, ReportSections.Cpu, ReportSections.Gpu, ReportSections.Memory, ReportSections.Storage, ReportSections.Sensors })
         {
             var o = new ReportSectionOption(s, true);
             o.PropertyChanged += (_, _) => RefreshPreview();
@@ -66,7 +64,6 @@ public sealed partial class ReportsViewModel : ObservableObject
         Sections = Sections.Where(s => s.IsIncluded).Aggregate(ReportSections.None, (a, s) => a | s.Section),
         Inventory = _inventory.Current,
         Sensors = _polling.Current,
-        Alerts = _alerts.RecentEvents,
     };
 
     /// <summary>Rebuilds the preview from current data. Loads the inventory first if it has not been collected yet.</summary>

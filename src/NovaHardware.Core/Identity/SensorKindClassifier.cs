@@ -6,7 +6,7 @@ namespace NovaHardware.Core.Identity;
 /// <summary>
 /// Separates live measurements from configuration / threshold values that some providers expose through the same
 /// sensor API (e.g. NVMe "Warning Composite Temperature", "Thermal Sensor High Limit", "Temperature Sensor Resolution").
-/// Metadata is kept and shown in the advanced view, but never presented or alerted on as a live reading.
+/// Metadata is kept and shown in the advanced view, but never presented as a live reading.
 /// </summary>
 public static partial class SensorKindClassifier
 {

@@ -29,6 +29,9 @@ public sealed record SettingsSection(string Key, string Icon)
     public string Title => Loc.Get($"SettingsSection_{Key}");
 }
 
+/// <summary>A named accent colour shown as a swatch.</summary>
+public sealed record ColorSwatch(string Name, string Hex);
+
 public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settings;
@@ -37,24 +40,20 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _loading;
 
     public SettingsViewModel(ISettingsService settings, ISensorPollingService polling, AppPaths paths,
-        SensorExplorerViewModel explorer, OverlayViewModel overlay, AlertsViewModel alerts)
+        SensorExplorerViewModel explorer)
     {
         _settings = settings;
         _polling = polling;
         _paths = paths;
         Explorer = explorer;
-        Overlay = overlay;
-        Alerts = alerts;
         Languages = Loc.Languages.Select(l => new LanguageOption(l.Culture, l.DisplayName)).ToList();
-        Sections = [new("Appearance", "Palette"), new("Sensors", "Thermometer"), new("Overlay", "Overlay"), new("Alerts", "Bell"), new("General", "Settings")];
+        Sections = [new("Appearance", "Palette"), new("Sensors", "Thermometer"), new("General", "Settings")];
         _selectedSection = Sections[0];
         Load();
         ThemeManager.Changed += (_, _) => RefreshThemeCards();
     }
 
     public SensorExplorerViewModel Explorer { get; }
-    public OverlayViewModel Overlay { get; }
-    public AlertsViewModel Alerts { get; }
     public IReadOnlyList<SettingsSection> Sections { get; }
     public IReadOnlyList<LanguageOption> Languages { get; }
     public ObservableCollection<ThemeOption> Themes { get; } = [];
@@ -126,7 +125,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     partial void OnSelectedSectionChanged(SettingsSection value)
     {
         if (value.Key == "General") RefreshProviders();
-        if (value.Key == "Alerts") Alerts.Load();
     }
 
     private static string? Hex(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();

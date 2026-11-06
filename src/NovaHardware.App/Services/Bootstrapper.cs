@@ -6,10 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NovaHardware.App.ViewModels;
 using NovaHardware.App.Views;
 using NovaHardware.Core.Abstractions;
-using NovaHardware.Core.Alerts;
 using NovaHardware.Core.Explorer;
 using NovaHardware.Core.Identity;
-using NovaHardware.Core.Overlay;
 using NovaHardware.Core.Reports;
 using NovaHardware.Core.Sensors;
 using NovaHardware.Core.Settings;
@@ -20,7 +18,6 @@ using NovaHardware.Infrastructure;
 using NovaHardware.Infrastructure.Cpu;
 using NovaHardware.Infrastructure.Discovery;
 using NovaHardware.Infrastructure.Gpu;
-using NovaHardware.Infrastructure.Overlay;
 using NovaHardware.Infrastructure.Preferences;
 using NovaHardware.Infrastructure.Settings;
 using NovaHardware.Infrastructure.Smbios;
@@ -79,13 +76,7 @@ public static class Bootstrapper
         services.AddSingleton<IDeviceDiscoveryService, SetupApiDiscoveryService>();
         services.AddSingleton<IHardwareInventoryService, HardwareInventoryService>();
 
-        services.AddSingleton<IAlertService, AlertService>();
         services.AddSingleton<IReportExportService, ReportExportService>();
-
-        // Overlay: frame timing source (PresentMon, not bundled) + controller that owns the overlay window.
-        services.AddSingleton<IFrameSource>(sp => new PresentMonFrameSource(sp.GetRequiredService<ILogger<PresentMonFrameSource>>(),
-            () => sp.GetRequiredService<ISettingsService>().Current.Overlay.PresentMonPath));
-        services.AddSingleton<OverlayController>();
 
         services.AddSingleton<IPreferenceStore<SensorExplorerState>>(sp =>
             new JsonPreferenceStore<SensorExplorerState>(Path.Combine(paths.Root, "sensor-explorer.json"), sp.GetRequiredService<ILogger<SensorExplorerState>>()));
@@ -93,8 +84,6 @@ public static class Bootstrapper
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<SensorExplorerViewModel>();
         services.AddSingleton<HardwareViewModel>();
-        services.AddSingleton<OverlayViewModel>();
-        services.AddSingleton<AlertsViewModel>();
         services.AddSingleton<ReportsViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<MainWindow>();

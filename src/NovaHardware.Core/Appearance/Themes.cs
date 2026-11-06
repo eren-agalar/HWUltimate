@@ -54,7 +54,7 @@ public readonly record struct Rgb(byte R, byte G, byte B)
         (byte)Math.Round(R + (other.R - R) * t), (byte)Math.Round(G + (other.G - G) * t), (byte)Math.Round(B + (other.B - B) * t));
 }
 
-/// <summary>All colour tokens of a theme. Every view, control and overlay draws only with these.</summary>
+/// <summary>All colour tokens of a theme. Every view and control draws only with these.</summary>
 public sealed record ThemePalette
 {
     public required string Name { get; init; }

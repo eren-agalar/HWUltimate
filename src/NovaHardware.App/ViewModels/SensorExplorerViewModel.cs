@@ -4,10 +4,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NovaHardware.App.Services;
 using NovaHardware.Core.Abstractions;
-using NovaHardware.Core.Alerts;
 using NovaHardware.Core.Explorer;
 using NovaHardware.Core.Settings;
-using NovaHardware.Domain.Alerts;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.Sensors;
 using NovaHardware.UI.Controls;
@@ -63,7 +61,6 @@ public sealed partial class ExplorerRow : ObservableObject
     public bool IsSensor => Kind == ExplorerNodeKind.Sensor;
     public double Indent => Depth * 16;
     public int Depth { get; private set; }
-    internal (double? Warning, double? Critical) Thresholds { get; set; }
 
     [ObservableProperty] private string _title = string.Empty;
     [ObservableProperty] private string _icon = "Other";
@@ -140,8 +137,6 @@ public sealed partial class ExplorerRow : ObservableObject
         Status = r.Quality switch
         {
             DataQuality.Suspect or DataQuality.Stale => NovaStatus.Warning,
-            _ when r.Value is { } v && Thresholds.Critical is { } crit && v >= crit => NovaStatus.Critical,
-            _ when r.Value is { } v && Thresholds.Warning is { } warn && v >= warn => NovaStatus.Warning,
             _ => NovaStatus.Inactive,
         };
     }
@@ -156,7 +151,6 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
 {
     private readonly ISensorPollingService _polling;
     private readonly IPreferenceStore<SensorExplorerState> _store;
-    private readonly IAlertService _alerts;
     private readonly Dictionary<string, ExplorerRow> _cache = new(StringComparer.Ordinal);
     private readonly DispatcherTimer _timer;
     private volatile SensorSnapshot _latest = SensorSnapshot.Empty;
@@ -165,11 +159,10 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     private int _version;
     private IReadOnlyList<ExplorerNode> _nodes = [];
 
-    public SensorExplorerViewModel(ISensorPollingService polling, IPreferenceStore<SensorExplorerState> store, IAlertService alerts)
+    public SensorExplorerViewModel(ISensorPollingService polling, IPreferenceStore<SensorExplorerState> store)
     {
         _polling = polling;
         _store = store;
-        _alerts = alerts;
         var loaded = store.Load();
         State = loaded.Sanitize();
         _isAdvanced = State.DisplayMode == ExplorerDisplayMode.Advanced;
@@ -292,12 +285,10 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     {
         var filter = CurrentFilter();
         _nodes = SensorExplorerBuilder.Build(snap, State, filter);
-        var thresholds = ResolveThresholds(snap);
         var rows = new List<ExplorerRow>(_nodes.Count);
         foreach (var node in _nodes)
         {
             if (!_cache.TryGetValue(node.Key, out var row)) _cache[node.Key] = row = new ExplorerRow(node.Key, Layout);
-            row.Thresholds = node.Sensor is { } s && thresholds.TryGetValue(s.SensorId, out var t) ? t : default;
             row.Configure(node);
             rows.Add(row);
         }
@@ -307,27 +298,6 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         ActiveFilterCount = new object?[] { GroupFilter.Value, CategoryFilter.Value, DeviceFilter.Value, ProviderFilter.Value }.Count(v => v is not null)
                             + (StatusFilter.Value is SensorStatusFilter.All or null ? 0 : 1);
         Summary = Loc.Format("Explorer_Count", snap.Sensors.Count(s => s.IsMeasurement), snap.Devices.Count, State.HiddenSensors.Count, State.FavoriteSensors.Count);
-    }
-
-    /// <summary>Warning / critical limits for alert-target sensors, from the same component rules the alerts use.</summary>
-    private Dictionary<string, (double? Warning, double? Critical)> ResolveThresholds(SensorSnapshot snap)
-    {
-        var result = new Dictionary<string, (double?, double?)>(StringComparer.Ordinal);
-        var byDevice = snap.Sensors.GroupBy(s => s.DeviceId).ToDictionary(g => g.Key, g => (IReadOnlyList<SensorReading>)g.ToList(), StringComparer.Ordinal);
-        foreach (var rule in _alerts.ComponentRules.Where(r => r.Role is not (ComponentRole.ThermalThrottling or ComponentRole.FanFailure)))
-        {
-            foreach (var device in snap.Devices)
-            {
-                if (!byDevice.TryGetValue(device.DeviceId, out var sensors)) continue;
-                foreach (var target in ThresholdResolver.Targets(rule.Role, device, sensors))
-                {
-                    var t = ThresholdResolver.Resolve(rule, device, sensors, target);
-                    result[target.SensorId] = (t.Warning?.Value, t.Critical?.Value);
-                }
-            }
-        }
-
-        return result;
     }
 
     private void UpdateFilterLists(SensorSnapshot snap)

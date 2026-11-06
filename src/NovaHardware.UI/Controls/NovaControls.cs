@@ -96,55 +96,6 @@ public class NovaChevron : Icon
     }
 }
 
-/// <summary>Minimal line graph for the overlay: draws the given samples, gaps where a value is missing.</summary>
-public sealed class Sparkline : FrameworkElement
-{
-    public static readonly DependencyProperty StrokeProperty = DependencyProperty.Register(nameof(Stroke), typeof(Brush), typeof(Sparkline),
-        new FrameworkPropertyMetadata(Brushes.SteelBlue, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty SamplesProperty = DependencyProperty.Register(nameof(Samples), typeof(IReadOnlyList<double?>), typeof(Sparkline),
-        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty VersionProperty = DependencyProperty.Register(nameof(Version), typeof(int), typeof(Sparkline),
-        new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.AffectsRender));
-
-    public Brush Stroke { get => (Brush)GetValue(StrokeProperty); set => SetValue(StrokeProperty, value); }
-    public IReadOnlyList<double?>? Samples { get => (IReadOnlyList<double?>?)GetValue(SamplesProperty); set => SetValue(SamplesProperty, value); }
-    /// <summary>Bump to redraw when the same sample list instance was updated in place.</summary>
-    public int Version { get => (int)GetValue(VersionProperty); set => SetValue(VersionProperty, value); }
-
-    protected override void OnRender(DrawingContext drawingContext)
-    {
-        var s = Samples;
-        if (s is null || s.Count < 2 || ActualWidth <= 0 || ActualHeight <= 0) return;
-        double min = double.MaxValue, max = double.MinValue;
-        foreach (var v in s)
-        {
-            if (v is not { } x) continue;
-            if (x < min) min = x;
-            if (x > max) max = x;
-        }
-
-        if (min == double.MaxValue) return;
-        if (max - min < 1e-6) { max += 1; min -= 1; }
-        var geometry = new StreamGeometry();
-        using (var ctx = geometry.Open())
-        {
-            var open = false;
-            for (var i = 0; i < s.Count; i++)
-            {
-                if (s[i] is not { } v) { open = false; continue; }
-                var p = new Point(i * ActualWidth / (s.Count - 1), ActualHeight - (v - min) / (max - min) * (ActualHeight - 2) - 1);
-                if (!open) { ctx.BeginFigure(p, false, false); open = true; }
-                else ctx.LineTo(p, true, false);
-            }
-        }
-
-        geometry.Freeze();
-        var pen = new Pen(Stroke, 1.4) { LineJoin = PenLineJoin.Round };
-        pen.Freeze();
-        drawingContext.DrawGeometry(null, pen, geometry);
-    }
-}
-
 /// <summary>Themed message dialog replacing the system MessageBox.</summary>
 public sealed class NovaDialog : Window
 {

@@ -28,7 +28,7 @@ public partial class SettingsView : UserControl
 
     private void ShowSection(string key)
     {
-        foreach (var page in new FrameworkElement[] { Appearance, Sensors, Overlay, Alerts, General })
+        foreach (var page in new FrameworkElement[] { Appearance, Sensors, General })
         {
             page.Visibility = page.Name == key ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -49,12 +49,4 @@ public partial class SettingsView : UserControl
         }
     }
 
-    private void OpenOverlay_Click(object sender, RoutedEventArgs e) => Navigate("Nav_Overlay");
-
-    private void OpenAlerts_Click(object sender, RoutedEventArgs e) => Navigate("Nav_Alerts");
-
-    private static void Navigate(string key)
-    {
-        if (Application.Current.MainWindow?.DataContext is MainViewModel main) main.NavigateCommand.Execute(key);
-    }
 }

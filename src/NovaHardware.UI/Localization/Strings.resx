@@ -7,31 +7,15 @@
   <data name="App_Tagline" xml:space="preserve"><value>Your Hardware. Every Detail. One Place.</value></data>
   <data name="Nav_Sensors" xml:space="preserve"><value>Sensors</value></data>
   <data name="Nav_Hardware" xml:space="preserve"><value>Hardware</value></data>
-  <data name="Nav_Alerts" xml:space="preserve"><value>Alerts</value></data>
   <data name="Nav_Reports" xml:space="preserve"><value>Reports</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Common_NA" xml:space="preserve"><value>N/A</value></data>
   <data name="Common_Refresh" xml:space="preserve"><value>Refresh</value></data>
-  <data name="Common_Save" xml:space="preserve"><value>Save</value></data>
   <data name="Common_Search" xml:space="preserve"><value>Search…</value></data>
   <data name="Common_Loading" xml:space="preserve"><value>Detecting hardware…</value></data>
-  <data name="Common_Type" xml:space="preserve"><value>Type</value></data>
-  <data name="Common_Add" xml:space="preserve"><value>Add</value></data>
-  <data name="Common_Remove" xml:space="preserve"><value>Remove</value></data>
-  <data name="Common_Clear" xml:space="preserve"><value>Clear</value></data>
   <data name="Elevation_Banner" xml:space="preserve"><value>Running without administrator rights. Motherboard, voltage and some CPU sensors are unavailable.</value></data>
   <data name="Elevation_Restart" xml:space="preserve"><value>Restart as administrator</value></data>
   <data name="Hw_Collected" xml:space="preserve"><value>Collected {0:g}</value></data>
-  <data name="Alerts_Events" xml:space="preserve"><value>Recent alerts</value></data>
-  <data name="Alerts_Name" xml:space="preserve"><value>Name</value></data>
-  <data name="Alerts_Enabled" xml:space="preserve"><value>On</value></data>
-  <data name="Alerts_Category" xml:space="preserve"><value>Device</value></data>
-  <data name="Alerts_Comparison" xml:space="preserve"><value>When</value></data>
-  <data name="Alerts_Threshold" xml:space="preserve"><value>Threshold</value></data>
-  <data name="Alerts_Sustain" xml:space="preserve"><value>Sustain (s)</value></data>
-  <data name="Alerts_Severity" xml:space="preserve"><value>Severity</value></data>
-  <data name="Alerts_Defaults" xml:space="preserve"><value>Restore defaults</value></data>
-  <data name="Alerts_None" xml:space="preserve"><value>No alerts so far.</value></data>
   <data name="Reports_Format" xml:space="preserve"><value>Format</value></data>
   <data name="Reports_Sections" xml:space="preserve"><value>Include</value></data>
   <data name="Reports_Export" xml:space="preserve"><value>Export report…</value></data>
@@ -143,7 +127,6 @@
   <data name="Section_AdvancedDetails" xml:space="preserve"><value>Advanced Details</value></data>
   <data name="App_AlreadyRunning" xml:space="preserve"><value>Nova Hardware is already running.</value></data>
   <data name="App_UnexpectedError" xml:space="preserve"><value>An unexpected error occurred and was logged.</value></data>
-  <data name="Nav_Overlay" xml:space="preserve"><value>Mini Overlay</value></data>
   <data name="Status_Poll" xml:space="preserve"><value>Poll {0:0} ms · {1} sensors · {2} devices</value></data>
   <data name="Status_Normal" xml:space="preserve"><value>Normal</value></data>
   <data name="Status_Warning" xml:space="preserve"><value>Warning</value></data>
@@ -151,7 +134,6 @@
   <data name="Window_Minimize" xml:space="preserve"><value>Minimize</value></data>
   <data name="Window_Maximize" xml:space="preserve"><value>Maximize</value></data>
   <data name="Window_Close" xml:space="preserve"><value>Close</value></data>
-  <data name="Common_Browse" xml:space="preserve"><value>Browse…</value></data>
   <data name="Category_MemoryModule" xml:space="preserve"><value>Memory modules</value></data>
   <data name="Group_Metadata" xml:space="preserve"><value>Technical metadata</value></data>
   <data name="Col_SensorId" xml:space="preserve"><value>Sensor ID</value></data>
@@ -217,97 +199,6 @@
   <data name="Origin_Detected" xml:space="preserve"><value>Detected from the system</value></data>
   <data name="Origin_Live" xml:space="preserve"><value>Live reading</value></data>
   <data name="Origin_Unavailable" xml:space="preserve"><value>Not available</value></data>
-  <data name="Overlay_Show" xml:space="preserve"><value>Show overlay</value></data>
-  <data name="Overlay_Hide" xml:space="preserve"><value>Hide overlay</value></data>
-  <data name="Overlay_Visible" xml:space="preserve"><value>Overlay visible</value></data>
-  <data name="Overlay_Intro" xml:space="preserve"><value>A small always-on-top window with live readings for gaming and other full-screen work. It reads the same sensor engine as the rest of Nova; it does not poll hardware on its own.</value></data>
-  <data name="Overlay_Metrics" xml:space="preserve"><value>Metrics</value></data>
-  <data name="Overlay_Preset_Minimal" xml:space="preserve"><value>Minimal</value></data>
-  <data name="Overlay_Preset_Gaming" xml:space="preserve"><value>Gaming</value></data>
-  <data name="Overlay_Preset_FullHardware" xml:space="preserve"><value>Full hardware</value></data>
-  <data name="Overlay_Preset_Custom" xml:space="preserve"><value>Custom</value></data>
-  <data name="Overlay_Gpu" xml:space="preserve"><value>Graphics card</value></data>
-  <data name="Overlay_GpuAuto" xml:space="preserve"><value>Automatic (discrete GPU)</value></data>
-  <data name="Overlay_Appearance" xml:space="preserve"><value>Appearance</value></data>
-  <data name="Overlay_Opacity" xml:space="preserve"><value>Background opacity</value></data>
-  <data name="Overlay_Scale" xml:space="preserve"><value>Scale</value></data>
-  <data name="Overlay_FontSize" xml:space="preserve"><value>Font size</value></data>
-  <data name="Overlay_TextColor" xml:space="preserve"><value>Value colour</value></data>
-  <data name="Overlay_AccentColor" xml:space="preserve"><value>Label and graph colour</value></data>
-  <data name="Overlay_BackgroundColor" xml:space="preserve"><value>Background colour</value></data>
-  <data name="Overlay_ShowLabels" xml:space="preserve"><value>Labels</value></data>
-  <data name="Overlay_ShowGraphs" xml:space="preserve"><value>Graphs</value></data>
-  <data name="Overlay_Horizontal" xml:space="preserve"><value>Horizontal layout</value></data>
-  <data name="Overlay_Behaviour" xml:space="preserve"><value>Behaviour</value></data>
-  <data name="Overlay_ClickThrough" xml:space="preserve"><value>Click-through</value></data>
-  <data name="Overlay_ClickThroughHint" xml:space="preserve"><value>Mouse clicks pass through the overlay to the window underneath. Turn it off to drag the overlay into place.</value></data>
-  <data name="Overlay_ShowOnStartup" xml:space="preserve"><value>Show overlay when Nova starts</value></data>
-  <data name="Overlay_AutoHideNova" xml:space="preserve"><value>Hide while the Nova window is active</value></data>
-  <data name="Overlay_AutoHideGame" xml:space="preserve"><value>Hide when no game is presenting frames</value></data>
-  <data name="Overlay_Hotkey" xml:space="preserve"><value>Show / hide shortcut</value></data>
-  <data name="Overlay_HotkeyActive" xml:space="preserve"><value>{0} is active system-wide.</value></data>
-  <data name="Overlay_HotkeyInUse" xml:space="preserve"><value>{0} is already used by another application. Choose a different shortcut.</value></data>
-  <data name="Overlay_Refresh" xml:space="preserve"><value>Overlay refresh</value></data>
-  <data name="Overlay_ResetPosition" xml:space="preserve"><value>Reset position</value></data>
-  <data name="Overlay_FpsSource" xml:space="preserve"><value>FPS and frame time</value></data>
-  <data name="Overlay_FpsExplain" xml:space="preserve"><value>Frame rate comes from PresentMon (MIT licence), which reads Windows present events via ETW. Nothing is injected into games. PresentMon is not bundled with Nova: install it or point to PresentMon.exe below. Administrator rights are required. Without it FPS shows N/A — Nova never estimates it.</value></data>
-  <data name="Overlay_PresentMonPath" xml:space="preserve"><value>PresentMon.exe path (optional)</value></data>
-  <data name="Overlay_PresentMonFound" xml:space="preserve"><value>Found: {0}</value></data>
-  <data name="Overlay_PresentMonMissing" xml:space="preserve"><value>PresentMon was not found.</value></data>
-  <data name="Overlay_GetPresentMon" xml:space="preserve"><value>Get PresentMon</value></data>
-  <data name="Overlay_Preview" xml:space="preserve"><value>Live preview</value></data>
-  <data name="Overlay_PreviewHint" xml:space="preserve"><value>Values update from the shared sensor engine. FPS appears only while the overlay is shown.</value></data>
-  <data name="Overlay_Metric_CpuTemperature" xml:space="preserve"><value>CPU</value></data>
-  <data name="Overlay_Metric_CpuUtilization" xml:space="preserve"><value>CPU load</value></data>
-  <data name="Overlay_Metric_CpuClock" xml:space="preserve"><value>CPU clock</value></data>
-  <data name="Overlay_Metric_GpuTemperature" xml:space="preserve"><value>GPU</value></data>
-  <data name="Overlay_Metric_GpuHotspot" xml:space="preserve"><value>Hotspot</value></data>
-  <data name="Overlay_Metric_GpuUtilization" xml:space="preserve"><value>GPU load</value></data>
-  <data name="Overlay_Metric_GpuClock" xml:space="preserve"><value>GPU clock</value></data>
-  <data name="Overlay_Metric_GpuPower" xml:space="preserve"><value>GPU power</value></data>
-  <data name="Overlay_Metric_GpuVram" xml:space="preserve"><value>VRAM</value></data>
-  <data name="Overlay_Metric_GpuFan" xml:space="preserve"><value>GPU fan</value></data>
-  <data name="Overlay_Metric_RamUsed" xml:space="preserve"><value>RAM</value></data>
-  <data name="Overlay_Metric_RamUtilization" xml:space="preserve"><value>RAM load</value></data>
-  <data name="Overlay_Metric_Fps" xml:space="preserve"><value>FPS</value></data>
-  <data name="Overlay_Metric_FrameTime" xml:space="preserve"><value>Frame time</value></data>
-  <data name="Alerts_Intro" xml:space="preserve"><value>Built-in rules use thresholds for each detected component: limits reported by the device itself (TjMax, driver slowdown temperature, NVMe warning / critical temperature) or documented vendor defaults. Turn off Automatic to set your own.</value></data>
-  <data name="Alerts_Notifications" xml:space="preserve"><value>Show notifications</value></data>
-  <data name="Alerts_Automatic" xml:space="preserve"><value>Automatic thresholds</value></data>
-  <data name="Alerts_Warning" xml:space="preserve"><value>Warning</value></data>
-  <data name="Alerts_Critical" xml:space="preserve"><value>Critical</value></data>
-  <data name="Alerts_InEffect" xml:space="preserve"><value>In effect (warning / critical)</value></data>
-  <data name="Alerts_Hysteresis" xml:space="preserve"><value>Hysteresis</value></data>
-  <data name="Alerts_Cooldown" xml:space="preserve"><value>Cooldown (min)</value></data>
-  <data name="Alerts_CustomRules" xml:space="preserve"><value>Custom rules</value></data>
-  <data name="Alerts_NewRule" xml:space="preserve"><value>New rule</value></data>
-  <data name="Rule_Detected" xml:space="preserve"><value>Uses state reported by the hardware.</value></data>
-  <data name="Rule_NoSensor" xml:space="preserve"><value>No matching sensor on this system.</value></data>
-  <data name="Rule_CpuTemperature" xml:space="preserve"><value>CPU temperature</value></data>
-  <data name="Rule_CpuTemperature_Desc" xml:space="preserve"><value>Package / Tctl temperature against TjMax or the vendor's limits.</value></data>
-  <data name="Rule_GpuTemperature" xml:space="preserve"><value>GPU temperature</value></data>
-  <data name="Rule_GpuTemperature_Desc" xml:space="preserve"><value>GPU core temperature against the driver's slowdown temperature or vendor defaults.</value></data>
-  <data name="Rule_GpuHotspot" xml:space="preserve"><value>GPU hotspot</value></data>
-  <data name="Rule_GpuHotspot_Desc" xml:space="preserve"><value>Hottest point on the GPU die, where available.</value></data>
-  <data name="Rule_GpuMemoryTemperature" xml:space="preserve"><value>GPU memory temperature</value></data>
-  <data name="Rule_GpuMemoryTemperature_Desc" xml:space="preserve"><value>Memory junction temperature, where available.</value></data>
-  <data name="Rule_StorageTemperature" xml:space="preserve"><value>Drive temperature</value></data>
-  <data name="Rule_StorageTemperature_Desc" xml:space="preserve"><value>Uses the drive's own warning and critical temperatures when reported; never swaps them.</value></data>
-  <data name="Rule_MemoryUtilization" xml:space="preserve"><value>Memory utilization</value></data>
-  <data name="Rule_MemoryUtilization_Desc" xml:space="preserve"><value>Physical memory load.</value></data>
-  <data name="Rule_ThermalThrottling" xml:space="preserve"><value>Thermal throttling</value></data>
-  <data name="Rule_ThermalThrottling_Desc" xml:space="preserve"><value>Raised when the hardware itself reports thermal slowdown.</value></data>
-  <data name="Rule_FanFailure" xml:space="preserve"><value>Fan failure</value></data>
-  <data name="Rule_FanFailure_Desc" xml:space="preserve"><value>A fan that was spinning stops. GPU zero-RPM mode below 60 °C is ignored.</value></data>
-  <data name="Severity_Information" xml:space="preserve"><value>Information</value></data>
-  <data name="Severity_Warning" xml:space="preserve"><value>Warning</value></data>
-  <data name="Severity_Critical" xml:space="preserve"><value>Critical</value></data>
-  <data name="AlertKind_WarningThreshold" xml:space="preserve"><value>Warning threshold exceeded</value></data>
-  <data name="AlertKind_CriticalThreshold" xml:space="preserve"><value>Critical threshold exceeded</value></data>
-  <data name="AlertKind_DeviceReportedLimit" xml:space="preserve"><value>Device-reported limit reached</value></data>
-  <data name="AlertKind_UserThreshold" xml:space="preserve"><value>Your threshold exceeded</value></data>
-  <data name="AlertKind_Throttling" xml:space="preserve"><value>Thermal throttling</value></data>
-  <data name="AlertKind_FanFailure" xml:space="preserve"><value>Fan stopped</value></data>
   <data name="ReportSection_Summary" xml:space="preserve"><value>System summary</value></data>
   <data name="ReportSection_Inventory" xml:space="preserve"><value>Hardware inventory</value></data>
   <data name="ReportSection_Cpu" xml:space="preserve"><value>CPU information</value></data>
@@ -315,14 +206,11 @@
   <data name="ReportSection_Memory" xml:space="preserve"><value>Memory information</value></data>
   <data name="ReportSection_Storage" xml:space="preserve"><value>Storage information</value></data>
   <data name="ReportSection_Sensors" xml:space="preserve"><value>Current sensor readings</value></data>
-  <data name="ReportSection_Alerts" xml:space="preserve"><value>Alert history</value></data>
   <data name="Reports_Failed" xml:space="preserve"><value>Export failed: {0}</value></data>
   <data name="Reports_NothingSelected" xml:space="preserve"><value>Select at least one section to preview the report.</value></data>
   <data name="Reports_OpenLast" xml:space="preserve"><value>Open exported report</value></data>
   <data name="SettingsSection_Appearance" xml:space="preserve"><value>Appearance</value></data>
   <data name="SettingsSection_Sensors" xml:space="preserve"><value>Sensors</value></data>
-  <data name="SettingsSection_Overlay" xml:space="preserve"><value>Overlay</value></data>
-  <data name="SettingsSection_Alerts" xml:space="preserve"><value>Alerts</value></data>
   <data name="SettingsSection_General" xml:space="preserve"><value>General</value></data>
   <data name="Theme_NovaDark" xml:space="preserve"><value>Nova Dark</value></data>
   <data name="Theme_NovaLight" xml:space="preserve"><value>Nova Light</value></data>
@@ -333,7 +221,7 @@
   <data name="Settings_Accent" xml:space="preserve"><value>Accent colour</value></data>
   <data name="Settings_ResetDefault" xml:space="preserve"><value>Default</value></data>
   <data name="Settings_StatusColors" xml:space="preserve"><value>Status colours</value></data>
-  <data name="Settings_StatusHint" xml:space="preserve"><value>Used only where a status means something: thresholds, alerts, provider health. Leave empty for the theme default.</value></data>
+  <data name="Settings_StatusHint" xml:space="preserve"><value>Used only where a status means something: sensor data quality, provider health. Leave empty for the theme default.</value></data>
   <data name="Settings_Interface" xml:space="preserve"><value>Interface</value></data>
   <data name="Settings_Animations" xml:space="preserve"><value>Animations</value></data>
   <data name="Settings_Comfortable" xml:space="preserve"><value>Comfortable density (larger controls)</value></data>
@@ -348,9 +236,6 @@
   <data name="Settings_AdvancedDefault" xml:space="preserve"><value>Advanced presentation (Compact is the default)</value></data>
   <data name="Settings_SensorPrefs" xml:space="preserve"><value>Sensor preferences</value></data>
   <data name="Settings_ClearFavorites" xml:space="preserve"><value>Clear favourites and pins</value></data>
-  <data name="Settings_OpenOverlayPage" xml:space="preserve"><value>All overlay options…</value></data>
-  <data name="Settings_AlertsHint" xml:space="preserve"><value>Thresholds, cooldowns and hysteresis are edited per component on the Alerts page.</value></data>
-  <data name="Settings_OpenAlertsPage" xml:space="preserve"><value>Edit alert rules…</value></data>
   <data name="Settings_Startup" xml:space="preserve"><value>Startup</value></data>
   <data name="Settings_LaunchWithWindows" xml:space="preserve"><value>Launch with Windows</value></data>
   <data name="Settings_StartMinimized" xml:space="preserve"><value>Start minimized</value></data>
@@ -358,5 +243,5 @@
   <data name="Settings_OpenLogs" xml:space="preserve"><value>Open logs</value></data>
   <data name="Settings_Restart" xml:space="preserve"><value>Restart Nova</value></data>
   <data name="Settings_RestartRequired" xml:space="preserve"><value>Saved. Some changes take effect after a restart.</value></data>
-  <data name="Settings_Licenses" xml:space="preserve"><value>Sensor data: LibreHardwareMonitor (MPL-2.0), NVIDIA NVAPI / NVML, AMD ADLX. Optional FPS: PresentMon (MIT, not bundled).</value></data>
+  <data name="Settings_Licenses" xml:space="preserve"><value>Sensor data: LibreHardwareMonitor (MPL-2.0), NVIDIA NVAPI / NVML, AMD ADLX.</value></data>
 </root>

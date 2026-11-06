@@ -50,7 +50,7 @@ public sealed class Loc : INotifyPropertyChanged
         Culture = string.IsNullOrWhiteSpace(cultureName) ? CultureInfo.InstalledUICulture : CultureInfo.GetCultureInfo(cultureName);
 }
 
-/// <summary>XAML usage: <c>Text="{loc:Tr Nav_Dashboard}"</c>.</summary>
+/// <summary>XAML usage: <c>Text="{loc:Tr Nav_Sensors}"</c>.</summary>
 [MarkupExtensionReturnType(typeof(BindingExpression))]
 public sealed class TrExtension : MarkupExtension
 {

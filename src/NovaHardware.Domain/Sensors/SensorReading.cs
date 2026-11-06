@@ -5,7 +5,7 @@ public enum SensorKind
 {
     /// <summary>A live reading (temperature, clock, load …).</summary>
     Measurement = 0,
-    /// <summary>A threshold, limit, resolution or other configuration value. Never shown as a live measurement or alerted on.</summary>
+    /// <summary>A threshold, limit, resolution or other configuration value. Never shown as a live measurement.</summary>
     Metadata,
 }
 

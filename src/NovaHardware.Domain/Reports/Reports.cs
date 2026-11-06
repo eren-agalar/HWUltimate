@@ -1,4 +1,3 @@
-using NovaHardware.Domain.Alerts;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.Sensors;
 
@@ -17,8 +16,7 @@ public enum ReportSections
     Memory = 16,
     Storage = 32,
     Sensors = 64,
-    Alerts = 128,
-    All = Summary | Inventory | Cpu | Gpu | Memory | Storage | Sensors | Alerts,
+    All = Summary | Inventory | Cpu | Gpu | Memory | Storage | Sensors,
 }
 
 public sealed record ReportData
@@ -28,5 +26,4 @@ public sealed record ReportData
     public ReportSections Sections { get; init; } = ReportSections.All;
     public HardwareInventory Inventory { get; init; } = HardwareInventory.Empty;
     public SensorSnapshot Sensors { get; init; } = SensorSnapshot.Empty;
-    public IReadOnlyList<AlertEvent> Alerts { get; init; } = [];
 }

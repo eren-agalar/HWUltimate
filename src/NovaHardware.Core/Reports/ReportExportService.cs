@@ -144,14 +144,6 @@ public sealed class ReportExportService : IReportExportService
             }
         }
 
-        if (d.Sections.HasFlag(ReportSections.Alerts))
-        {
-            list.Add(new PreviewSection("Alert history", $"{d.Alerts.Count} events",
-                d.Alerts.Count == 0
-                    ? [new PreviewRow("Alerts", "No alerts recorded", IsAvailable: false)]
-                    : d.Alerts.Select(a => new PreviewRow(a.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", Inv), a.Message, $"{a.Severity} · {a.RuleName}")).ToList()));
-        }
-
         return list;
     }
 
@@ -188,7 +180,6 @@ public sealed class ReportExportService : IReportExportService
                     s.Timestamp,
                 })
                 : null,
-            alerts = d.Sections.HasFlag(ReportSections.Alerts) ? d.Alerts : null,
             warnings = d.Inventory.Warnings.Count > 0 ? d.Inventory.Warnings : null,
         };
         return JsonSerializer.Serialize(doc, JsonOptions);
@@ -227,11 +218,6 @@ public sealed class ReportExportService : IReportExportService
             {
                 Row("Sensors", DeviceName(d, s.DeviceId), s.Type.ToString(), s.Name, Num(s.Value), Num(s.Minimum), Num(s.Maximum), Num(s.Average), s.UnitSymbol, s.ProviderName, s.Quality.ToString());
             }
-        }
-
-        if (d.Sections.HasFlag(ReportSections.Alerts))
-        {
-            foreach (var a in d.Alerts) Row("Alerts", a.DeviceName, a.Severity.ToString(), a.RuleName, a.Message, "", "", "", a.Unit.ToSymbol(), a.Kind.ToString(), a.State.ToString());
         }
 
         return sb.ToString();
@@ -299,7 +285,7 @@ public sealed class ReportExportService : IReportExportService
             th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
             th{color:var(--muted);font-weight:500;width:34%}td.n{text-align:right;white-space:nowrap}
             tr:last-child td,tr:last-child th{border-bottom:0}.na{color:var(--muted);font-style:italic}.src{color:var(--muted);font-size:12px}
-            .wrap{overflow-x:auto}.Warning{color:var(--warn)}.Critical{color:var(--bad)}.Information{color:var(--accent)}
+            .wrap{overflow-x:auto}
             footer{color:var(--muted);font-size:12px;margin-top:28px;text-align:center}
             </style></head><body><main>
             """);

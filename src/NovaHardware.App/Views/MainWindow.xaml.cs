@@ -1,17 +1,14 @@
 using System.Windows;
-using NovaHardware.App.Services;
 using NovaHardware.App.ViewModels;
 
 namespace NovaHardware.App.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow(MainViewModel viewModel, OverlayController overlay)
+    public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
         DataContext = viewModel;
-        // The global overlay shortcut is registered against this window's handle.
-        SourceInitialized += (_, _) => overlay.Attach(this);
         StateChanged += (_, _) =>
         {
             // WindowChrome windows overhang the screen by the resize border when maximised.

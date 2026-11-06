@@ -1,4 +1,3 @@
-using NovaHardware.Domain.Alerts;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.History;
 using NovaHardware.Domain.Reports;
@@ -26,7 +25,7 @@ public interface ISystemSummaryProvider
     Task<SystemSummary> GetSummaryAsync(CancellationToken cancellationToken = default);
 }
 
-/// <summary>The single, central sensor polling loop. Every consumer (explorer, overlay, alerts) reads from it.</summary>
+/// <summary>The single, central sensor polling loop. Every consumer reads from it.</summary>
 public interface ISensorPollingService : IAsyncDisposable
 {
     TimeSpan Interval { get; set; }
@@ -62,21 +61,6 @@ public interface IHistoricalDataService
     Task<HistoryStatistics?> GetStatisticsAsync(string sensorId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
     Task<int> PurgeOlderThanAsync(DateTimeOffset cutoff, CancellationToken cancellationToken = default);
     Task<long> GetSampleCountAsync(CancellationToken cancellationToken = default);
-}
-
-public interface IAlertService
-{
-    IReadOnlyList<AlertRule> Rules { get; }
-    IReadOnlyList<ComponentAlertRule> ComponentRules { get; }
-    IReadOnlyList<AlertEvent> RecentEvents { get; }
-    int ActiveAlertCount { get; }
-
-    event EventHandler<AlertEvent>? AlertRaised;
-
-    void SetRules(IEnumerable<AlertRule> rules);
-    void SetComponentRules(IEnumerable<ComponentAlertRule> rules);
-    IReadOnlyList<AlertEvent> Evaluate(SensorSnapshot snapshot);
-    void ClearHistory();
 }
 
 public interface IReportExportService

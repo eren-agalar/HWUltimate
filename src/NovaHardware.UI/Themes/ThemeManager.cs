@@ -7,7 +7,7 @@ namespace NovaHardware.UI.Themes;
 
 /// <summary>
 /// Applies Nova design tokens (colours, density, typography) to application resources. Every style references the
-/// tokens through DynamicResource, so a change repaints all windows, dialogs, menus, popups and the overlay immediately.
+/// tokens through DynamicResource, so a change repaints all windows, dialogs, menus and popups immediately.
 /// </summary>
 public static class ThemeManager
 {

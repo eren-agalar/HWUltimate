@@ -81,10 +81,14 @@ Publish output (`win-x64`, framework-dependent, without PDBs):
 
 The reduction comes from dropping LiveCharts / SkiaSharp (the Dashboard, History and Stability pages) and SQLite (history recording) from the application.
 
-On-Windows CPU and RAM use of the running app, and the overlay's effect on game FPS, were **not measured**: the WPF app cannot run in this Linux build environment.
+On-Windows CPU and RAM use of the running app, were **not measured**: the WPF app cannot run in this Linux build environment.
 
 ## Data migration
 
 - `settings.json` (v0.1, flat) is converted automatically to the v0.2 sectioned schema on first start. The original is kept as `settings.v1.json`. v0.1 single-threshold alert rules are not carried over; the component-aware rules replace them.
 - `sensor-explorer.json`: the v0.1 value `"Detailed"` maps to the v0.2 Advanced mode. All other preferences (hidden, favourites, order, columns) carry over unchanged, keyed by the same sensor ids.
 - `history.db` is **left untouched** on disk. v0.2 neither reads nor writes it. The SQLite repository (`NovaHardware.Storage`) stays in the solution, outside the application, so a future version can export or import that data. Users can delete the file themselves.
+
+## Post-v0.2.0 change: Mini Overlay and Alerts removed
+
+At the user's request the Mini Overlay (overlay window, global shortcut, PresentMon FPS / frame-time source) and the Alerts feature (component-aware rules, threshold resolver, toasts, navigation badge, report alert history) were removed. Navigation is now Sensors · Hardware · Reports · Settings. The Sensors explorer keeps its data-quality status (Suspect / Stale); value-threshold colouring, which came from the alert rules, is gone. `Overlay` and `Alerts` sections in an existing `settings.json` are ignored on load and dropped on the next save; every other setting is kept (covered by `SettingsV2Tests`). Sections above that describe the overlay or alerts are the historical v0.2.0 audit.

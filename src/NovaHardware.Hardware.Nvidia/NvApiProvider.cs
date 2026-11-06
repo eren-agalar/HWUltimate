@@ -180,7 +180,7 @@ public sealed class NvApiProvider : IHardwareProvider
         if (nvml.PcieThroughputKBps(d, 0) is { } tx) list.Add(Reading(id, "nvml/pcie/tx", "PCIe Transmit", SensorType.Throughput, SensorUnit.BytesPerSecond, tx * 1024.0, 1));
         if (nvml.PerformanceState(d) is { } ps) list.Add(Reading(id, "nvml/pstate", "Performance State (P-state)", SensorType.Other, SensorUnit.None, ps, 2));
 
-        // Driver-reported thermal limits: exposed as metadata (never as live temperatures) so alerts can use them.
+        // Driver-reported thermal limits: exposed as metadata (never as live temperatures).
         if (nvml.TemperatureThreshold(d, 1) is { } slow and > 0)
             list.Add(Reading(id, "nvml/threshold/slowdown", "GPU Slowdown Temperature Threshold", SensorType.Temperature, SensorUnit.Celsius, slow, 10, SensorKind.Metadata));
         if (nvml.TemperatureThreshold(d, 0) is { } shut and > 0)

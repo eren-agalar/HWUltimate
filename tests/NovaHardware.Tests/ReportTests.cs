@@ -1,6 +1,5 @@
 using System.Text.Json;
 using NovaHardware.Core.Reports;
-using NovaHardware.Domain.Alerts;
 using NovaHardware.Domain.Hardware;
 using NovaHardware.Domain.Reports;
 using NovaHardware.Domain.Sensors;
@@ -21,8 +20,7 @@ public class ReportTests
             new DeviceInfo { Id = "g", Name = "RTX 4090", Category = HardwareCategory.Gpu, Source = "PCI", Properties = [new("VBIOS version", "95.02", PropertySections.Firmware, "NVML")] },
             new DeviceInfo { Id = "b", Name = "Board", Category = HardwareCategory.Motherboard, Source = "SMBIOS", Properties = [new("BIOS", "1.0")] },
         ], []);
-        var alert = new AlertEvent(Guid.NewGuid(), "CPU temperature", AlertSeverity.Warning, AlertState.Raised, AlertKind.WarningThreshold, "t", "Package", "Test CPU", 88, 85, SensorUnit.Celsius, DateTimeOffset.Now, "auto: AMD default");
-        return new ReportData { ApplicationVersion = "0.2.0", Sensors = snap, Inventory = inventory, Alerts = [alert] };
+        return new ReportData { ApplicationVersion = "0.2.0", Sensors = snap, Inventory = inventory };
     }
 
     private readonly ReportExportService _svc = new();
@@ -37,7 +35,7 @@ public class ReportTests
         Assert.Contains(all, s => s.Title == "Graphics — RTX 4090");
         Assert.Contains(all, s => s.Title == "Memory" && s.Rows.Single().Value == "None detected");
         Assert.Contains(all, s => s.Title.StartsWith("Sensors — ", StringComparison.Ordinal) && s.Rows.Count == 2);
-        Assert.Contains(all, s => s.Title == "Alert history" && s.Rows.Single().Value.Contains("warning threshold", StringComparison.Ordinal));
+        Assert.DoesNotContain(all, s => s.Title.Contains("Alert", StringComparison.Ordinal));
 
         var onlyGpu = ReportExportService.BuildPreview(Sample() with { Sections = ReportSections.Gpu });
         Assert.Equal("Graphics — RTX 4090", Assert.Single(onlyGpu).Title);
@@ -68,7 +66,7 @@ public class ReportTests
         Assert.False(sensors[1].TryGetProperty("Value", out _));
         Assert.Equal("Measurement", sensors[0].GetProperty("Kind").GetString());
         Assert.True(doc.RootElement.GetProperty("components").TryGetProperty("Processor", out _));
-        Assert.Equal("WarningThreshold", doc.RootElement.GetProperty("alerts")[0].GetProperty("Kind").GetString());
+        Assert.False(doc.RootElement.TryGetProperty("alerts", out _));
     }
 
     [Fact]

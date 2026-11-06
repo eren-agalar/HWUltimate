@@ -70,8 +70,7 @@ public partial class App : Application
         {
             if (_services is not null)
             {
-                // Overlay first (stops PresentMon and unregisters the hotkey), then the shared polling loop and providers.
-                _services.GetRequiredService<OverlayController>().Dispose();
+                // Stop the shared polling loop and release the hardware providers.
                 var polling = _services.GetRequiredService<ISensorPollingService>();
                 if (!Task.Run(async () => await polling.DisposeAsync()).Wait(TimeSpan.FromSeconds(5)))
                 {

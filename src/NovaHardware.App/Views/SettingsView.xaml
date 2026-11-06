@@ -190,43 +190,6 @@
           </Border>
         </StackPanel>
 
-        <!-- ===================== Overlay -->
-        <StackPanel x:Name="Overlay" Style="{StaticResource Page}">
-          <Border Style="{StaticResource Card}">
-            <StackPanel>
-              <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Nav_Overlay}" />
-              <ToggleButton Style="{StaticResource NovaToggle}" IsChecked="{Binding Overlay.ShowOnStartup}" Content="{loc:Tr Overlay_ShowOnStartup}" />
-              <ToggleButton Style="{StaticResource NovaToggle}" IsChecked="{Binding Overlay.ClickThrough}" Content="{loc:Tr Overlay_ClickThrough}" />
-              <TextBlock Style="{StaticResource Label}" Text="{loc:Tr Overlay_Hotkey}" />
-              <TextBox Text="{Binding Overlay.Hotkey, UpdateSourceTrigger=PropertyChanged, Delay=500}" Width="220" HorizontalAlignment="Left" />
-              <TextBlock Style="{StaticResource Text.Small}" Text="{Binding Overlay.Controller.HotkeyStatus}" Margin="0,4,0,0" />
-              <DockPanel Margin="0,12,0,4"><TextBlock DockPanel.Dock="Right" Style="{StaticResource Text.Small}" Text="{Binding Overlay.BackgroundOpacity, Converter={x:Static conv:PercentConverter.Instance}}" /><TextBlock Style="{StaticResource Text.Small}" Text="{loc:Tr Overlay_Opacity}" /></DockPanel>
-              <Slider Minimum="0" Maximum="1" Value="{Binding Overlay.BackgroundOpacity, Delay=150}" Width="320" HorizontalAlignment="Left" />
-              <TextBlock Style="{StaticResource Label}" Text="{loc:Tr Overlay_Refresh}" />
-              <ComboBox ItemsSource="{Binding Overlay.RefreshIntervals}" SelectedItem="{Binding Overlay.RefreshIntervalMs}" ItemStringFormat="{}{0} ms" HorizontalAlignment="Left" />
-              <WrapPanel Margin="0,14,0,0">
-                <Button Content="{loc:Tr Overlay_ResetPosition}" Command="{Binding Overlay.ResetPositionCommand}" Margin="0,0,8,0" />
-                <Button Content="{loc:Tr Settings_OpenOverlayPage}" Click="OpenOverlay_Click" />
-              </WrapPanel>
-            </StackPanel>
-          </Border>
-        </StackPanel>
-
-        <!-- ===================== Alerts -->
-        <StackPanel x:Name="Alerts" Style="{StaticResource Page}">
-          <Border Style="{StaticResource Card}">
-            <StackPanel>
-              <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Nav_Alerts}" />
-              <ToggleButton Style="{StaticResource NovaToggle}" IsChecked="{Binding Alerts.NotificationsEnabled}" Content="{loc:Tr Alerts_Notifications}" />
-              <TextBlock Style="{StaticResource Text.Small}" Text="{loc:Tr Settings_AlertsHint}" Margin="0,6,0,10" />
-              <WrapPanel>
-                <Button Style="{StaticResource Nova.Button.Primary}" Content="{loc:Tr Common_Save}" Command="{Binding Alerts.SaveCommand}" Margin="0,0,8,0" />
-                <Button Content="{loc:Tr Settings_OpenAlertsPage}" Click="OpenAlerts_Click" />
-              </WrapPanel>
-            </StackPanel>
-          </Border>
-        </StackPanel>
-
         <!-- ===================== General -->
         <StackPanel x:Name="General" Style="{StaticResource Page}">
           <Border Style="{StaticResource Card}">
