@@ -1,22 +1,25 @@
-# HWULTIMATE
+# HWUltimate
 
 **Your Hardware. Every Detail. One Place.**
 
 HWUltimate is a Windows 10/11 (x64) desktop application for hardware monitoring, system identification
 and hardware reporting. Built with C# / .NET 10 LTS and WPF.
 
-## Features (v0.2)
+## Features (v0.3)
 
-> The Mini Overlay (with PresentMon FPS) and the Alerts page were removed after v0.2.0. Their settings sections in an existing `settings.json` are ignored and dropped on the next save; all other settings are kept.
+> Renamed from "Nova Hardware". On first start, settings, sensor preferences, reports and history are copied from `%LOCALAPPDATA%\NovaHardware` to `%LOCALAPPDATA%\HWUltimate` (the old folder is left untouched), and an old launch-with-Windows entry is replaced.
+> The Mini Overlay (with PresentMon FPS) and the Alerts page were removed after v0.2.0; their settings sections are ignored.
 
 Navigation: **Sensors** (start page) · **Hardware** · **Reports** · **Settings**.
 
 | Area | What it does |
 |---|---|
-| **Sensors** | Compact tree: Category → physical device → sensor group → sensor. Columns: Sensor, Current, Min, Max, Average, plus optional technical columns. Expand / collapse all or single nodes. Hide, favourite, pin and reorder sensors. Search; filter by device, hardware type, sensor category, provider and status; sort by name, value, maximum, temperature, power or load. Compact (default) and Advanced modes; Advanced adds sensor ids, providers and a technical-metadata group. Refresh interval is user-selectable; all preferences persist by stable sensor id. |
+| **Sensors** | Classic hardware-monitor tree: device → sensor group → sensor, columns Sensor · Value · Min · Max (Average and technical columns optional). Every core reading sits in its type group (all core temperatures under Temperatures). Super I/O / EC chips are listed under their motherboard. **Secondary sensors** — never reported, empty fan headers, unconnected voltage / temperature inputs, virtual or disconnected network adapters, cumulative traffic counters — are hidden by default; *Show all sensors* reveals them. Hide sensors, whole devices or groups permanently (they follow id changes such as drives renumbered at boot); the *Hidden* list shows them again. Favourites, pins, custom order, search, filters, sorting. |
+| **Detection** | *Rescan hardware* repeats detection without restarting. Automatic passes shortly after start repeat detection when it looks incomplete (driver still loading at logon, bus held by another monitoring tool); unavailable providers are retried periodically. A banner explains when the **PawnIO** driver (needed by LibreHardwareMonitor for motherboard, fan, voltage and some CPU sensors) is missing. System memory is named from SMBIOS (e.g. "32 GB DDR5-6000 (2 × 16 GB)"). |
 | **Physical device identity** | One device per piece of hardware. LibreHardwareMonitor, NVAPI and NVML views of the same GPU merge by PCI location, PnP instance path or unambiguous PCI ids, never by name alone. Integrated and discrete GPUs, and two identical cards, stay separate. Duplicate readings are kept once and record the other providers that also reported them. |
 | **Sensor classification** | Limits, thresholds and resolutions exposed as "temperatures" (e.g. NVMe warning / critical temperature, thermal sensor limits) are technical metadata. They are never shown as live readings. |
-| **Hardware** | Sectioned information per device. Every value shows its source and whether it is an official specification (catalog), detected from the system, or not available. Live readings are listed separately. Search, copy (value / property / device / all), export to HTML / JSON / text. |
+| **Hardware** | Device tree (computer → category → device) and one Feature · Description · Source table with section bands. A **System summary** page lists processor, graphics, motherboard, memory modules, drives, displays, network and OS. Every value shows whether it is an official specification (catalog), detected, live or not available. Search, copy, export to HTML / JSON / text. |
+| **Silicon quality** | Processors: the factory per-core ranking (Intel favored cores / AMD preferred cores) Windows reads from ACPI CPPC — best cores, full order, levels; hybrid CPUs per core type. No percentage "quality score" is shown: Intel, AMD, NVIDIA and Windows expose none, and HWUltimate never estimates one. |
 | **Reports** | Sections: system summary, inventory, CPU, GPU, memory, storage, current readings. Formats: HTML (HWUltimate template), CSV, JSON, text. The live in-app preview shows exactly what will be exported. Files are read back and validated before success is reported. |
 | **Settings** | Appearance (HWUltimate Dark / Light / Midnight / Ocean / Follow Windows, accent, status colours, animations, density, text size — applied live), Sensors, General (language, launch with Windows, start minimized, logging, providers, data folder). Settings are validated before saving. |
 
@@ -24,7 +27,7 @@ Navigation: **Sensors** (start page) · **Hardware** · **Reports** · **Setting
 - Sensor values are **never fabricated or interpolated**; a sensor without a value shows **N/A**. 
 - Values keep the provider's original unit; the only conversions are exact and labelled (NVAPI kHz → MHz, NVML mW → W).
 - Values outside a broad physical range are kept unchanged but flagged **Suspect**.
-- ASIC / silicon quality is shown as *Not Available*: no supported API exposes it and HWUltimate never estimates it.
+- A silicon / ASIC quality *score* is shown as *Not Available*: no supported API exposes it and HWUltimate never estimates it. Only the firmware-reported per-core ranking is shown.
 
 ## Architecture
 
@@ -42,7 +45,7 @@ HWUltimate.UI               HWUltimate design system (tokens, themes, controls: 
                               HwuChevron, HwuDialog; styles for dropdown, toggle, checkbox, slider, scrollbar,
                               menus, tooltips, data grid, navigation), icons, localisation (resx: en, tr)
 HWUltimate.App              WPF shell, MVVM view models (CommunityToolkit.Mvvm), DI composition root
-HWUltimate.Tests            xUnit v3 tests (187)
+HWUltimate.Tests            xUnit v3 tests (227)
 tools/HwuPerf                Sensor-pipeline micro-benchmark (synthetic data, development only)
 ```
 
@@ -93,7 +96,7 @@ To add a language, add a column and a culture to `Loc.Languages`.
 | Network | WMI + System.Net.NetworkInformation (status, negotiated speed, IPv4 / IPv6, gateway, DNS, MTU) |
 | Display | WmiMonitorID / WmiMonitorConnectionParams (EDID identity, connection type) |
 
-## Known limitations (v0.2)
+## Known limitations
 - **Not run on Windows here.** The UI and native calls (DXGI, D3D12 / D3D11, Vulkan, NVML, SetupAPI) were compiled and covered by tests. The application has not been launched and viewed on Windows in this environment.
 - **Unavailable properties**:
   - ASIC quality, SPD contents and memory timings
@@ -102,6 +105,9 @@ To add a language, add a column and a culture to `Loc.Languages`.
   - supported GPU outputs (only connected monitors are listed)
   - raw SMART tables
 - **GPU chip codename / die / process / transistors** come only from HWUltimate's catalog of about 30 common GPUs and are labelled as an official specification (catalog).
+- **PawnIO** is not bundled (it is a separately installed, signed driver). Without it LibreHardwareMonitor cannot read Super I/O, SMBus, MSR or SMU data.
+- **AMD Ryzen per-core temperatures**: AMD exposes Tctl / Tdie and per-CCD temperatures; LibreHardwareMonitor does not provide per-core temperatures on Ryzen, and HWUltimate does not derive them. Intel processors report every core.
+- **GPU voltage / frequency curve and ASIC quality** are not read: only undocumented, generation-specific interfaces exist.
 - **AMD ADLX** is detected and initialised but not bound for metrics. AMD GPU sensors come from LibreHardwareMonitor.
 - **Inventory merge**: two identical GPUs merge correctly only when Windows reports their PCI location. Keyless entries with an ambiguous name are kept separate rather than guessed.
 - **Not measured**: on-Windows CPU / RAM use (see `docs/AUDIT-v0.2.md`).
