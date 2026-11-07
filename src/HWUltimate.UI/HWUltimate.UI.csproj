@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>HWUltimate.UI</RootNamespace>
+    <SatelliteResourceLanguages>en;tr</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HWUltimate.Domain\HWUltimate.Domain.csproj" />
+    <ProjectReference Include="..\HWUltimate.Core\HWUltimate.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Localization\Strings.resx" />
+    <EmbeddedResource Update="Localization\Strings.tr.resx" />
+  </ItemGroup>
+</Project>

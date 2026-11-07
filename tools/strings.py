@@ -1,5 +1,5 @@
 # Single source of truth for UI strings. Run: python3 tools/strings.py
-# Generates src/NovaHardware.UI/Localization/Strings.resx (English) and Strings.tr.resx (Turkish).
+# Generates src/HWUltimate.UI/Localization/Strings.resx (English) and Strings.tr.resx (Turkish).
 import os
 from xml.sax.saxutils import escape
 
@@ -125,7 +125,7 @@ S = {
  'Section_PerformanceCapabilities': ('Performance Capabilities', 'Performans yetenekleri'),
  'Section_FirmwareDrivers': ('Firmware & Drivers', 'Ürün yazılımı ve sürücüler'),
  'Section_AdvancedDetails': ('Advanced Details', 'Gelişmiş ayrıntılar'),
- 'App_AlreadyRunning': ('Nova Hardware is already running.', 'Nova Hardware zaten çalışıyor.'),
+ 'App_AlreadyRunning': ('HWUltimate is already running.', 'HWUltimate zaten çalışıyor.'),
  'App_UnexpectedError': ('An unexpected error occurred and was logged.', 'Beklenmeyen bir hata oluştu ve günlüğe kaydedildi.'),
  'Status_Poll': ('Poll {0:0} ms · {1} sensors · {2} devices', 'Okuma {0:0} ms · {1} sensör · {2} cihaz'),
  'Status_Normal': ('Normal', 'Normal'),
@@ -212,12 +212,12 @@ S = {
  'SettingsSection_Appearance': ('Appearance', 'Görünüm'),
  'SettingsSection_Sensors': ('Sensors', 'Sensörler'),
  'SettingsSection_General': ('General', 'Genel'),
- 'Theme_NovaDark': ('Nova Dark', 'Nova Koyu'),
- 'Theme_NovaLight': ('Nova Light', 'Nova Açık'),
- 'Theme_NovaMidnight': ('Nova Midnight', 'Nova Gece'),
- 'Theme_NovaOcean': ('Nova Ocean', 'Nova Okyanus'),
+ 'Theme_Dark': ('Dark', 'Koyu'),
+ 'Theme_Light': ('Light', 'Açık'),
+ 'Theme_Midnight': ('Midnight', 'Gece'),
+ 'Theme_Ocean': ('Ocean', 'Okyanus'),
  'Theme_System': ('Follow Windows', "Windows'u izle"),
- 'Settings_SystemThemeHint': ('“Follow Windows” switches between Nova Light and Nova Dark with the Windows app mode, live.', "“Windows'u izle”, Windows uygulama moduna göre Nova Açık ile Nova Koyu arasında anında geçiş yapar."),
+ 'Settings_SystemThemeHint': ('“Follow Windows” switches between Light and Dark with the Windows app mode, live.', "“Windows'u izle”, Windows uygulama moduna göre Açık ile Koyu arasında anında geçiş yapar."),
  'Settings_Accent': ('Accent colour', 'Vurgu rengi'),
  'Settings_ResetDefault': ('Default', 'Varsayılan'),
  'Settings_StatusColors': ('Status colours', 'Durum renkleri'),
@@ -241,13 +241,13 @@ S = {
  'Settings_StartMinimized': ('Start minimized', 'Küçültülmüş başlat'),
  'Settings_VerboseLogging': ('Verbose logging (restart required)', 'Ayrıntılı günlük (yeniden başlatma gerekir)'),
  'Settings_OpenLogs': ('Open logs', 'Günlükleri aç'),
- 'Settings_Restart': ('Restart Nova', "Nova'yı yeniden başlat"),
+ 'Settings_Restart': ('Restart HWUltimate', "HWUltimate'i yeniden başlat"),
  'Settings_RestartRequired': ('Saved. Some changes take effect after a restart.', 'Kaydedildi. Bazı değişiklikler yeniden başlatmadan sonra geçerli olur.'),
  'Settings_Licenses': ('Sensor data: LibreHardwareMonitor (MPL-2.0), NVIDIA NVAPI / NVML, AMD ADLX.', 'Sensör verisi: LibreHardwareMonitor (MPL-2.0), NVIDIA NVAPI / NVML, AMD ADLX.'),
 }
 
 here = os.path.dirname(os.path.abspath(__file__))
-out = os.path.join(here, "..", "src", "NovaHardware.UI", "Localization")
+out = os.path.join(here, "..", "src", "HWUltimate.UI", "Localization")
 HEADER = '''<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>

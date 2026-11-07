@@ -1,4 +1,4 @@
-# Nova Hardware v0.1 → v0.2 audit
+# HWUltimate v0.1 → v0.2 audit
 
 Baseline: tag `v0.1.0` (commit f3d8338). Work branch: `release/v0.2`.
 
@@ -6,13 +6,13 @@ Baseline: tag `v0.1.0` (commit f3d8338). Work branch: `release/v0.2`.
 
 | Layer | Project | Responsibility |
 |---|---|---|
-| Domain | NovaHardware.Domain | Sensor / device / inventory / alert / report models |
-| Core | NovaHardware.Core | Interfaces, central `SensorPollingService`, statistics, explorer tree builder, alerts, history recorder, stress engine, report rendering, CPUID / PCI decoding |
-| Providers | NovaHardware.Hardware (+ .Nvidia, .Amd) | LibreHardwareMonitor, Windows memory manager, NVAPI + NVML, ADLX loader |
-| Infrastructure | NovaHardware.Infrastructure | WMI, SMBIOS, SetupAPI / PnP, CPU / GPU / motherboard discovery, settings and preference stores, Serilog |
-| Storage | NovaHardware.Storage | SQLite sensor history |
-| UI | NovaHardware.UI | Theme dictionaries, styles, converters, icons, localisation |
-| App | NovaHardware.App | WPF shell, MVVM view models, DI composition root |
+| Domain | HWUltimate.Domain | Sensor / device / inventory / alert / report models |
+| Core | HWUltimate.Core | Interfaces, central `SensorPollingService`, statistics, explorer tree builder, alerts, history recorder, stress engine, report rendering, CPUID / PCI decoding |
+| Providers | HWUltimate.Hardware (+ .Nvidia, .Amd) | LibreHardwareMonitor, Windows memory manager, NVAPI + NVML, ADLX loader |
+| Infrastructure | HWUltimate.Infrastructure | WMI, SMBIOS, SetupAPI / PnP, CPU / GPU / motherboard discovery, settings and preference stores, Serilog |
+| Storage | HWUltimate.Storage | SQLite sensor history |
+| UI | HWUltimate.UI | Theme dictionaries, styles, converters, icons, localisation |
+| App | HWUltimate.App | WPF shell, MVVM view models, DI composition root |
 
 A single polling loop (`SensorPollingService`) feeds every consumer. The UI marshals coalesced snapshots onto the dispatcher.
 
@@ -50,7 +50,7 @@ A single polling loop (`SensorPollingService`) feeds every consumer. The UI mars
 
 ## Baseline measurements (Linux container, Release, .NET 10.0.114)
 
-`dotnet run -c Release --project tools/NovaPerf` — 12 synthetic devices × 40 sensors = 480 sensors, three runs:
+`dotnet run -c Release --project tools/HwuPerf` — 12 synthetic devices × 40 sensors = 480 sensors, three runs:
 
 | Operation | Time / op | Allocated / op |
 |---|---|---|
@@ -87,7 +87,7 @@ On-Windows CPU and RAM use of the running app, were **not measured**: the WPF ap
 
 - `settings.json` (v0.1, flat) is converted automatically to the v0.2 sectioned schema on first start. The original is kept as `settings.v1.json`. v0.1 single-threshold alert rules are not carried over; the component-aware rules replace them.
 - `sensor-explorer.json`: the v0.1 value `"Detailed"` maps to the v0.2 Advanced mode. All other preferences (hidden, favourites, order, columns) carry over unchanged, keyed by the same sensor ids.
-- `history.db` is **left untouched** on disk. v0.2 neither reads nor writes it. The SQLite repository (`NovaHardware.Storage`) stays in the solution, outside the application, so a future version can export or import that data. Users can delete the file themselves.
+- `history.db` is **left untouched** on disk. v0.2 neither reads nor writes it. The SQLite repository (`HWUltimate.Storage`) stays in the solution, outside the application, so a future version can export or import that data. Users can delete the file themselves.
 
 ## Post-v0.2.0 change: Mini Overlay and Alerts removed
 

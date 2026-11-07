@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Stability / stress-test engine extracted from HWUltimate v0.1.
+    Not referenced by the v0.2 application; kept as the starting point for the separate HWULTIMATE BENCHMARK product.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>HWUltimate.Benchmark</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HWUltimate.Core\HWUltimate.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="HWUltimate.Tests" />
+  </ItemGroup>
+</Project>

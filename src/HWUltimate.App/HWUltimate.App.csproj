@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>HWUltimate.App</RootNamespace>
+    <AssemblyName>HWUltimate</AssemblyName>
+    <ApplicationIcon>Assets\hwultimate.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>en;tr</SatelliteResourceLanguages>
+    <SelfContained>false</SelfContained>
+    <NoWarn>$(NoWarn);MVVMTK0045;CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HWUltimate.Core\HWUltimate.Core.csproj" />
+    <ProjectReference Include="..\HWUltimate.Hardware\HWUltimate.Hardware.csproj" />
+    <ProjectReference Include="..\HWUltimate.Hardware.Nvidia\HWUltimate.Hardware.Nvidia.csproj" />
+    <ProjectReference Include="..\HWUltimate.Hardware.Amd\HWUltimate.Hardware.Amd.csproj" />
+    <ProjectReference Include="..\HWUltimate.Infrastructure\HWUltimate.Infrastructure.csproj" />
+    <ProjectReference Include="..\HWUltimate.UI\HWUltimate.UI.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\hwultimate.png" />
+    <Resource Include="Assets\hwultimate.ico" />
+  </ItemGroup>
+</Project>

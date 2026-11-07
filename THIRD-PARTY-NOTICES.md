@@ -9,4 +9,4 @@
 | NVIDIA NVAPI / NVML | NVIDIA driver runtime | Loaded from the installed driver (`nvapi64.dll`, `nvml.dll`) | No |
 | AMD ADLX | AMD driver runtime | Loaded from the installed driver (`amdadlx64.dll`) | No |
 
-MPL-2.0 is file-level copyleft. Nova ships LibreHardwareMonitorLib unmodified as a separate DLL; its source is available from the upstream project.
+MPL-2.0 is file-level copyleft. HWUltimate ships LibreHardwareMonitorLib unmodified as a separate DLL; its source is available from the upstream project.

@@ -1,8 +1,8 @@
-# NOVA HARDWARE
+# HWULTIMATE
 
 **Your Hardware. Every Detail. One Place.**
 
-Nova Hardware is a Windows 10/11 (x64) desktop application for hardware monitoring, system identification
+HWUltimate is a Windows 10/11 (x64) desktop application for hardware monitoring, system identification
 and hardware reporting. Built with C# / .NET 10 LTS and WPF.
 
 ## Features (v0.2)
@@ -17,36 +17,36 @@ Navigation: **Sensors** (start page) · **Hardware** · **Reports** · **Setting
 | **Physical device identity** | One device per piece of hardware. LibreHardwareMonitor, NVAPI and NVML views of the same GPU merge by PCI location, PnP instance path or unambiguous PCI ids, never by name alone. Integrated and discrete GPUs, and two identical cards, stay separate. Duplicate readings are kept once and record the other providers that also reported them. |
 | **Sensor classification** | Limits, thresholds and resolutions exposed as "temperatures" (e.g. NVMe warning / critical temperature, thermal sensor limits) are technical metadata. They are never shown as live readings. |
 | **Hardware** | Sectioned information per device. Every value shows its source and whether it is an official specification (catalog), detected from the system, or not available. Live readings are listed separately. Search, copy (value / property / device / all), export to HTML / JSON / text. |
-| **Reports** | Sections: system summary, inventory, CPU, GPU, memory, storage, current readings. Formats: HTML (Nova template), CSV, JSON, text. The live in-app preview shows exactly what will be exported. Files are read back and validated before success is reported. |
-| **Settings** | Appearance (Nova Dark / Light / Midnight / Ocean / Follow Windows, accent, status colours, animations, density, text size — applied live), Sensors, General (language, launch with Windows, start minimized, logging, providers, data folder). Settings are validated before saving. |
+| **Reports** | Sections: system summary, inventory, CPU, GPU, memory, storage, current readings. Formats: HTML (HWUltimate template), CSV, JSON, text. The live in-app preview shows exactly what will be exported. Files are read back and validated before success is reported. |
+| **Settings** | Appearance (HWUltimate Dark / Light / Midnight / Ocean / Follow Windows, accent, status colours, animations, density, text size — applied live), Sensors, General (language, launch with Windows, start minimized, logging, providers, data folder). Settings are validated before saving. |
 
 ### Data integrity rules
 - Sensor values are **never fabricated or interpolated**; a sensor without a value shows **N/A**. 
 - Values keep the provider's original unit; the only conversions are exact and labelled (NVAPI kHz → MHz, NVML mW → W).
 - Values outside a broad physical range are kept unchanged but flagged **Suspect**.
-- ASIC / silicon quality is shown as *Not Available*: no supported API exposes it and Nova never estimates it.
+- ASIC / silicon quality is shown as *Not Available*: no supported API exposes it and HWUltimate never estimates it.
 
 ## Architecture
 
 ```
-NovaHardware.Domain           Unified models (SensorReading, HardwareDevice, DeviceInfo, stress, reports)
-NovaHardware.Core             Interfaces + platform-neutral services (polling, statistics, history recorder,
+HWUltimate.Domain           Unified models (SensorReading, HardwareDevice, DeviceInfo, stress, reports)
+HWUltimate.Core             Interfaces + platform-neutral services (polling, statistics, history recorder,
                               stress engine, report export)
-NovaHardware.Hardware         LibreHardwareMonitor provider
-NovaHardware.Hardware.Nvidia  NVAPI provider (nvapi_QueryInterface, unmanaged function pointers)
-NovaHardware.Hardware.Amd     ADLX runtime loader/provider
-NovaHardware.Infrastructure   WMI, SMBIOS (GetSystemFirmwareTable + parser), SetupAPI, inventory merge, settings, Serilog
-NovaHardware.Storage          SQLite history repository — retained for existing history.db files, not used by the v0.2 app
-NovaHardware.Benchmark        Stress / stability engine — extracted for the future NOVA BENCHMARK product, not used by the app
-NovaHardware.UI               Nova design system (tokens, themes, controls: NovaIconButton, NovaSearchBox, NovaStatusIndicator,
-                              NovaChevron, NovaDialog; styles for dropdown, toggle, checkbox, slider, scrollbar,
+HWUltimate.Hardware         LibreHardwareMonitor provider
+HWUltimate.Hardware.Nvidia  NVAPI provider (nvapi_QueryInterface, unmanaged function pointers)
+HWUltimate.Hardware.Amd     ADLX runtime loader/provider
+HWUltimate.Infrastructure   WMI, SMBIOS (GetSystemFirmwareTable + parser), SetupAPI, inventory merge, settings, Serilog
+HWUltimate.Storage          SQLite history repository — retained for existing history.db files, not used by the v0.2 app
+HWUltimate.Benchmark        Stress / stability engine — extracted for the future HWULTIMATE BENCHMARK product, not used by the app
+HWUltimate.UI               HWUltimate design system (tokens, themes, controls: HwuIconButton, HwuSearchBox, HwuStatusIndicator,
+                              HwuChevron, HwuDialog; styles for dropdown, toggle, checkbox, slider, scrollbar,
                               menus, tooltips, data grid, navigation), icons, localisation (resx: en, tr)
-NovaHardware.App              WPF shell, MVVM view models (CommunityToolkit.Mvvm), DI composition root
-NovaHardware.Tests            xUnit v3 tests (187)
-tools/NovaPerf                Sensor-pipeline micro-benchmark (synthetic data, development only)
+HWUltimate.App              WPF shell, MVVM view models (CommunityToolkit.Mvvm), DI composition root
+HWUltimate.Tests            xUnit v3 tests (187)
+tools/HwuPerf                Sensor-pipeline micro-benchmark (synthetic data, development only)
 ```
 
-The UI only depends on `NovaHardware.Core` interfaces (`IHardwareProvider`, `ISensorProvider`, `IDeviceDiscoveryService`,
+The UI only depends on `HWUltimate.Core` interfaces (`IHardwareProvider`, `ISensorProvider`, `IDeviceDiscoveryService`,
 `ISensorPollingService`, `IHardwareInventoryService`, `IHistoricalDataService`, `IReportExportService`,
 `IStressTestService`). Concrete implementations are wired up only in `App/Services/Bootstrapper.cs`.
 
@@ -55,19 +55,19 @@ The UI only depends on `NovaHardware.Core` interfaces (`IHardwareProvider`, `ISe
 Requires the .NET 10 SDK on Windows 10/11 x64 (the app needs the .NET 10 Desktop Runtime to run).
 
 ```bash
-dotnet build NovaHardware.sln -c Release
+dotnet build HWUltimate.sln -c Release
 ```
 
 ```bash
-dotnet test --project tests/NovaHardware.Tests -c Release
+dotnet test --project tests/HWUltimate.Tests -c Release
 ```
 
 ```bash
-dotnet run --project src/NovaHardware.App -c Release
+dotnet run --project src/HWUltimate.App -c Release
 ```
 
 ```bash
-dotnet publish src/NovaHardware.App -c Release -r win-x64 --self-contained false -o publish
+dotnet publish src/HWUltimate.App -c Release -r win-x64 --self-contained false -o publish
 ```
 
 For a build that does not need the .NET runtime installed, add `--self-contained true` (larger output).
@@ -75,7 +75,7 @@ For a build that does not need the .NET runtime installed, add `--self-contained
 The app requests `highestAvailable` elevation. Administrators get full sensor access.
 Standard users get reduced sensors and see a banner offering to restart elevated.
 
-User data lives in `%LOCALAPPDATA%\NovaHardware`: `settings.json`, `sensor-explorer.json`, `logs\`, `reports\`, and the v0.1 `history.db`, which v0.2 leaves untouched.
+User data lives in `%LOCALAPPDATA%\HWUltimate`: `settings.json`, `sensor-explorer.json`, `logs\`, `reports\`, and the v0.1 `history.db`, which v0.2 leaves untouched.
 
 ## Localisation
 UI strings live in `tools/strings.py`, the single source for English and Turkish.
@@ -86,7 +86,7 @@ To add a language, add a column and a culture to `Loc.Languages`.
 | Area | Sources |
 |---|---|
 | CPU | CPUID (vendor, brand, signature, ISA extensions, cache descriptors, VT-x / AMD-V, hypervisor, leaf 0x16 clocks), GetLogicalProcessorInformationEx (cores, threads, P/E split, cache instances), registry (microcode revision), WMI (socket, firmware VT, SLAT) |
-| GPU | PnP / PCI ids, bus / device / function and PCIe current / max link (SetupDiGetDeviceProperty), display-driver registry (VRAM size, VBIOS string, chip / DAC type), DXGI (memory, adapters), D3D12 / D3D11 feature-level probe, Vulkan (API / driver version), NVML (architecture, VBIOS, bus width, clocks, power limits, PCIe generation, thermal thresholds, CUDA), NVAPI (base / boost clocks), Nova chip catalog for officially published die figures (labelled as externally reported) |
+| GPU | PnP / PCI ids, bus / device / function and PCIe current / max link (SetupDiGetDeviceProperty), display-driver registry (VRAM size, VBIOS string, chip / DAC type), DXGI (memory, adapters), D3D12 / D3D11 feature-level probe, Vulkan (API / driver version), NVML (architecture, VBIOS, bus width, clocks, power limits, PCIe generation, thermal thresholds, CUDA), NVAPI (base / boost clocks), HWUltimate chip catalog for officially published die figures (labelled as externally reported) |
 | Memory | SMBIOS type 16 / 17 (ECC capability, slots, max capacity, data / total width, rank, rated vs configured speed, voltage), Windows memory manager (commit, virtual memory, cache, pools) |
 | Motherboard | SMBIOS types 0 / 1 / 2, chipset LPC / ISA bridge and host bridge (PCI class 06-01 / 06-00), Super I/O and EC from the sensor provider |
 | Storage | MSFT_PhysicalDisk, MSFT_StorageReliabilityCounter (temperature, wear, power-on hours, error counters, latency), live sensors (e.g. data read / written) |
@@ -101,7 +101,7 @@ To add a language, add a column and a culture to `Loc.Languages`.
   - VRAM type and memory bandwidth, CPU TDP
   - supported GPU outputs (only connected monitors are listed)
   - raw SMART tables
-- **GPU chip codename / die / process / transistors** come only from Nova's catalog of about 30 common GPUs and are labelled as an official specification (catalog).
+- **GPU chip codename / die / process / transistors** come only from HWUltimate's catalog of about 30 common GPUs and are labelled as an official specification (catalog).
 - **AMD ADLX** is detected and initialised but not bound for metrics. AMD GPU sensors come from LibreHardwareMonitor.
 - **Inventory merge**: two identical GPUs merge correctly only when Windows reports their PCI location. Keyless entries with an ambiguous name are kept separate rather than guessed.
 - **Not measured**: on-Windows CPU / RAM use (see `docs/AUDIT-v0.2.md`).

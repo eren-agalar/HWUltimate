@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>HWUltimate.Hardware</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HWUltimate.Core\HWUltimate.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="HWUltimate.Tests" />
+  </ItemGroup>
+</Project>
