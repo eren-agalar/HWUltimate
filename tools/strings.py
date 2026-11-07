@@ -147,6 +147,7 @@ S = {
  'Section_FirmwareDrivers': ('Firmware & Drivers', 'Ürün yazılımı ve sürücüler'),
  'Section_AdvancedDetails': ('Advanced Details', 'Gelişmiş ayrıntılar'),
  'Section_Processor': ('Processor', 'İşlemci'),
+ 'Section_SiliconQuality': ('Silicon quality', 'Silikon kalitesi'),
  'Section_Graphics': ('Graphics', 'Ekran kartı'),
  'Section_Motherboard': ('Motherboard', 'Anakart'),
  'Section_Memory': ('Memory', 'Bellek'),

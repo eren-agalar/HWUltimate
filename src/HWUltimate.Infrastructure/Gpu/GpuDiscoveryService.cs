@@ -184,8 +184,8 @@ public sealed class GpuDiscoveryService : IDeviceDiscoveryService
         if (vk is not null) Add(S.Firmware, "Vulkan driver version", vk.DriverVersionText, "Vulkan");
 
         // ---------------- Silicon quality
-        Na(S.Advanced, "ASIC / silicon quality",
-            "No public NVIDIA (NVAPI, NVML), AMD (ADLX) or Windows interface exposes an ASIC-quality or leakage metric. HWUltimate does not estimate it from temperature, voltage or power.",
+        Na(CoreQualityRanking.Section, "ASIC / silicon quality",
+            "Researched: no public NVIDIA (NVAPI, NVML), AMD (ADLX) or Intel interface exposes an ASIC-quality or leakage value for current graphics cards. The figure older tools showed came from undocumented registers of a few GPU generations (roughly up to 2016) and is not available on modern cards. The voltage / frequency curve exists only behind undocumented, generation-specific NVAPI calls whose layout cannot be verified, so it is not read. HWUltimate does not estimate quality from temperature, voltage or power.",
             "NVAPI, NVML, ADLX, Windows");
 
         // ---------------- Advanced

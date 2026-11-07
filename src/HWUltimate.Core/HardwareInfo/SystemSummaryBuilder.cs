@@ -24,7 +24,7 @@ public static class SystemSummaryBuilder
     public static IReadOnlyList<string> SectionOrder { get; } =
         [ProcessorSection, GraphicsSection, MotherboardSection, MemorySection, StorageSection, DisplaySection, NetworkSection, SystemSection];
 
-    private static readonly string[] CpuKeys = ["Cores / threads", "Performance cores (P)", "Efficiency cores (E)", "Codename", "Microarchitecture", "Socket", "Base frequency", "Maximum boost frequency", "L2 cache", "L3 cache", "Manufacturing process", "Instruction sets"];
+    private static readonly string[] CpuKeys = ["Cores / threads", "Performance cores (P)", "Efficiency cores (E)", "Codename", "Microarchitecture", "Socket", "Base frequency", "Maximum boost frequency", "L2 cache", "L3 cache", "Manufacturing process", "Instruction sets", "Best cores", "Performance cores — Best cores"];
     private static readonly string[] GpuKeys = ["GPU chip", "VRAM capacity", "VRAM type", "PCIe link (current)", "Driver version"];
     private static readonly string[] BoardKeys = ["Manufacturer", "Chipset", "Chipset (LPC / ISA bridge)", "Super I/O / hardware monitor", "BIOS version", "BIOS date"];
     private static readonly string[] MemoryKeys = ["Total installed", "Memory type", "Current operating speed", "Rated speed", "Modules installed", "Memory slots"];

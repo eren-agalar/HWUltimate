@@ -147,6 +147,7 @@
   <data name="Section_FirmwareDrivers" xml:space="preserve"><value>Firmware &amp; Drivers</value></data>
   <data name="Section_AdvancedDetails" xml:space="preserve"><value>Advanced Details</value></data>
   <data name="Section_Processor" xml:space="preserve"><value>Processor</value></data>
+  <data name="Section_SiliconQuality" xml:space="preserve"><value>Silicon quality</value></data>
   <data name="Section_Graphics" xml:space="preserve"><value>Graphics</value></data>
   <data name="Section_Motherboard" xml:space="preserve"><value>Motherboard</value></data>
   <data name="Section_Memory" xml:space="preserve"><value>Memory</value></data>

@@ -147,6 +147,7 @@
   <data name="Section_FirmwareDrivers" xml:space="preserve"><value>Ürün yazılımı ve sürücüler</value></data>
   <data name="Section_AdvancedDetails" xml:space="preserve"><value>Gelişmiş ayrıntılar</value></data>
   <data name="Section_Processor" xml:space="preserve"><value>İşlemci</value></data>
+  <data name="Section_SiliconQuality" xml:space="preserve"><value>Silikon kalitesi</value></data>
   <data name="Section_Graphics" xml:space="preserve"><value>Ekran kartı</value></data>
   <data name="Section_Motherboard" xml:space="preserve"><value>Anakart</value></data>
   <data name="Section_Memory" xml:space="preserve"><value>Bellek</value></data>

@@ -48,7 +48,10 @@ public sealed class CpuDiscoveryService : IDeviceDiscoveryService
             try { topo = ProcessorTopology.Query(); } catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException) { }
             var (microcode, nominalMhz) = ReadRegistry();
             var wmi = ReadWmi();
-            return [Build(id, topo, microcode, nominalMhz, wmi)];
+            IReadOnlyList<CpuSetEntry>? cpuSets = null;
+            try { cpuSets = CpuSets.Query(); } catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException) { }
+            var device = Build(id, topo, microcode, nominalMhz, wmi);
+            return [device with { Properties = [.. device.Properties, .. CoreQualityRanking.Properties(cpuSets)] }];
         }
         catch (Exception ex) when (ex is PlatformNotSupportedException or ManagementException or UnauthorizedAccessException)
         {
