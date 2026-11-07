@@ -248,7 +248,7 @@ public class PersistentHidingTests
         state.SetNodeHidden(ExplorerKeys.Device("lhm:/nvme/1"), true, Nvme1.Name);
         state.SetNodeHidden(ExplorerKeys.Group("lhm:/nvme/0", SensorGroupKind.Temperatures), true, Nvme0.Name);
         var first = Boot(swapped: false);
-        Assert.Empty(SensorExplorerBuilder.Build(first, state).Where(n => n.Kind == ExplorerNodeKind.Sensor));
+        Assert.DoesNotContain(SensorExplorerBuilder.Build(first, state), n => n.Kind == ExplorerNodeKind.Sensor);
 
         // Next boot the drives swap numbers; both are present, so only the fingerprints reveal the swap.
         var second = Boot(swapped: true);
@@ -256,7 +256,7 @@ public class PersistentHidingTests
         Assert.True(state.IsNodeHidden(ExplorerKeys.Device("lhm:/nvme/0")));                                  // WD is now nvme/0
         Assert.True(state.IsNodeHidden(ExplorerKeys.Group("lhm:/nvme/1", SensorGroupKind.Temperatures)));     // Samsung is now nvme/1
         Assert.False(state.IsNodeHidden(ExplorerKeys.Device("lhm:/nvme/1")));
-        Assert.Empty(SensorExplorerBuilder.Build(second, state).Where(n => n.Kind == ExplorerNodeKind.Sensor));
+        Assert.DoesNotContain(SensorExplorerBuilder.Build(second, state), n => n.Kind == ExplorerNodeKind.Sensor);
         Assert.False(state.Rebind(second)); // stable once moved
 
         state.ShowHidden = true;

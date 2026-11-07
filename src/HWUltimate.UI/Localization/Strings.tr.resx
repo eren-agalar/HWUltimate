@@ -146,6 +146,17 @@
   <data name="Section_PerformanceCapabilities" xml:space="preserve"><value>Performans yetenekleri</value></data>
   <data name="Section_FirmwareDrivers" xml:space="preserve"><value>Ürün yazılımı ve sürücüler</value></data>
   <data name="Section_AdvancedDetails" xml:space="preserve"><value>Gelişmiş ayrıntılar</value></data>
+  <data name="Section_Processor" xml:space="preserve"><value>İşlemci</value></data>
+  <data name="Section_Graphics" xml:space="preserve"><value>Ekran kartı</value></data>
+  <data name="Section_Motherboard" xml:space="preserve"><value>Anakart</value></data>
+  <data name="Section_Memory" xml:space="preserve"><value>Bellek</value></data>
+  <data name="Section_Storage" xml:space="preserve"><value>Diskler</value></data>
+  <data name="Section_Displays" xml:space="preserve"><value>Monitörler</value></data>
+  <data name="Section_Network" xml:space="preserve"><value>Ağ</value></data>
+  <data name="Section_OperatingSystem" xml:space="preserve"><value>İşletim sistemi</value></data>
+  <data name="Hw_Feature" xml:space="preserve"><value>Özellik</value></data>
+  <data name="Hw_Description" xml:space="preserve"><value>Açıklama</value></data>
+  <data name="Hw_Source" xml:space="preserve"><value>Kaynak</value></data>
   <data name="App_AlreadyRunning" xml:space="preserve"><value>HWUltimate zaten çalışıyor.</value></data>
   <data name="App_UnexpectedError" xml:space="preserve"><value>Beklenmeyen bir hata oluştu ve günlüğe kaydedildi.</value></data>
   <data name="Status_Poll" xml:space="preserve"><value>Okuma {0:0} ms · {1} sensör · {2} cihaz</value></data>

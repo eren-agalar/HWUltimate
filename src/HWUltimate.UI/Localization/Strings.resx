@@ -146,6 +146,17 @@
   <data name="Section_PerformanceCapabilities" xml:space="preserve"><value>Performance Capabilities</value></data>
   <data name="Section_FirmwareDrivers" xml:space="preserve"><value>Firmware &amp; Drivers</value></data>
   <data name="Section_AdvancedDetails" xml:space="preserve"><value>Advanced Details</value></data>
+  <data name="Section_Processor" xml:space="preserve"><value>Processor</value></data>
+  <data name="Section_Graphics" xml:space="preserve"><value>Graphics</value></data>
+  <data name="Section_Motherboard" xml:space="preserve"><value>Motherboard</value></data>
+  <data name="Section_Memory" xml:space="preserve"><value>Memory</value></data>
+  <data name="Section_Storage" xml:space="preserve"><value>Drives</value></data>
+  <data name="Section_Displays" xml:space="preserve"><value>Displays</value></data>
+  <data name="Section_Network" xml:space="preserve"><value>Network</value></data>
+  <data name="Section_OperatingSystem" xml:space="preserve"><value>Operating system</value></data>
+  <data name="Hw_Feature" xml:space="preserve"><value>Feature</value></data>
+  <data name="Hw_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Hw_Source" xml:space="preserve"><value>Source</value></data>
   <data name="App_AlreadyRunning" xml:space="preserve"><value>HWUltimate is already running.</value></data>
   <data name="App_UnexpectedError" xml:space="preserve"><value>An unexpected error occurred and was logged.</value></data>
   <data name="Status_Poll" xml:space="preserve"><value>Poll {0:0} ms · {1} sensors · {2} devices</value></data>

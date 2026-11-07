@@ -34,144 +34,164 @@
     </DockPanel>
     <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" IsIndeterminate="True" Height="2" VerticalAlignment="Bottom" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
 
-    <!-- Devices -->
-    <Border Grid.Row="2" Style="{StaticResource Card}" Padding="6">
-      <ListBox ItemsSource="{Binding DeviceView}" SelectedItem="{Binding SelectedDevice}" ItemContainerStyle="{StaticResource Hwu.ListItem}" VirtualizingPanel.IsVirtualizingWhenGrouping="True">
+    <!-- Device tree: computer › category › device -->
+    <Border Grid.Row="2" Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="0,4" ClipToBounds="True">
+      <ListBox ItemsSource="{Binding DeviceView}" SelectedItem="{Binding SelectedDevice}" VirtualizingPanel.IsVirtualizingWhenGrouping="True" AutomationProperties.Name="{loc:Tr Nav_Hardware}">
+        <ListBox.ItemContainerStyle>
+          <Style TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                  <Border x:Name="Bd" Background="Transparent" Padding="26,3,8,3"><ContentPresenter /></Border>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.PanelHover}" /></Trigger>
+                    <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Selection}" /></Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+          </Style>
+        </ListBox.ItemContainerStyle>
         <ListBox.GroupStyle>
           <GroupStyle>
             <GroupStyle.HeaderTemplate>
-              <DataTemplate><TextBlock Margin="8,12,0,4" FontSize="{DynamicResource Size.FontSmall}" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Name}" /></DataTemplate>
+              <DataTemplate>
+                <DockPanel Margin="8,8,8,2">
+                  <ui:Icon DockPanel.Dock="Left" Kind="{Binding Items[0].Icon}" Width="14" Height="14" Margin="0,0,8,0" Foreground="{DynamicResource Brush.Accent}" />
+                  <TextBlock FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+              </DataTemplate>
             </GroupStyle.HeaderTemplate>
           </GroupStyle>
         </ListBox.GroupStyle>
         <ListBox.ItemTemplate>
           <DataTemplate>
             <DockPanel>
-              <ui:Icon DockPanel.Dock="Left" Kind="{Binding Icon}" Width="17" Height="17" Margin="0,1,10,0" VerticalAlignment="Top" Foreground="{DynamicResource Brush.Accent}" />
               <Border DockPanel.Dock="Right" Padding="6,0" CornerRadius="8" Background="{DynamicResource Brush.Accent}" VerticalAlignment="Center"
                       Visibility="{Binding MatchCount, Converter={x:Static local:PositiveToVisibility.Instance}}">
                 <TextBlock FontSize="11" Foreground="{DynamicResource Brush.OnAccent}" Text="{Binding MatchCount}" />
               </Border>
-              <StackPanel>
-                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontWeight="SemiBold" />
-                <TextBlock Style="{StaticResource Text.Small}" Text="{Binding Counts}" />
-              </StackPanel>
+              <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" VerticalAlignment="Center" />
             </DockPanel>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
     </Border>
 
-    <!-- Detail -->
-    <Grid Grid.Row="2" Grid.Column="1">
+    <!-- Detail: Feature | Description table with section header bands -->
+    <Grid Grid.Row="2" Grid.Column="1" Margin="10,0,0,0">
       <TextBlock Style="{StaticResource Text.Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{loc:Tr Hw_SelectDevice}"
                  Visibility="{Binding SelectedDevice, Converter={StaticResource NullToVisInv}}" />
-      <DockPanel Visibility="{Binding SelectedDevice, Converter={StaticResource NullToVis}}">
-        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,10">
-          <DockPanel>
+      <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" ClipToBounds="True"
+              Visibility="{Binding SelectedDevice, Converter={StaticResource NullToVis}}">
+        <DockPanel>
+          <!-- Device title line -->
+          <DockPanel DockPanel.Dock="Top" Margin="12,10,10,8">
             <ui:HwuIconButton DockPanel.Dock="Right" Icon="Copy" Label="{loc:Tr Hw_CopyDevice}" Command="{Binding CopyDeviceCommand}" Style="{StaticResource Hwu.IconButton.Bordered}" VerticalAlignment="Center" />
-            <ui:Icon DockPanel.Dock="Left" Kind="{Binding SelectedDevice.Icon}" Width="32" Height="32" Margin="0,0,14,0" Foreground="{DynamicResource Brush.Accent}" StrokeThickness="1.4" />
+            <ui:Icon DockPanel.Dock="Left" Kind="{Binding SelectedDevice.Icon}" Width="22" Height="22" Margin="0,0,10,0" Foreground="{DynamicResource Brush.Accent}" />
             <StackPanel VerticalAlignment="Center">
-              <TextBlock FontFamily="{StaticResource Font.Display}" FontSize="18" FontWeight="SemiBold" Text="{Binding SelectedDevice.Name}" TextWrapping="Wrap" />
-              <TextBlock Style="{StaticResource Text.Small}"><Run Text="{Binding SelectedDevice.CategoryTitle, Mode=OneWay}" /><Run Text="  ·  " /><Run Text="{Binding SelectedDevice.Device.Source, Mode=OneWay}" /></TextBlock>
+              <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding SelectedDevice.Name}" TextTrimming="CharacterEllipsis" />
+              <TextBlock Style="{StaticResource Text.Small}"><Run Text="{Binding SelectedDevice.CategoryTitle, Mode=OneWay}" /><Run Text="  ·  " /><Run Text="{Binding SelectedDevice.Counts, Mode=OneWay}" /></TextBlock>
             </StackPanel>
           </DockPanel>
-        </Border>
+          <!-- Legend -->
+          <WrapPanel DockPanel.Dock="Top" Margin="12,0,10,8">
+            <ui:HwuStatusIndicator Status="Info" Text="{loc:Tr Origin_Official}" Margin="0,0,16,0" />
+            <ui:HwuStatusIndicator Status="Normal" Text="{loc:Tr Origin_Detected}" Margin="0,0,16,0" />
+            <ui:HwuStatusIndicator Status="Warning" Text="{loc:Tr Origin_Live}" Margin="0,0,16,0" />
+            <ui:HwuStatusIndicator Status="Inactive" Text="{loc:Tr Origin_Unavailable}" />
+          </WrapPanel>
+          <!-- Column header -->
+          <Border DockPanel.Dock="Top" Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="0,1">
+            <Grid Height="26" Margin="0,0,14,0">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="280" /><ColumnDefinition Width="*" /><ColumnDefinition Width="190" /></Grid.ColumnDefinitions>
+              <TextBlock Margin="12,0" VerticalAlignment="Center" FontSize="{DynamicResource Size.FontSmall}" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" Text="{loc:Tr Hw_Feature}" />
+              <TextBlock Grid.Column="1" Margin="8,0" VerticalAlignment="Center" FontSize="{DynamicResource Size.FontSmall}" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" Text="{loc:Tr Hw_Description}" />
+              <TextBlock Grid.Column="2" Margin="8,0" VerticalAlignment="Center" FontSize="{DynamicResource Size.FontSmall}" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" Text="{loc:Tr Hw_Source}" />
+            </Grid>
+          </Border>
+          <ItemsControl DockPanel.Dock="Bottom" ItemsSource="{Binding Warnings}" Margin="12,6">
+            <ItemsControl.ItemTemplate><DataTemplate><TextBlock Style="{StaticResource Text.Small}" Text="{Binding}" TextWrapping="Wrap" /></DataTemplate></ItemsControl.ItemTemplate>
+          </ItemsControl>
 
-        <!-- Legend: where values come from -->
-        <WrapPanel DockPanel.Dock="Top" Margin="2,0,0,8">
-          <ui:HwuStatusIndicator Status="Info" Text="{loc:Tr Origin_Official}" Margin="0,0,16,0" />
-          <ui:HwuStatusIndicator Status="Normal" Text="{loc:Tr Origin_Detected}" Margin="0,0,16,0" />
-          <ui:HwuStatusIndicator Status="Warning" Text="{loc:Tr Origin_Live}" Margin="0,0,16,0" />
-          <ui:HwuStatusIndicator Status="Inactive" Text="{loc:Tr Origin_Unavailable}" />
-        </WrapPanel>
-
-        <ListBox DockPanel.Dock="Top" ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}" ItemContainerStyle="{StaticResource Hwu.TabItem}" Margin="0,0,0,8">
-          <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
-          <ListBox.ItemTemplate>
-            <DataTemplate><TextBlock><Run Text="{Binding Title, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding Rows.Count, Mode=OneWay}" Foreground="{DynamicResource Brush.TextMuted}" /></TextBlock></DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-
-        <ScrollViewer>
-          <StackPanel>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="6">
-              <ItemsControl ItemsSource="{Binding SelectedSection.Rows}" AlternationCount="2">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <Border x:Name="RowBorder" Padding="10,6" CornerRadius="6" Background="Transparent">
-                      <Grid>
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="240" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MaxWidth="240" /><ColumnDefinition Width="56" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
-                          <ui:HwuStatusIndicator x:Name="OriginDot" Status="Normal" Margin="0,0,8,0" VerticalAlignment="Top" ToolTip="{Binding Origin}" />
-                          <TextBlock Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Name}" TextWrapping="Wrap" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                          <TextBox x:Name="ValueText" Style="{StaticResource Text.Selectable}" Text="{Binding Value, Mode=OneWay}" />
-                          <TextBlock x:Name="NoteText" Style="{StaticResource Text.Small}" Text="{Binding Note}" Margin="0,2,0,0" Visibility="Collapsed" />
-                        </StackPanel>
-                        <TextBlock Grid.Column="2" Style="{StaticResource Text.Small}" Text="{Binding Source}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="12,1,8,0" ToolTip="{Binding Source}" />
-                        <StackPanel x:Name="Actions" Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Visibility="Hidden">
-                          <ui:HwuIconButton Icon="Copy" IconSize="12" Padding="4" MinHeight="0" ToolTip="{loc:Tr Explorer_CopyValue}" Command="{Binding DataContext.CopyValueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                          <ui:HwuIconButton Icon="Report" IconSize="12" Padding="4" MinHeight="0" ToolTip="{loc:Tr Explorer_CopyRow}" Command="{Binding DataContext.CopyPropertyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                        </StackPanel>
-                      </Grid>
-                    </Border>
-                    <DataTemplate.Triggers>
-                      <Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource Brush.RowAlt}" /></Trigger>
-                      <DataTrigger Binding="{Binding OriginKey}" Value="Official"><Setter TargetName="OriginDot" Property="Status" Value="Info" /></DataTrigger>
-                      <DataTrigger Binding="{Binding IsAvailable}" Value="False">
-                        <Setter TargetName="OriginDot" Property="Status" Value="Inactive" />
-                        <Setter TargetName="ValueText" Property="FontStyle" Value="Italic" />
-                        <Setter TargetName="ValueText" Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
-                      </DataTrigger>
-                      <DataTrigger Binding="{Binding HasNote}" Value="True"><Setter TargetName="NoteText" Property="Visibility" Value="Visible" /></DataTrigger>
-                      <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource Brush.PanelHover}" />
-                        <Setter TargetName="Actions" Property="Visibility" Value="Visible" />
-                      </Trigger>
-                    </DataTemplate.Triggers>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </Border>
-
-            <Border Style="{StaticResource Card}" Margin="0">
-              <StackPanel>
-                <DockPanel Margin="0,0,0,8">
-                  <ui:HwuIconButton DockPanel.Dock="Right" Icon="Refresh" Command="{Binding RefreshLiveSensorsCommand}" ToolTip="{loc:Tr Common_Refresh}" />
-                  <ui:HwuStatusIndicator DockPanel.Dock="Left" Status="Warning" Margin="0,0,8,0" />
-                  <TextBlock Style="{StaticResource Text.Section}" Margin="0" VerticalAlignment="Center" Text="{loc:Tr Hw_LiveSensors}" />
-                </DockPanel>
-                <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Hw_NoLiveSensors}" Visibility="{Binding HasLiveSensors, Converter={StaticResource BoolToVisInv}}" />
-                <ItemsControl ItemsSource="{Binding LiveSensors}" AlternationCount="2">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border x:Name="R" Padding="8,3" CornerRadius="5">
-                        <Grid>
-                          <Grid.ColumnDefinitions><ColumnDefinition Width="110" /><ColumnDefinition Width="*" /><ColumnDefinition Width="100" /><ColumnDefinition Width="90" /><ColumnDefinition Width="90" /></Grid.ColumnDefinitions>
-                          <TextBlock Text="{Binding Group}" Style="{StaticResource Text.Small}" VerticalAlignment="Center" />
-                          <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                          <TextBlock Grid.Column="3" Text="{Binding Min}" Foreground="{DynamicResource Brush.TextMuted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                          <TextBlock Grid.Column="4" Text="{Binding Max}" Foreground="{DynamicResource Brush.TextMuted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                        </Grid>
-                      </Border>
-                      <DataTemplate.Triggers><Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="R" Property="Background" Value="{DynamicResource Brush.RowAlt}" /></Trigger></DataTemplate.Triggers>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
-            </Border>
-
-            <ItemsControl ItemsSource="{Binding Warnings}" Margin="0,8,0,0">
-              <ItemsControl.ItemTemplate><DataTemplate><TextBlock Style="{StaticResource Text.Small}" Text="{Binding}" /></DataTemplate></ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </ScrollViewer>
-      </DockPanel>
+          <ListBox ItemsSource="{Binding DetailRows}" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.ScrollUnit="Pixel" AutomationProperties.Name="{loc:Tr Hw_Description}">
+            <ListBox.ItemContainerStyle>
+              <Style TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                  <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                      <Border x:Name="Bd" Background="Transparent"><ContentPresenter /></Border>
+                      <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.PanelHover}" /></Trigger>
+                      </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                  </Setter.Value>
+                </Setter>
+              </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid>
+                  <!-- Section header band -->
+                  <Border x:Name="HeaderBand" Background="{DynamicResource Brush.RowAlt}" Padding="12,5" Visibility="Collapsed">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Header}" />
+                  </Border>
+                  <!-- Property row -->
+                  <Grid x:Name="PropertyGrid" Visibility="Collapsed" MinHeight="24">
+                    <Grid.ContextMenu>
+                      <ContextMenu>
+                        <MenuItem Header="{loc:Tr Explorer_CopyValue}" Command="{Binding PlacementTarget.Tag.CopyValueCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding Property}" />
+                        <MenuItem Header="{loc:Tr Explorer_CopyRow}" Command="{Binding PlacementTarget.Tag.CopyPropertyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding Property}" />
+                      </ContextMenu>
+                    </Grid.ContextMenu>
+                    <Grid.Tag><Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType=UserControl}" /></Grid.Tag>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="280" /><ColumnDefinition Width="*" /><ColumnDefinition Width="190" /></Grid.ColumnDefinitions>
+                    <DockPanel Margin="24,3,8,3">
+                      <ui:HwuStatusIndicator x:Name="OriginDot" DockPanel.Dock="Left" Status="Normal" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="{Binding Property.Origin}" />
+                      <TextBlock Text="{Binding Property.Name}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <StackPanel Grid.Column="1" Margin="8,3" VerticalAlignment="Center">
+                      <TextBox x:Name="ValueText" Style="{StaticResource Text.Selectable}" Text="{Binding Property.Value, Mode=OneWay}" />
+                      <TextBlock x:Name="NoteText" Style="{StaticResource Text.Small}" Text="{Binding Property.Note}" TextWrapping="Wrap" Margin="0,1,0,0" Visibility="Collapsed" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Style="{StaticResource Text.Small}" Text="{Binding Property.Source}" TextTrimming="CharacterEllipsis" Margin="8,3" VerticalAlignment="Center" ToolTip="{Binding Property.Source}" />
+                  </Grid>
+                  <!-- Live reading row -->
+                  <Grid x:Name="LiveGrid" Visibility="Collapsed" MinHeight="24">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="280" /><ColumnDefinition Width="*" /><ColumnDefinition Width="190" /></Grid.ColumnDefinitions>
+                    <DockPanel Margin="24,3,8,3">
+                      <ui:HwuStatusIndicator DockPanel.Dock="Left" Status="Warning" Margin="0,0,8,0" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding Live.Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <TextBlock Grid.Column="1" Margin="8,3" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular">
+                      <Run Text="{Binding Live.Value, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding Live.Min, Mode=OneWay}" Foreground="{DynamicResource Brush.TextMuted}" /><Run Text=" – " Foreground="{DynamicResource Brush.TextMuted}" /><Run Text="{Binding Live.Max, Mode=OneWay}" Foreground="{DynamicResource Brush.TextMuted}" />
+                    </TextBlock>
+                    <TextBlock Grid.Column="2" Style="{StaticResource Text.Small}" Text="{Binding Live.Group}" Margin="8,3" VerticalAlignment="Center" />
+                  </Grid>
+                </Grid>
+                <DataTemplate.Triggers>
+                  <DataTrigger Binding="{Binding IsHeader}" Value="True"><Setter TargetName="HeaderBand" Property="Visibility" Value="Visible" /></DataTrigger>
+                  <DataTrigger Binding="{Binding IsProperty}" Value="True"><Setter TargetName="PropertyGrid" Property="Visibility" Value="Visible" /></DataTrigger>
+                  <DataTrigger Binding="{Binding IsLive}" Value="True"><Setter TargetName="LiveGrid" Property="Visibility" Value="Visible" /></DataTrigger>
+                  <DataTrigger Binding="{Binding Property.OriginKey}" Value="Official"><Setter TargetName="OriginDot" Property="Status" Value="Info" /></DataTrigger>
+                  <DataTrigger Binding="{Binding Property.IsAvailable}" Value="False">
+                    <Setter TargetName="OriginDot" Property="Status" Value="Inactive" />
+                    <Setter TargetName="ValueText" Property="FontStyle" Value="Italic" />
+                    <Setter TargetName="ValueText" Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
+                  </DataTrigger>
+                  <DataTrigger Binding="{Binding Property.HasNote}" Value="True"><Setter TargetName="NoteText" Property="Visibility" Value="Visible" /></DataTrigger>
+                </DataTemplate.Triggers>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
     </Grid>
   </Grid>
 </UserControl>

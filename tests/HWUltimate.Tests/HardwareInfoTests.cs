@@ -432,3 +432,51 @@ public class HardwareInfoExporterTests
         Assert.Empty(HardwareInfoExporter.Search(inv, "does-not-exist"));
     }
 }
+
+public class SystemSummaryTests
+{
+    private static DeviceInfo D(string id, string name, HardwareCategory c, params (string Name, string Value)[] props) => new()
+    {
+        Id = id, Name = name, Category = c, Source = "test",
+        Properties = props.Select(p => new HardwareProperty(p.Name, p.Value, PropertySections.Overview, "test")).ToList(),
+    };
+
+    [Fact]
+    public void Summary_lists_every_component_from_discovered_values_only()
+    {
+        var inv = new HardwareInventory(DateTimeOffset.Now, new SystemSummary { OperatingSystem = "Windows 11 Pro", OsVersion = "10.0.26100", OsBuild = "26100", ComputerName = "PC" },
+        [
+            D("c", "AMD Ryzen 7 7800X3D", HardwareCategory.Cpu, ("Cores / threads", "8 / 16"), ("Codename", "Raphael"), ("Unrelated", "x")),
+            D("g1", "NVIDIA GeForce RTX 4070", HardwareCategory.Gpu, ("VRAM capacity", "12 GB"), ("Driver version", "566.36")),
+            D("g2", "AMD Radeon(TM) Graphics", HardwareCategory.Gpu),
+            D("b", "ASUS TUF GAMING B650-PLUS", HardwareCategory.Motherboard, ("Chipset", "AMD B650"), ("BIOS version", "3024")),
+            D("m", "System Memory", HardwareCategory.Memory, ("Total installed", "32 GB"), ("Memory type", "DDR5")),
+            D("m1", "Kingston KF560C36-16 (DIMM_A2)", HardwareCategory.MemoryModule, ("Capacity", "16 GB"), ("Type", "DDR5"), ("Configured speed", "6000 MT/s")),
+            D("s", "Samsung SSD 990 PRO 2TB", HardwareCategory.Storage, ("Capacity", "2000 GB"), ("Bus", "NVMe")),
+            D("n1", "Intel Ethernet I226-V", HardwareCategory.Network, ("Interface status", "Up"), ("Link speed", "2.5 Gbps")),
+            D("n2", "Hyper-V Virtual Ethernet Adapter", HardwareCategory.Network, ("Interface status", "Down")),
+        ], []);
+        var summary = SystemSummaryBuilder.Build(inv, "System summary");
+        var sections = HardwareInfoExporter.Sections(summary).Select(s => s.Section).ToList();
+        Assert.Equal([SystemSummaryBuilder.ProcessorSection, SystemSummaryBuilder.GraphicsSection, SystemSummaryBuilder.MotherboardSection, SystemSummaryBuilder.MemorySection,
+            SystemSummaryBuilder.StorageSection, SystemSummaryBuilder.NetworkSection, SystemSummaryBuilder.SystemSection], sections);
+
+        var p = summary.Properties;
+        Assert.Contains(p, x => x.Name == "Cores / threads" && x.Value == "8 / 16");
+        Assert.DoesNotContain(p, x => x.Name == "Unrelated");
+        Assert.Contains(p, x => x.Name == "NVIDIA GeForce RTX 4070" && x.Value == "12 GB  ·  566.36");
+        Assert.Contains(p, x => x.Name == "AMD Radeon(TM) Graphics"); // iGPU listed even without extra facts
+        Assert.Contains(p, x => x.Name == "Kingston KF560C36-16 (DIMM_A2)" && x.Value == "16 GB  ·  DDR5  ·  6000 MT/s");
+        Assert.Contains(p, x => x.Name == "Intel Ethernet I226-V");
+        Assert.DoesNotContain(p, x => x.Name.StartsWith("Hyper-V", StringComparison.Ordinal));
+        Assert.Contains(p, x => x.Name == "Version" && x.Value == "10.0.26100 (build 26100)");
+    }
+
+    [Fact]
+    public void Empty_inventory_still_gives_a_summary_from_wmi()
+    {
+        var summary = SystemSummaryBuilder.Build(new HardwareInventory(DateTimeOffset.Now, new SystemSummary { Processor = "Intel Core i5-8250U", PhysicalCores = 4, LogicalProcessors = 8 }, [], []), "S");
+        Assert.Contains(summary.Properties, x => x.Name == "Name" && x.Value == "Intel Core i5-8250U");
+        Assert.Contains(summary.Properties, x => x.Name == "Cores / threads" && x.Value == "4 / 8");
+    }
+}

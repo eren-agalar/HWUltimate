@@ -40,13 +40,21 @@ public sealed record PropertyRow(HardwareProperty Property)
 
 public sealed record PropertySection(string Key, string Title, IReadOnlyList<PropertyRow> Rows);
 
+/// <summary>One line of the detail table: a section header band or a property (Feature | Description).</summary>
+public sealed record DetailRow(string? Header, PropertyRow? Property, LiveSensorRow? Live = null)
+{
+    public bool IsHeader => Header is not null;
+    public bool IsProperty => Property is not null;
+    public bool IsLive => Live is not null;
+}
+
 public sealed partial class DeviceItem : ObservableObject
 {
     public DeviceItem(DeviceInfo device)
     {
         Device = device;
         Icon = IconMap.ForCategory(device.Category);
-        CategoryTitle = Loc.Get($"Category_{device.Category}");
+        CategoryTitle = device.Category == HardwareCategory.System ? Environment.MachineName : Loc.Get($"Category_{device.Category}");
         Available = device.Properties.Count(p => p.IsAvailable);
         Unavailable = device.Properties.Count - Available;
     }
@@ -87,6 +95,7 @@ public sealed partial class HardwareViewModel : ObservableObject
     public ObservableCollection<DeviceItem> Devices { get; } = [];
     public ICollectionView DeviceView { get; }
     public ObservableCollection<PropertySection> Sections { get; } = [];
+    public RangeObservableCollection<DetailRow> DetailRows { get; } = [];
     public ObservableCollection<LiveSensorRow> LiveSensors { get; } = [];
     public ObservableCollection<string> Warnings { get; } = [];
     public IReadOnlyList<HardwareInfoFormat> ExportFormats { get; } = Enum.GetValues<HardwareInfoFormat>();
@@ -125,38 +134,13 @@ public sealed partial class HardwareViewModel : ObservableObject
         _current = inv;
         var selectedId = SelectedDevice?.Device.Id;
         Devices.Clear();
-        Devices.Add(new DeviceItem(SummaryDevice(inv.Summary)));
+        Devices.Add(new DeviceItem(SystemSummaryBuilder.Build(inv, Loc.Get("Hw_SystemSummary"))));
         foreach (var d in inv.Devices) Devices.Add(new DeviceItem(d));
         Warnings.Clear();
         foreach (var w in inv.Warnings) Warnings.Add(w);
         Collected = Loc.Format("Hw_Collected", inv.CollectedAt.LocalDateTime);
         ApplySearch();
         SelectedDevice = Devices.FirstOrDefault(d => d.Device.Id == selectedId) ?? Devices.FirstOrDefault();
-    }
-
-    /// <summary>The OS / system summary presented as a pseudo-device so it uses the same layout, copy and search.</summary>
-    internal static DeviceInfo SummaryDevice(SystemSummary s)
-    {
-        var props = new List<HardwareProperty>();
-        void Add(string name, string? value, string section = PropertySections.Overview)
-        {
-            props.Add(string.IsNullOrWhiteSpace(value)
-                ? HardwareProperty.Unavailable(name, section, "Not reported by WMI.", "WMI")
-                : new HardwareProperty(name, value, section, "WMI"));
-        }
-
-        Add("Computer", s.ComputerName);
-        Add("Operating system", s.OperatingSystem);
-        Add("OS version", s.OsVersion is null ? null : $"{s.OsVersion} (build {s.OsBuild})");
-        Add("System", $"{s.SystemManufacturer} {s.SystemModel}".Trim());
-        Add("Motherboard", s.Motherboard);
-        Add("BIOS", $"{s.BiosVersion} {s.BiosDate}".Trim(), PropertySections.Firmware);
-        Add("Processor", s.Processor);
-        Add("Cores / threads", s.PhysicalCores is null ? null : $"{s.PhysicalCores} / {s.LogicalProcessors}", PropertySections.Specifications);
-        Add("Installed memory", s.TotalMemoryBytes is { } b ? $"{b / 1024d / 1024 / 1024:0.#} GB" : null, PropertySections.Specifications);
-        Add("Graphics", string.Join("; ", s.Gpus));
-        Add("Uptime", s.Uptime is { } u ? $"{(int)u.TotalDays}d {u.Hours}h {u.Minutes}m" : null, PropertySections.Advanced);
-        return new DeviceInfo { Id = "summary", Name = Loc.Get("Hw_SystemSummary"), Category = HardwareCategory.System, Source = "WMI", Properties = props };
     }
 
     partial void OnSearchTextChanged(string value) => ApplySearch();
@@ -201,6 +185,25 @@ public sealed partial class HardwareViewModel : ObservableObject
         }
 
         SelectedSection = Sections.FirstOrDefault(s => s.Key == previous) ?? Sections.FirstOrDefault();
+        BuildDetail();
+    }
+
+    private void BuildDetail()
+    {
+        var rows = new List<DetailRow>();
+        foreach (var section in Sections)
+        {
+            rows.Add(new DetailRow(section.Title, null));
+            rows.AddRange(section.Rows.Select(r => new DetailRow(null, r)));
+        }
+
+        if (LiveSensors.Count > 0)
+        {
+            rows.Add(new DetailRow(Loc.Get("Hw_LiveSensors"), null));
+            rows.AddRange(LiveSensors.Select(l => new DetailRow(null, null, l)));
+        }
+
+        DetailRows.ReplaceAll(rows);
     }
 
     public static string SectionTitle(string key) =>
@@ -222,13 +225,14 @@ public sealed partial class HardwareViewModel : ObservableObject
         var matches = snap.Devices.Where(x => x.Category == d.Category && (Normalize(x.Name) == name || Normalize(x.Name).Contains(name, StringComparison.Ordinal) || name.Contains(Normalize(x.Name), StringComparison.Ordinal)))
             .Select(x => x.DeviceId).ToHashSet(StringComparer.Ordinal);
         var c = Loc.Instance.Culture;
-        foreach (var s in snap.Sensors.Where(s => matches.Contains(s.DeviceId) && s.IsMeasurement))
+        foreach (var s in snap.Sensors.Where(s => matches.Contains(s.DeviceId) && s.IsMeasurement && s.SampleCount > 0))
         {
             LiveSensors.Add(new LiveSensorRow(Loc.Get($"SensorType_{s.Type}"), s.Name, s.Unit.FormatValue(s.Value, c, Loc.Get("Common_NA")),
                 s.Unit.FormatValue(s.Minimum, c, "—"), s.Unit.FormatValue(s.Maximum, c, "—")));
         }
 
         HasLiveSensors = LiveSensors.Count > 0;
+        BuildDetail();
     }
 
     private static string Normalize(string s) => string.Join(' ', s.ToUpperInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
