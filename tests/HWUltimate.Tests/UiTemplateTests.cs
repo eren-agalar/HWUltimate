@@ -28,4 +28,20 @@ public class UiTemplateTests
         var settings = File.ReadAllText(Path.Combine(Root(), "src", "HWUltimate.App", "ViewModels", "SettingsViewModel.cs"));
         Assert.Matches(new Regex(@"record LanguageOption\(string Culture, string Name\)\s*\{[^}]*ToString\(\) => Name;"), settings);
     }
+
+    [Fact]
+    public void Logo_is_vector_and_respects_the_animation_setting()
+    {
+        var logo = File.ReadAllText(Path.Combine(Root(), "src", "HWUltimate.UI", "Controls", "HwuLogo.cs"));
+        Assert.Contains("ThemeManager.AnimationsEnabled", logo, StringComparison.Ordinal);
+        Assert.Contains("WindowState.Minimized", logo, StringComparison.Ordinal);
+        Assert.Contains("SetDesiredFrameRate", logo, StringComparison.Ordinal);
+        var main = File.ReadAllText(Path.Combine(Root(), "src", "HWUltimate.App", "Views", "MainWindow.xaml"));
+        Assert.Contains("<ui:HwuLogo", main, StringComparison.Ordinal);
+        Assert.DoesNotContain("hwultimate.png\" Width", main, StringComparison.Ordinal);
+
+        // The application icon carries every size Windows asks for, so small sizes are drawn, not scaled.
+        var ico = File.ReadAllBytes(Path.Combine(Root(), "src", "HWUltimate.App", "Assets", "hwultimate.ico"));
+        Assert.Equal(10, BitConverter.ToUInt16(ico, 4));
+    }
 }

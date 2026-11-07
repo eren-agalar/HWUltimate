@@ -31,10 +31,10 @@
     <Border Background="{DynamicResource Brush.Sidebar}" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="0,0,1,0">
       <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="18,16,12,22">
-          <Image Source="/Assets/hwultimate.png" Width="30" Height="30" RenderOptions.BitmapScalingMode="HighQuality" />
+          <ui:HwuLogo Width="32" Height="32" AutomationProperties.Name="HWUltimate" />
           <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
             <TextBlock FontFamily="{StaticResource Font.Display}" FontSize="15" FontWeight="Bold">
-              <Run Text="HWULTIMATE" /><Run Text=" HARDWARE" Foreground="{DynamicResource Brush.Accent}" />
+              <Run Text="HW" /><Run Text="ULTIMATE" Foreground="{DynamicResource Brush.Accent}" />
             </TextBlock>
             <TextBlock Text="{Binding Version, StringFormat=v{0}}" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" />
           </StackPanel>
@@ -86,7 +86,7 @@
 
         <Border Background="{DynamicResource Brush.Background}" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
           <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <Image Source="/Assets/hwultimate.png" Width="64" Height="64" />
+            <ui:HwuLogo Width="72" Height="72" HorizontalAlignment="Center" />
             <TextBlock Margin="0,14,0,8" HorizontalAlignment="Center" Text="{loc:Tr Common_Loading}" />
             <ProgressBar IsIndeterminate="True" Width="200" Height="3" />
           </StackPanel>

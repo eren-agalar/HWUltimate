@@ -48,7 +48,7 @@ public class SiliconQualityTests
         var p = CoreQualityRanking.Properties(Cpu(4, _ => 0));
         Assert.False(Get(p, "Core quality ranking").IsAvailable);
         Assert.DoesNotContain(p, x => x.Name == "Best cores");
-        Assert.False(CoreQualityRanking.Properties(null).Any(x => x.IsAvailable));
+        Assert.DoesNotContain(CoreQualityRanking.Properties(null), x => x.IsAvailable);
     }
 
     [Fact]
