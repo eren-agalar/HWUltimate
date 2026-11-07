@@ -21,6 +21,8 @@ using HWUltimate.Infrastructure.Gpu;
 using HWUltimate.Infrastructure.Preferences;
 using HWUltimate.Infrastructure.Settings;
 using HWUltimate.Infrastructure.Smbios;
+using HWUltimate.Infrastructure.Updates;
+using HWUltimate.Core.Updates;
 using Serilog;
 
 namespace HWUltimate.App.Services;
@@ -78,6 +80,11 @@ public static class Bootstrapper
         services.AddSingleton<IHardwareInventoryService, HardwareInventoryService>();
 
         services.AddSingleton<IReportExportService, ReportExportService>();
+
+        // Updates from GitHub Releases (public API, no account).
+        services.AddSingleton<IUpdateService>(sp => new GitHubUpdateService(paths, sp.GetRequiredService<ILogger<GitHubUpdateService>>(),
+            ReleaseParser.ParseVersion(Version) ?? new System.Version(0, 0, 0)));
+        services.AddSingleton<UpdateViewModel>();
 
         services.AddSingleton<IPreferenceStore<SensorExplorerState>>(sp =>
             new JsonPreferenceStore<SensorExplorerState>(Path.Combine(paths.Root, "sensor-explorer.json"), sp.GetRequiredService<ILogger<SensorExplorerState>>()));

@@ -60,6 +60,7 @@ public partial class App : Application
         if (settings.General.StartMinimized || e.Args.Contains("--minimized")) main.WindowState = WindowState.Minimized;
         main.Show();
 
+        _services.GetRequiredService<UpdateViewModel>().Start(e.Args);
         await _services.GetRequiredService<MainViewModel>().InitializeAsync();
     }
 

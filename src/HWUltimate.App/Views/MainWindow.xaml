@@ -71,6 +71,28 @@
       </Grid>
 
       <!-- Elevation banner -->
+      <!-- New version on GitHub -->
+      <Border DockPanel.Dock="Top" Margin="20,0,20,10" Padding="12,8" CornerRadius="{StaticResource Radius.Card}"
+              Background="{DynamicResource Brush.AccentSoft}" BorderBrush="{DynamicResource Brush.Accent}" BorderThickness="1"
+              Visibility="{Binding Updates.IsBannerVisible, Converter={StaticResource BoolToVis}}">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Visibility="{Binding Updates.Available, Converter={StaticResource NullToVis}}">
+              <Button Style="{StaticResource Hwu.Button.Primary}" Content="{loc:Tr Update_Install}" Command="{Binding Updates.InstallCommand}" Margin="0,0,6,0" />
+              <Button Content="{loc:Tr Update_WhatsNew}" Command="{Binding Updates.ShowNotesCommand}" Margin="0,0,6,0" />
+              <Button Content="{loc:Tr Update_Skip}" Command="{Binding Updates.SkipCommand}" Margin="0,0,6,0" />
+            </StackPanel>
+            <ui:HwuIconButton Icon="Close" ToolTip="{loc:Tr Common_Close}" Command="{Binding Updates.DismissCommand}" />
+          </StackPanel>
+          <ui:Icon DockPanel.Dock="Left" Kind="Export" Width="16" Height="16" Foreground="{DynamicResource Brush.Accent}" Margin="0,0,10,0" VerticalAlignment="Center" />
+          <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+            <TextBlock Text="{Binding Updates.BannerText}" TextWrapping="Wrap" FontWeight="SemiBold" />
+            <ProgressBar Height="3" Margin="0,6,0,0" Maximum="1" Value="{Binding Updates.Progress}" Visibility="{Binding Updates.IsBusy, Converter={StaticResource BoolToVis}}" />
+            <TextBlock Style="{StaticResource Text.Small}" Text="{Binding Updates.StatusText}" Visibility="{Binding Updates.IsBusy, Converter={StaticResource BoolToVis}}" />
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
       <Border DockPanel.Dock="Top" Margin="20,0,20,10" Padding="12,8" CornerRadius="{StaticResource Radius.Card}"
               Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Warn}" BorderThickness="1"
               Visibility="{Binding IsElevated, Converter={StaticResource BoolToVisInv}}">

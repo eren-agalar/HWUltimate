@@ -13,6 +13,10 @@ public sealed record GeneralSettings
     public bool VerboseLogging { get; init; }
     public bool EnableNvidiaProvider { get; init; } = true;
     public bool EnableAmdProvider { get; init; } = true;
+    /// <summary>Check GitHub for new releases at start-up and every few hours.</summary>
+    public bool CheckForUpdates { get; init; } = true;
+    /// <summary>A version the user chose to skip; no notification for it (a newer one notifies again).</summary>
+    public string? SkippedUpdateVersion { get; init; }
 }
 
 public sealed record SensorSettings

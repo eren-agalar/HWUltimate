@@ -41,8 +41,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     public MainViewModel(
         ISensorPollingService polling, IHardwareInventoryService inventory, ILogger<MainViewModel> logger,
-        SensorExplorerViewModel sensors, HardwareViewModel hardware, ReportsViewModel reports, SettingsViewModel settingsVm)
+        SensorExplorerViewModel sensors, HardwareViewModel hardware, ReportsViewModel reports, SettingsViewModel settingsVm, UpdateViewModel updates)
     {
+        Updates = updates;
         _polling = polling;
         _inventory = inventory;
         _logger = logger;
@@ -63,6 +64,7 @@ public sealed partial class MainViewModel : ObservableObject
     public IReadOnlyList<NavPage> Pages { get; }
 
     public ObservableCollection<ProviderStatusItem> Providers { get; } = [];
+    public UpdateViewModel Updates { get; }
     public string Version => Bootstrapper.Version;
     public bool IsElevated { get; }
 

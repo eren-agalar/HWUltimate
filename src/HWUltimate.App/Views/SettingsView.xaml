@@ -194,6 +194,24 @@
         <StackPanel x:Name="General" Style="{StaticResource Page}">
           <Border Style="{StaticResource Card}">
             <StackPanel>
+              <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Update_Section}" />
+              <TextBlock Style="{StaticResource Text.Small}" Margin="0,0,0,8"><Run Text="{loc:Tr Update_CurrentVersion}" /><Run Text=" " /><Run Text="{Binding Updates.CurrentVersion, Mode=OneWay}" FontWeight="SemiBold" /></TextBlock>
+              <ToggleButton Style="{StaticResource HwuToggle}" IsChecked="{Binding Updates.AutoCheck}" Content="{loc:Tr Update_AutoCheck}" />
+              <TextBlock Style="{StaticResource Text.Small}" Text="{loc:Tr Update_AutoCheckHint}" TextWrapping="Wrap" Margin="0,2,0,10" />
+              <WrapPanel>
+                <Button Content="{loc:Tr Update_CheckNow}" Command="{Binding Updates.CheckNowCommand}" Margin="0,0,8,8" />
+                <Button Style="{StaticResource Hwu.Button.Primary}" Content="{loc:Tr Update_Install}" Command="{Binding Updates.InstallCommand}" Margin="0,0,8,8"
+                        Visibility="{Binding Updates.Available, Converter={StaticResource NullToVis}}" />
+                <Button Content="{loc:Tr Update_WhatsNew}" Command="{Binding Updates.ShowNotesCommand}" Margin="0,0,8,8"
+                        Visibility="{Binding Updates.Available, Converter={StaticResource NullToVis}}" />
+                <Button Content="{loc:Tr Update_OpenGitHub}" Command="{Binding Updates.OpenRepositoryCommand}" Margin="0,0,8,8" />
+              </WrapPanel>
+              <ProgressBar Height="3" Maximum="1" Value="{Binding Updates.Progress}" Margin="0,0,0,6" Visibility="{Binding Updates.IsBusy, Converter={StaticResource BoolToVis}}" />
+              <TextBlock Style="{StaticResource Text.Small}" Text="{Binding Updates.StatusText}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
               <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Settings_Language}" />
               <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" DisplayMemberPath="Name" HorizontalAlignment="Left" MinWidth="220" />
             </StackPanel>

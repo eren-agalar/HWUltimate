@@ -11,6 +11,31 @@
   <data name="Nav_Settings" xml:space="preserve"><value>Ayarlar</value></data>
   <data name="Common_NA" xml:space="preserve"><value>Yok</value></data>
   <data name="Common_Refresh" xml:space="preserve"><value>Yenile</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Kapat</value></data>
+  <data name="Update_Section" xml:space="preserve"><value>Güncellemeler</value></data>
+  <data name="Update_CurrentVersion" xml:space="preserve"><value>Yüklü sürüm:</value></data>
+  <data name="Update_AutoCheck" xml:space="preserve"><value>Güncellemeleri otomatik denetle</value></data>
+  <data name="Update_AutoCheckHint" xml:space="preserve"><value>Açılıştan kısa süre sonra ve 6 saatte bir GitHub Releases sayfasını denetler. HWUltimate'in yaptığı tek ağ bağlantısı budur; bilgisayarınız hakkında hiçbir bilgi gönderilmez.</value></data>
+  <data name="Update_CheckNow" xml:space="preserve"><value>Şimdi denetle</value></data>
+  <data name="Update_OpenGitHub" xml:space="preserve"><value>GitHub'da aç</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Güncellemeler denetleniyor…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>HWUltimate {0} en güncel sürüm.</value></data>
+  <data name="Update_AvailableStatus" xml:space="preserve"><value>{0} sürümü yayınlandı.</value></data>
+  <data name="Update_Banner" xml:space="preserve"><value>HWUltimate {0} yayınlandı.</value></data>
+  <data name="Update_CheckFailed" xml:space="preserve"><value>Güncellemeler denetlenemedi: {0}</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>İndir ve kur</value></data>
+  <data name="Update_WhatsNew" xml:space="preserve"><value>Yenilikler</value></data>
+  <data name="Update_Skip" xml:space="preserve"><value>Bu sürümü atla</value></data>
+  <data name="Update_NotesTitle" xml:space="preserve"><value>{0} sürümündeki yenilikler</value></data>
+  <data name="Update_NoNotes" xml:space="preserve"><value>Bu sürüm için sürüm notu yayınlanmamış.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>İndiriliyor… %{0}</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>İndirildi ve doğrulandı.</value></data>
+  <data name="Update_ReadyTitle" xml:space="preserve"><value>Kuruluma hazır</value></data>
+  <data name="Update_ReadyText" xml:space="preserve"><value>{0} sürümü indirildi ve sağlama toplamı doğrulandı. HWUltimate kapanıp güncellemeyi kuracak ve yeniden açılacak. Ayarlarınız korunur.</value></data>
+  <data name="Update_Installed" xml:space="preserve"><value>HWUltimate {0} sürümüne güncellendi.</value></data>
+  <data name="Update_InstallFailed" xml:space="preserve"><value>Güncelleme kurulamadı; önceki sürüm geri yüklendi. Ayrıntılar logs\update.log dosyasında.</value></data>
+  <data name="Update_NoWriteAccess" xml:space="preserve"><value>HWUltimate program klasörüne yazamıyor. Yeni sürümü sürüm sayfasından indirip dosyaları değiştirin veya HWUltimate'i yönetici olarak çalıştırın.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Güncelleme başarısız: {0}</value></data>
   <data name="Common_Search" xml:space="preserve"><value>Ara…</value></data>
   <data name="Common_Loading" xml:space="preserve"><value>Donanım algılanıyor…</value></data>
   <data name="Elevation_Banner" xml:space="preserve"><value>Yönetici hakları olmadan çalışıyor. Anakart, voltaj ve bazı CPU sensörleri kullanılamıyor.</value></data>

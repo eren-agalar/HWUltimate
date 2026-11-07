@@ -43,8 +43,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _loading;
 
     public SettingsViewModel(ISettingsService settings, ISensorPollingService polling, AppPaths paths,
-        SensorExplorerViewModel explorer)
+        SensorExplorerViewModel explorer, UpdateViewModel updates)
     {
+        Updates = updates;
         _settings = settings;
         _polling = polling;
         _paths = paths;
@@ -57,6 +58,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     public SensorExplorerViewModel Explorer { get; }
+    public UpdateViewModel Updates { get; }
     public IReadOnlyList<SettingsSection> Sections { get; }
     public IReadOnlyList<LanguageOption> Languages { get; }
     public ObservableCollection<ThemeOption> Themes { get; } = [];

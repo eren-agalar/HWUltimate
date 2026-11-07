@@ -11,6 +11,31 @@
   <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Common_NA" xml:space="preserve"><value>N/A</value></data>
   <data name="Common_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Update_Section" xml:space="preserve"><value>Updates</value></data>
+  <data name="Update_CurrentVersion" xml:space="preserve"><value>Installed version:</value></data>
+  <data name="Update_AutoCheck" xml:space="preserve"><value>Check for updates automatically</value></data>
+  <data name="Update_AutoCheckHint" xml:space="preserve"><value>Checks GitHub Releases shortly after start and every 6 hours. This is the only network connection HWUltimate makes; nothing about your computer is sent.</value></data>
+  <data name="Update_CheckNow" xml:space="preserve"><value>Check now</value></data>
+  <data name="Update_OpenGitHub" xml:space="preserve"><value>Open on GitHub</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Checking for updates…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>HWUltimate {0} is the latest version.</value></data>
+  <data name="Update_AvailableStatus" xml:space="preserve"><value>Version {0} is available.</value></data>
+  <data name="Update_Banner" xml:space="preserve"><value>HWUltimate {0} is available.</value></data>
+  <data name="Update_CheckFailed" xml:space="preserve"><value>Could not check for updates: {0}</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Download and install</value></data>
+  <data name="Update_WhatsNew" xml:space="preserve"><value>What's new</value></data>
+  <data name="Update_Skip" xml:space="preserve"><value>Skip this version</value></data>
+  <data name="Update_NotesTitle" xml:space="preserve"><value>What's new in {0}</value></data>
+  <data name="Update_NoNotes" xml:space="preserve"><value>No release notes were published for this version.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Downloading… {0}%</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>Downloaded and verified.</value></data>
+  <data name="Update_ReadyTitle" xml:space="preserve"><value>Ready to install</value></data>
+  <data name="Update_ReadyText" xml:space="preserve"><value>Version {0} was downloaded and its checksum verified. HWUltimate will close, install the update and start again. Your settings are kept.</value></data>
+  <data name="Update_Installed" xml:space="preserve"><value>HWUltimate was updated to {0}.</value></data>
+  <data name="Update_InstallFailed" xml:space="preserve"><value>The update could not be installed; the previous version was restored. Details are in logs\update.log.</value></data>
+  <data name="Update_NoWriteAccess" xml:space="preserve"><value>HWUltimate cannot write to its program folder. Download the new version from the release page and replace the files, or run HWUltimate as administrator.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Update failed: {0}</value></data>
   <data name="Common_Search" xml:space="preserve"><value>Search…</value></data>
   <data name="Common_Loading" xml:space="preserve"><value>Detecting hardware…</value></data>
   <data name="Elevation_Banner" xml:space="preserve"><value>Running without administrator rights. Motherboard, voltage and some CPU sensors are unavailable.</value></data>
