@@ -38,7 +38,7 @@ jobs:
       - if: env.EXISTS == 'false'
         run: dotnet build HWUltimate.sln -c Release
       - if: env.EXISTS == 'false'
-        run: dotnet test --project tests/HWUltimate.Tests -c Release --no-build
+        run: dotnet test --project tests/HWUltimate.Tests -c Release
       - if: env.EXISTS == 'false'
         run: dotnet publish src/HWUltimate.App -c Release -r win-x64 --self-contained false -o publish
       - name: Package
