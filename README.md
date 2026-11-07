@@ -99,19 +99,12 @@ tools/                          strings.py, logo.py, icons.json, HwuPerf benchma
 
 ### Publishing a release
 
-1. Set `<Version>` in `Directory.Build.props` (e.g. `0.3.1`) and optionally add notes in `docs/releases/v0.3.1.md`.
-2. Commit, then push a matching tag:
+1. Set `<Version>` in `Directory.Build.props` (e.g. `0.3.1`) and optionally write notes in `docs/releases/v0.3.1.md`.
+2. Commit and push to `main`.
 
-```bash
-git tag v0.3.1
-```
-
-```bash
-git push origin v0.3.1
-```
-
-The `release` workflow builds and tests on Windows, uploads `HWUltimate-v0.3.1-win-x64.zip` and its `.sha256`, and
-creates the GitHub release. Installed copies notify their users and can update from inside the app.
+The `release` workflow sees the new version, builds and tests on Windows, uploads `HWUltimate-v0.3.1-win-x64.zip`
+and its `.sha256`, and creates the `v0.3.1` tag and release. Installed copies notify their users and can update from
+inside the app. (It can also be started by hand from the *Actions* tab.)
 
 ### Contributing
 
@@ -185,19 +178,12 @@ dotnet publish src/HWUltimate.App -c Release -r win-x64 --self-contained false -
 
 ### Yeni sürüm yayınlama
 
-1. `Directory.Build.props` içindeki `<Version>` değerini ayarlayın (ör. `0.3.1`), isterseniz `docs/releases/v0.3.1.md` dosyasına notlar ekleyin.
-2. Commit'leyip aynı numaralı etiketi gönderin:
+1. `Directory.Build.props` içindeki `<Version>` değerini ayarlayın (ör. `0.3.1`), isterseniz `docs/releases/v0.3.1.md` dosyasına notlar yazın.
+2. Commit'leyip `main` dalına gönderin.
 
-```bash
-git tag v0.3.1
-```
-
-```bash
-git push origin v0.3.1
-```
-
-`release` iş akışı Windows'ta derleyip test eder, `HWUltimate-v0.3.1-win-x64.zip` dosyasını ve `.sha256` dosyasını yükler
-ve GitHub sürümünü oluşturur. Kurulu kopyalar kullanıcılarına bildirim gösterir ve uygulama içinden güncellenebilir.
+`release` iş akışı yeni sürüm numarasını görür, Windows'ta derleyip test eder, `HWUltimate-v0.3.1-win-x64.zip`
+dosyasını ve `.sha256` dosyasını yükler, `v0.3.1` etiketini ve sürümü oluşturur. Kurulu kopyalar kullanıcılarına
+bildirim gösterir ve uygulama içinden güncellenebilir. (*Actions* sekmesinden elle de başlatılabilir.)
 
 ### Katkıda bulunma
 

@@ -1,31 +1,48 @@
-# Publishing a release: bump <Version> in Directory.Build.props, commit, then push a tag "v<version>" (e.g. v0.3.1).
-# This workflow builds, tests, packages HWUltimate-v<version>-win-x64.zip with its .sha256, and creates the GitHub release.
-# Installed copies of HWUltimate find the new release and offer to download and install it.
+# Publishing a release: set <Version> in Directory.Build.props (e.g. 0.3.1), optionally add docs/releases/v0.3.1.md,
+# and push to main. When no release "v<version>" exists yet, this workflow builds and tests on Windows, packages
+# HWUltimate-v<version>-win-x64.zip with its .sha256, and creates the tag and the GitHub release.
+# Installed copies of HWUltimate then notify their users and can update from inside the app.
 name: release
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: ['Directory.Build.props', 'docs/releases/**', '.github/workflows/release.yml']
+  workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: release
+  cancel-in-progress: false
 jobs:
   release:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-      - name: Check version matches tag
+      - name: Read version
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           [xml]$props = Get-Content Directory.Build.props
-          $version = $props.Project.PropertyGroup.Version
-          if ("v$version" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} does not match <Version>$version</Version>" }
+          $version = ($props.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
+          if (-not $version) { throw "No <Version> in Directory.Build.props" }
           "VERSION=$version" >> $env:GITHUB_ENV
-      - run: dotnet build HWUltimate.sln -c Release
-      - run: dotnet test --project tests/HWUltimate.Tests -c Release --no-build
-      - run: dotnet publish src/HWUltimate.App -c Release -r win-x64 --self-contained false -o publish
+          gh release view "v$version" --repo "${{ github.repository }}" *> $null
+          if ($LASTEXITCODE -eq 0) { "EXISTS=true" >> $env:GITHUB_ENV; Write-Host "Release v$version already exists; nothing to do." }
+          else { "EXISTS=false" >> $env:GITHUB_ENV }
+          exit 0
+      - uses: actions/setup-dotnet@v4
+        if: env.EXISTS == 'false'
+        with:
+          dotnet-version: 10.0.x
+      - if: env.EXISTS == 'false'
+        run: dotnet build HWUltimate.sln -c Release
+      - if: env.EXISTS == 'false'
+        run: dotnet test --project tests/HWUltimate.Tests -c Release --no-build
+      - if: env.EXISTS == 'false'
+        run: dotnet publish src/HWUltimate.App -c Release -r win-x64 --self-contained false -o publish
       - name: Package
+        if: env.EXISTS == 'false'
         shell: pwsh
         run: |
           Remove-Item publish\*.pdb -ErrorAction SilentlyContinue
@@ -35,11 +52,14 @@ jobs:
           $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
           "$hash  $zip" | Out-File "$zip.sha256" -Encoding ascii -NoNewline
           "ZIP=$zip" >> $env:GITHUB_ENV
-      - name: Create release
+      - name: Create tag and release
+        if: env.EXISTS == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          $notes = "docs/releases/v$env:VERSION.md"
-          if (Test-Path $notes) { gh release create "${{ github.ref_name }}" $env:ZIP "$env:ZIP.sha256" --title "HWUltimate v$env:VERSION" --notes-file $notes }
-          else { gh release create "${{ github.ref_name }}" $env:ZIP "$env:ZIP.sha256" --title "HWUltimate v$env:VERSION" --generate-notes }
+          $tag = "v$env:VERSION"
+          $notes = "docs/releases/$tag.md"
+          $args = @($tag, $env:ZIP, "$env:ZIP.sha256", "--repo", "${{ github.repository }}", "--target", "${{ github.sha }}", "--title", "HWUltimate $env:VERSION", "--latest")
+          if (Test-Path $notes) { $args += @("--notes-file", $notes) } else { $args += "--generate-notes" }
+          gh release create @args
