@@ -58,7 +58,8 @@ public static class Bootstrapper
         services.AddSingleton<ISensorPollingService>(sp => new SensorPollingService(
             sp.GetServices<IHardwareProvider>(), sp.GetRequiredService<SensorStatisticsTracker>(),
             sp.GetRequiredService<ILogger<SensorPollingService>>(), sp.GetRequiredService<TimeProvider>(),
-            sp.GetRequiredService<IDeviceIdentityResolver>())
+            sp.GetRequiredService<IDeviceIdentityResolver>(),
+            new DeviceNameResolver(() => OperatingSystem.IsWindows() ? sp.GetRequiredService<SmbiosDiscoveryService>().LastData ?? sp.GetRequiredService<SmbiosDiscoveryService>().ReadTable() : null))
         {
             Interval = TimeSpan.FromMilliseconds(settings.Sensors.PollingIntervalMs),
         });

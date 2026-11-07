@@ -48,12 +48,33 @@
   <data name="Explorer_AllGroups" xml:space="preserve"><value>Tüm sensör türleri</value></data>
   <data name="Explorer_Favorite" xml:space="preserve"><value>Favorilere ekle</value></data>
   <data name="Explorer_Hide" xml:space="preserve"><value>Sensörü gizle</value></data>
+  <data name="Explorer_HideDevice" xml:space="preserve"><value>Cihazı gizle</value></data>
+  <data name="Explorer_HideGroup" xml:space="preserve"><value>Bu grubu gizle</value></data>
+  <data name="Explorer_Show" xml:space="preserve"><value>Göster</value></data>
+  <data name="Explorer_HiddenList" xml:space="preserve"><value>Gizli</value></data>
+  <data name="Explorer_HiddenListHint" xml:space="preserve"><value>Kapattığınız sensörler, cihazlar ve gruplar. Siz tekrar gösterene kadar yeniden başlatmalardan sonra da gizli kalırlar.</value></data>
+  <data name="Explorer_NoHidden" xml:space="preserve"><value>Gizli bir şey yok.</value></data>
+  <data name="Explorer_HiddenDevice" xml:space="preserve"><value>Tüm cihaz</value></data>
+  <data name="Explorer_HiddenGroup" xml:space="preserve"><value>Sensör grubu</value></data>
+  <data name="Explorer_NotDetectedNow" xml:space="preserve"><value>şu an algılanmıyor</value></data>
+  <data name="Explorer_ShowAll" xml:space="preserve"><value>Tüm sensörleri göster</value></data>
+  <data name="Explorer_ShowAllHint" xml:space="preserve"><value>Varsayılan olarak gizlenen sensörleri de gösterir: hiç değer bildirmeyen girişler, boş fan girişleri, bağlı olmayan voltaj / sıcaklık girişleri, sanal veya bağlı olmayan ağ bağdaştırıcıları, toplam trafik sayaçları.</value></data>
+  <data name="Explorer_SecondaryHidden" xml:space="preserve"><value>{0} kullanılmayan sensör gösterilmiyor</value></data>
+  <data name="Explorer_Rescan" xml:space="preserve"><value>Donanımı yeniden tara</value></data>
+  <data name="Explorer_RescanHint" xml:space="preserve"><value>Uygulamayı yeniden başlatmadan donanımı tekrar algılar (örneğin bir sürücü kurduktan sonra veya sensörler eksikse).</value></data>
+  <data name="Explorer_Rescanning" xml:space="preserve"><value>Donanım taranıyor…</value></data>
+  <data name="Explorer_RescanFound" xml:space="preserve"><value>{0} yeni sensör bulundu</value></data>
+  <data name="Explorer_RescanNoChange" xml:space="preserve"><value>Yeni sensör bulunamadı</value></data>
+  <data name="Explorer_PawnIoMissing" xml:space="preserve"><value>PawnIO sürücüsü kurulu olmadığı için anakart, fan, voltaj ve bazı işlemci sensörleri (çekirdek başına sıcaklıklar gibi) okunamıyor. PawnIO'yu resmi sitesinden kurun, ardından Yeniden tara'ya basın — yeniden başlatma gerekmez.</value></data>
+  <data name="Explorer_GetPawnIo" xml:space="preserve"><value>PawnIO'yu indir</value></data>
+  <data name="Explorer_AdvancedDetails" xml:space="preserve"><value>Gelişmiş ayrıntılar</value></data>
+  <data name="Col_Sensor" xml:space="preserve"><value>Sensör</value></data>
   <data name="Explorer_MoveUp" xml:space="preserve"><value>Yukarı taşı</value></data>
   <data name="Explorer_MoveDown" xml:space="preserve"><value>Aşağı taşı</value></data>
   <data name="Explorer_ResetSensor" xml:space="preserve"><value>Min/maks sıfırla</value></data>
   <data name="Explorer_CopyValue" xml:space="preserve"><value>Değeri kopyala</value></data>
   <data name="Explorer_CopyRow" xml:space="preserve"><value>Satırı kopyala</value></data>
-  <data name="Explorer_Count" xml:space="preserve"><value>{0} sensör · {1} cihaz · {2} gizli · {3} favori</value></data>
+  <data name="Explorer_Count" xml:space="preserve"><value>{0} sensör · {1} cihaz</value></data>
   <data name="Explorer_Favorites" xml:space="preserve"><value>Favoriler</value></data>
   <data name="Explorer_Name" xml:space="preserve"><value>Sensör</value></data>
   <data name="Explorer_NoSensors" xml:space="preserve"><value>Mevcut filtrelerle eşleşen sensör yok.</value></data>

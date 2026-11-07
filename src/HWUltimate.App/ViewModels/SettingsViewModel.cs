@@ -12,7 +12,10 @@ using HWUltimate.UI.Themes;
 
 namespace HWUltimate.App.ViewModels;
 
-public sealed record LanguageOption(string Culture, string Name);
+public sealed record LanguageOption(string Culture, string Name)
+{
+    public override string ToString() => Name;
+}
 
 /// <summary>A theme card with its preview colours.</summary>
 public sealed record ThemeOption(ThemeChoice Choice, string Name, string Background, string Panel, string Accent, string Text, string Muted)

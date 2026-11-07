@@ -10,8 +10,8 @@ namespace HWUltimate.Tests;
 public class SensorClassifierTests
 {
     [Theory]
-    [InlineData(SensorType.Temperature, "Core #3", HardwareCategory.Cpu, SensorGroupKind.PerCore)]
-    [InlineData(SensorType.Clock, "CPU Core #12", HardwareCategory.Cpu, SensorGroupKind.PerCore)]
+    [InlineData(SensorType.Temperature, "Core #3", HardwareCategory.Cpu, SensorGroupKind.Temperatures)] // every core temperature with the other temperatures
+    [InlineData(SensorType.Clock, "CPU Core #12", HardwareCategory.Cpu, SensorGroupKind.Clocks)]
     [InlineData(SensorType.Temperature, "Core Average", HardwareCategory.Cpu, SensorGroupKind.Temperatures)]
     [InlineData(SensorType.Temperature, "CPU Package", HardwareCategory.Cpu, SensorGroupKind.Temperatures)]
     [InlineData(SensorType.Temperature, "Core #1 Distance to TjMax", HardwareCategory.Cpu, SensorGroupKind.Throttling)]
@@ -57,20 +57,19 @@ public class SensorExplorerBuilderTests
     private static List<string> SensorIds(IEnumerable<ExplorerNode> nodes) => nodes.Where(n => n.Kind == ExplorerNodeKind.Sensor).Select(n => n.Sensor!.SensorId).ToList();
 
     [Fact]
-    public void Builds_category_device_group_sensor_hierarchy_in_category_order()
+    public void Builds_device_group_sensor_tree_in_category_order()
     {
         var nodes = Build(new SensorExplorerState());
-        var categories = nodes.Where(n => n.Kind == ExplorerNodeKind.Category).Select(n => n.Category).ToList();
-        Assert.Equal([HardwareCategory.Cpu, HardwareCategory.Gpu, HardwareCategory.Motherboard], categories); // Super I/O folds under Motherboard
-        Assert.Equal(0, nodes[0].Depth);
-        Assert.Equal(ExplorerNodeKind.Device, nodes[1].Kind);
-        Assert.Equal(ExplorerNodeKind.Group, nodes[2].Kind);
-        Assert.Equal(ExplorerNodeKind.Sensor, nodes[3].Kind);
-        Assert.Equal(3, nodes[3].Depth);
-        Assert.Equal(10, SensorIds(nodes).Count);
-        // Board device has no sensors → not shown; Super I/O device appears under Motherboard.
-        Assert.DoesNotContain(nodes, n => n.Key == ExplorerKeys.Device("board"));
-        Assert.Contains(nodes, n => n.Key == ExplorerKeys.Device("sio"));
+        Assert.Equal(["cpu", "gpu", "board"], nodes.Where(n => n.Kind == ExplorerNodeKind.Device).Select(n => n.DeviceId!).ToList());
+        Assert.DoesNotContain(nodes, n => n.Kind == ExplorerNodeKind.Category);
+        Assert.Equal((ExplorerNodeKind.Device, 0), (nodes[0].Kind, nodes[0].Depth));
+        Assert.Equal((ExplorerNodeKind.Group, 1), (nodes[1].Kind, nodes[1].Depth));
+        Assert.Equal((ExplorerNodeKind.Sensor, 2), (nodes[2].Kind, nodes[2].Depth));
+        // The voltage that never reported a value is a secondary sensor: not in the default view.
+        Assert.Equal(9, SensorIds(nodes).Count);
+        // The Super I/O chip's fans are listed under the motherboard, not as a separate device.
+        Assert.DoesNotContain(nodes, n => n.Key == ExplorerKeys.Device("sio"));
+        Assert.Contains(nodes, n => n.Key == ExplorerKeys.Group("board", SensorGroupKind.Fans));
     }
 
     [Fact]
@@ -89,7 +88,7 @@ public class SensorExplorerBuilderTests
         var nodes = Build(state);
         var cpuDevice = nodes.Single(n => n.Key == ExplorerKeys.Device("cpu"));
         Assert.False(cpuDevice.IsExpanded);
-        Assert.Equal(5, cpuDevice.ChildCount);
+        Assert.Equal(4, cpuDevice.ChildCount);
         Assert.DoesNotContain("c-pkg", SensorIds(nodes));
         Assert.Contains("g-temp", SensorIds(nodes));
 
@@ -103,18 +102,18 @@ public class SensorExplorerBuilderTests
         var state = new SensorExplorerState();
         state.CollapseAll(SensorExplorerBuilder.ContainerKeys(Snapshot()));
         var collapsed = Build(state);
-        Assert.All(collapsed, n => Assert.Equal(ExplorerNodeKind.Category, n.Kind));
+        Assert.All(collapsed, n => Assert.Equal(ExplorerNodeKind.Device, n.Kind));
         Assert.All(collapsed, n => Assert.False(n.IsExpanded));
 
         state.ExpandAll();
-        Assert.Equal(10, SensorIds(Build(state)).Count);
+        Assert.Equal(9, SensorIds(Build(state)).Count);
     }
 
     [Fact]
     public void Individual_group_collapse()
     {
         var state = new SensorExplorerState();
-        state.SetExpanded(ExplorerKeys.Group("cpu", SensorGroupKind.PerCore), false);
+        state.SetExpanded(ExplorerKeys.Group("cpu", SensorGroupKind.Clocks), false);
         var ids = SensorIds(Build(state));
         Assert.DoesNotContain("c-c2", ids);
         Assert.Contains("c-pkg", ids);
@@ -188,10 +187,10 @@ public class SensorExplorerBuilderTests
     public void Sorts_by_name_naturally()
     {
         var state = new SensorExplorerState { SortColumn = SensorSortColumn.Name };
-        var perCore = Build(state).Where(n => n.Group == SensorGroupKind.PerCore && n.Kind == ExplorerNodeKind.Sensor).Select(n => n.Title).ToList();
+        var perCore = Build(state).Where(n => n.Group == SensorGroupKind.Clocks && n.Kind == ExplorerNodeKind.Sensor).Select(n => n.Title).ToList();
         Assert.Equal(["Core #2", "Core #10"], perCore);
         state.SortDescending = true;
-        perCore = Build(state).Where(n => n.Group == SensorGroupKind.PerCore && n.Kind == ExplorerNodeKind.Sensor).Select(n => n.Title).ToList();
+        perCore = Build(state).Where(n => n.Group == SensorGroupKind.Clocks && n.Kind == ExplorerNodeKind.Sensor).Select(n => n.Title).ToList();
         Assert.Equal(["Core #10", "Core #2"], perCore);
     }
 
@@ -220,7 +219,7 @@ public class SensorExplorerBuilderTests
     public void Custom_order_by_moving_sensors()
     {
         var state = new SensorExplorerState();
-        var group = ExplorerKeys.Group("sio", SensorGroupKind.Fans);
+        var group = ExplorerKeys.Group("board", SensorGroupKind.Fans);
         var order = SensorExplorerBuilder.GroupOrder(Build(state), group);
         Assert.Equal(["s-fan1", "s-fan2", "s-fan3"], order);
 
@@ -247,7 +246,7 @@ public class SensorExplorerBuilderTests
     [Fact]
     public void Missing_values_are_kept_and_marked_unavailable()
     {
-        var node = Build(new SensorExplorerState()).Single(n => n.Sensor?.SensorId == "c-vcore");
+        var node = Build(new SensorExplorerState { ShowAllSensors = true }).Single(n => n.Sensor?.SensorId == "c-vcore");
         Assert.False(node.IsAvailable);
         Assert.Null(node.Sensor!.Value);
     }
@@ -259,7 +258,7 @@ public class SensorExplorerBuilderTests
         state.SetColumnVisible(ExplorerColumns.Provider, true);
         state.SetColumnVisible(ExplorerColumns.Value, false);
         state.SetColumnVisible(ExplorerColumns.Value, true);
-        Assert.Equal([ExplorerColumns.Value, ExplorerColumns.Minimum, ExplorerColumns.Maximum, ExplorerColumns.Average, ExplorerColumns.Provider], state.VisibleColumns);
+        Assert.Equal([ExplorerColumns.Value, ExplorerColumns.Minimum, ExplorerColumns.Maximum, ExplorerColumns.Provider], state.VisibleColumns);
         Assert.False(state.IsColumnVisible(ExplorerColumns.Type));
     }
 }

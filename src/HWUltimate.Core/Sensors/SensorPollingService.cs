@@ -11,6 +11,17 @@ namespace HWUltimate.Core.Sensors;
 /// Polls every registered <see cref="IHardwareProvider"/> on a fixed cadence, normalises readings into
 /// <see cref="SensorReading"/>s, attaches session statistics and publishes an immutable <see cref="SensorSnapshot"/>.
 /// </summary>
+/// <summary>Who asked for a re-scan.</summary>
+public enum RescanMode
+{
+    /// <summary>The user: every provider re-detects.</summary>
+    Forced = 0,
+    /// <summary>Start-up passes: providers re-detect only when their detection failed or looks incomplete.</summary>
+    Automatic,
+    /// <summary>Periodic: only providers that are currently unavailable.</summary>
+    UnavailableOnly,
+}
+
 public sealed class SensorPollingService : ISensorPollingService
 {
     public static readonly TimeSpan MinimumInterval = TimeSpan.FromMilliseconds(250);
@@ -33,6 +44,10 @@ public sealed class SensorPollingService : ISensorPollingService
     private int _sensorSignature = int.MinValue;
     private HashSet<string> _suppressed = new(StringComparer.Ordinal);
     private Dictionary<string, List<string>> _alsoReportedBy = new(StringComparer.Ordinal);
+    private Dictionary<string, List<string>> _duplicateIds = new(StringComparer.Ordinal);
+    private readonly IDeviceNameResolver? _names;
+    private Task? _autoRescan;
+    private int _rescanRunning;
     private readonly Dictionary<string, SensorKind> _kinds = new(StringComparer.Ordinal);
 
     private TimeSpan _interval = TimeSpan.FromSeconds(1);
@@ -45,8 +60,10 @@ public sealed class SensorPollingService : ISensorPollingService
         SensorStatisticsTracker stats,
         ILogger<SensorPollingService> logger,
         TimeProvider? timeProvider = null,
-        IDeviceIdentityResolver? identityResolver = null)
+        IDeviceIdentityResolver? identityResolver = null,
+        IDeviceNameResolver? nameResolver = null)
     {
+        _names = nameResolver;
         _providers = providers.OrderBy(p => p.Priority).ToList();
         _identity = identityResolver ?? NullIdentityResolver.Instance;
         for (var i = 0; i < _providers.Count; i++) _priority.TryAdd(_providers[i].Name, i);
@@ -107,6 +124,7 @@ public sealed class SensorPollingService : ISensorPollingService
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
         _loop = Task.Factory.StartNew(() => RunLoopAsync(token), token, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
+        _autoRescan = Task.Run(() => AutoRescanAsync(token), token);
         _logger.LogInformation("Sensor polling started at {Interval} ms", _interval.TotalMilliseconds);
     }
 
@@ -124,6 +142,11 @@ public sealed class SensorPollingService : ISensorPollingService
             {
                 await _loop.ConfigureAwait(false);
             }
+
+            if (_autoRescan is not null)
+            {
+                await _autoRescan.ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -133,7 +156,78 @@ public sealed class SensorPollingService : ISensorPollingService
             _cts.Dispose();
             _cts = null;
             _loop = null;
+            _autoRescan = null;
         }
+    }
+
+    /// <summary>
+    /// Full re-detections shortly after start. At logon drivers can still be loading, and another monitoring tool can hold
+    /// the SMBus / Super I/O while this app opens them; without these passes some sensors would only appear after a restart.
+    /// </summary>
+    public IReadOnlyList<TimeSpan> AutoRescanDelays { get; init; } = [TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(90)];
+
+    /// <summary>After the start-up passes, providers that are still unavailable are retried at this interval.</summary>
+    public TimeSpan UnavailableRetryInterval { get; init; } = TimeSpan.FromMinutes(10);
+
+    private async Task AutoRescanAsync(CancellationToken token)
+    {
+        try
+        {
+            var elapsed = TimeSpan.Zero;
+            foreach (var delay in AutoRescanDelays)
+            {
+                var wait = delay - elapsed;
+                if (wait > TimeSpan.Zero) await Task.Delay(wait, _time, token).ConfigureAwait(false);
+                elapsed = delay;
+                await RescanAsync(RescanMode.Automatic, token).ConfigureAwait(false);
+            }
+
+            while (!token.IsCancellationRequested && UnavailableRetryInterval > TimeSpan.Zero)
+            {
+                await Task.Delay(UnavailableRetryInterval, _time, token).ConfigureAwait(false);
+                await RescanAsync(RescanMode.UnavailableOnly, token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public Task<IReadOnlyList<string>> RescanAsync(CancellationToken cancellationToken = default) => RescanAsync(RescanMode.Forced, cancellationToken);
+
+    /// <summary>Repeats hardware detection for every provider that supports it. Never runs two re-scans at once.</summary>
+    public async Task<IReadOnlyList<string>> RescanAsync(RescanMode mode, CancellationToken cancellationToken = default)
+    {
+        if (Interlocked.Exchange(ref _rescanRunning, 1) == 1) return ["A hardware re-scan is already running."];
+        var changes = new List<string>();
+        try
+        {
+            foreach (var provider in _providers)
+            {
+                if (provider is not IRescannableProvider rescannable || (mode == RescanMode.UnavailableOnly && provider.Status.IsAvailable)) continue;
+                try
+                {
+                    var result = await rescannable.RescanAsync(mode == RescanMode.Forced, cancellationToken).ConfigureAwait(false);
+                    _logger.LogInformation("Re-scan {Provider}: {Message}", provider.Name, result.Message);
+                    if (result.Changed) changes.Add($"{provider.Name}: {result.Message}");
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogWarning(ex, "Re-scan of {Provider} failed", provider.Name);
+                }
+
+                lock (_pollGate)
+                {
+                    _statuses[provider.Name] = provider.Status;
+                }
+            }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _rescanRunning, 0);
+        }
+
+        return changes;
     }
 
     private async Task RunLoopAsync(CancellationToken token)
@@ -236,11 +330,15 @@ public sealed class SensorPollingService : ISensorPollingService
     private void UpdateMerge(List<HardwareDevice> devices, List<RawSensorReading> raw)
     {
         var deviceSig = devices.Count;
-        foreach (var d in devices) deviceSig = HashCode.Combine(deviceSig, StringComparer.Ordinal.GetHashCode(d.DeviceId));
+        foreach (var d in devices) deviceSig = HashCode.Combine(deviceSig, StringComparer.Ordinal.GetHashCode(d.DeviceId), d.Relevance);
         if (deviceSig != _deviceSignature)
         {
             _deviceSignature = deviceSig;
             _merge = PhysicalDeviceMerger.Merge(devices, ProviderPriority, _identity);
+            if (_names is not null)
+            {
+                _merge = _merge with { Devices = _merge.Devices.Select(d => SafeName(d) is { } name ? d with { Name = name } : d).ToList() };
+            }
             _sensorSignature = int.MinValue;
             if (_merge.Devices.Count < devices.Count)
             {
@@ -253,7 +351,21 @@ public sealed class SensorPollingService : ISensorPollingService
         if (sensorSig != _sensorSignature)
         {
             _sensorSignature = sensorSig;
-            (_suppressed, _alsoReportedBy) = PhysicalDeviceMerger.FindDuplicateSensors(raw, _merge.PhysicalIdOf, ProviderPriority);
+            (_suppressed, _alsoReportedBy, _duplicateIds) = PhysicalDeviceMerger.FindDuplicates(raw, _merge.PhysicalIdOf, ProviderPriority);
+        }
+    }
+
+    private string? SafeName(HardwareDevice device)
+    {
+        try
+        {
+            var name = _names!.DisplayName(device);
+            return string.IsNullOrWhiteSpace(name) ? null : name;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Name resolver failed for {Device}", device.DeviceId);
+            return null;
         }
     }
 
@@ -299,6 +411,7 @@ public sealed class SensorPollingService : ISensorPollingService
             Index = r.Index,
             Kind = kind,
             AlsoReportedBy = _alsoReportedBy.TryGetValue(r.SensorId, out var also) ? also : [],
+            DuplicateIds = _duplicateIds.TryGetValue(r.SensorId, out var dups) ? dups : [],
         };
 
         if (value is not null)

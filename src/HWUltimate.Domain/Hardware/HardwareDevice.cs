@@ -34,6 +34,17 @@ public sealed record DeviceIdentity
         : null;
 }
 
+/// <summary>How relevant a device is for the default sensor view. Nothing is ever deleted; secondary devices are shown on request.</summary>
+public enum DeviceRelevance
+{
+    /// <summary>Real, active hardware. Shown by default.</summary>
+    Primary = 0,
+    /// <summary>Physical but not connected / not in use (e.g. a disconnected network adapter).</summary>
+    Inactive,
+    /// <summary>Software device (Hyper-V / WSL / VPN / loopback / tunnel adapters and similar).</summary>
+    Virtual,
+}
+
 /// <summary>A sensor-bearing device. After merging, one instance represents one physical device.</summary>
 public sealed record HardwareDevice(
     string DeviceId,
@@ -49,4 +60,7 @@ public sealed record HardwareDevice(
 
     /// <summary>The provider-specific device ids merged into this device.</summary>
     public IReadOnlyList<string> SourceDeviceIds { get; init; } = [DeviceId];
+
+    /// <summary>Whether the default sensor view shows this device (see <see cref="DeviceRelevance"/>).</summary>
+    public DeviceRelevance Relevance { get; init; }
 }

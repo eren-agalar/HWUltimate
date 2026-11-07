@@ -42,10 +42,10 @@ public class ExplorerV2Tests
     }
 
     [Fact]
-    public void Memory_modules_have_their_own_category()
+    public void Memory_modules_are_their_own_devices_in_category_order()
     {
-        var cats = Build(new SensorExplorerState()).Where(n => n.Kind == ExplorerNodeKind.Category).Select(n => n.Category).ToList();
-        Assert.Equal([HardwareCategory.Cpu, HardwareCategory.Gpu, HardwareCategory.MemoryModule, HardwareCategory.Storage], cats);
+        var cats = Build(new SensorExplorerState()).Where(n => n.Kind == ExplorerNodeKind.Device).Select(n => n.Category).ToList();
+        Assert.Equal([HardwareCategory.Cpu, HardwareCategory.Gpu, HardwareCategory.Gpu, HardwareCategory.MemoryModule, HardwareCategory.Storage], cats);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class ExplorerV2Tests
         var state = new SensorExplorerState();
         state.SetColumnVisible(ExplorerColumns.SensorId, true);
         state.SetColumnVisible(ExplorerColumns.Samples, true);
-        Assert.Equal([ExplorerColumns.Value, ExplorerColumns.Minimum, ExplorerColumns.Maximum, ExplorerColumns.Average, ExplorerColumns.SensorId, ExplorerColumns.Samples], state.VisibleColumns);
+        Assert.Equal([ExplorerColumns.Value, ExplorerColumns.Minimum, ExplorerColumns.Maximum, ExplorerColumns.SensorId, ExplorerColumns.Samples], state.VisibleColumns);
     }
 
     [Fact]

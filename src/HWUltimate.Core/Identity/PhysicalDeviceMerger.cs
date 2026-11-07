@@ -9,6 +9,15 @@ public interface IDeviceIdentityResolver
     DeviceIdentity Resolve(DeviceIdentity identity);
 }
 
+/// <summary>
+/// Supplies a descriptive name where a provider only reports a generic one (e.g. "Total Memory" becomes the installed
+/// modules read from SMBIOS). Returns null to keep the provider's name. Never invents hardware details.
+/// </summary>
+public interface IDeviceNameResolver
+{
+    string? DisplayName(HardwareDevice device);
+}
+
 public sealed class NullIdentityResolver : IDeviceIdentityResolver
 {
     public static NullIdentityResolver Instance { get; } = new();
@@ -105,6 +114,7 @@ public static class PhysicalDeviceMerger
                 Vendor = group.Select(d => d.Vendor).FirstOrDefault(v => v is not null),
                 Providers = group.Select(d => d.ProviderName).Distinct().ToList(),
                 SourceDeviceIds = group.Select(d => d.DeviceId).ToList(),
+                Relevance = group.Min(d => d.Relevance),
             });
         }
 
@@ -153,8 +163,17 @@ public static class PhysicalDeviceMerger
     public static (HashSet<string> Suppressed, Dictionary<string, List<string>> AlsoReportedBy) FindDuplicateSensors(
         IReadOnlyList<RawSensorReading> readings, IReadOnlyDictionary<string, string> physicalIdOf, Func<string, int> providerPriority)
     {
+        var (suppressed, also, _) = FindDuplicates(readings, physicalIdOf, providerPriority);
+        return (suppressed, also);
+    }
+
+    /// <summary>As <see cref="FindDuplicateSensors"/>, also returning the suppressed ids per kept sensor.</summary>
+    public static (HashSet<string> Suppressed, Dictionary<string, List<string>> AlsoReportedBy, Dictionary<string, List<string>> DuplicateIds) FindDuplicates(
+        IReadOnlyList<RawSensorReading> readings, IReadOnlyDictionary<string, string> physicalIdOf, Func<string, int> providerPriority)
+    {
         var suppressed = new HashSet<string>(StringComparer.Ordinal);
         var also = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var dupIds = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         foreach (var g in readings.GroupBy(r => (Device: physicalIdOf.GetValueOrDefault(r.DeviceId, r.DeviceId), r.Type, r.Unit, Name: NormalizeName(r.Name))))
         {
             if (g.Select(r => r.ProviderName).Distinct().Count() < 2) continue;
@@ -168,11 +187,13 @@ public static class PhysicalDeviceMerger
                 {
                     if (!also.TryGetValue(k.SensorId, out var l)) also[k.SensorId] = l = [];
                     if (!l.Contains(r.ProviderName)) l.Add(r.ProviderName);
+                    if (!dupIds.TryGetValue(k.SensorId, out var ids)) dupIds[k.SensorId] = ids = [];
+                    ids.Add(r.SensorId);
                 }
             }
         }
 
-        return (suppressed, also);
+        return (suppressed, also, dupIds);
     }
 
     internal static string NormalizeName(string name) =>

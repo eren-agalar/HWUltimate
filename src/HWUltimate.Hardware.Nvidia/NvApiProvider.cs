@@ -12,7 +12,7 @@ namespace HWUltimate.Hardware.Nvidia;
 /// NVML devices are matched to NVAPI GPUs by PCI bus number.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public sealed class NvApiProvider : IHardwareProvider
+public sealed class NvApiProvider : IHardwareProvider, IRescannableProvider
 {
     public const string ProviderName = "NVIDIA (NVAPI/NVML)";
 
@@ -87,6 +87,28 @@ public sealed class NvApiProvider : IHardwareProvider
 
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Retries initialisation when it failed (e.g. the NVIDIA driver was still loading at logon). A working provider is kept:
+    /// NVAPI / NVML handles stay valid for the life of the driver session.
+    /// </summary>
+    public Task<RescanResult> RescanAsync(bool force, CancellationToken cancellationToken = default) => Task.Run(() =>
+    {
+        if (Status.IsAvailable) return RescanResult.Unchanged("already available");
+        lock (_gate)
+        {
+            _api?.Dispose();
+            _api = null;
+            _nvml?.Dispose();
+            _nvml = null;
+            _gpus = [];
+            _devices = [];
+            _readings = [];
+        }
+
+        InitializeAsync(cancellationToken).GetAwaiter().GetResult();
+        return new RescanResult(Status.IsAvailable, Status.Message);
+    }, cancellationToken);
 
     public void Update()
     {

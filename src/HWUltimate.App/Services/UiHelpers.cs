@@ -15,6 +15,12 @@ public static class Ui
 
     public static void OpenFolder(string path) => Shell(path);
 
+    /// <summary>Opens an https link in the default browser (other schemes are refused).</summary>
+    public static void OpenUrl(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps) Shell(uri.AbsoluteUri);
+    }
+
     public static void Shell(string path)
     {
         try

@@ -23,6 +23,8 @@ public partial class SensorExplorerView : UserControl
         }
     }
 
+    private void HiddenToggle_Checked(object sender, RoutedEventArgs e) => Vm?.RefreshHiddenItems();
+
     /// <summary>Double-click a category / device / group row to expand or collapse it.</summary>
     private void Row_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -33,7 +35,7 @@ public partial class SensorExplorerView : UserControl
         }
     }
 
-    /// <summary>Keyboard: ←/→ collapse/expand, Enter/Space toggle, F favourite, P pin, H hide, Ctrl+C copy.</summary>
+    /// <summary>Keyboard: ←/→ collapse/expand, Enter/Space toggle, F favourite, P pin, H hide / show (sensor, device or group), Ctrl+C copy.</summary>
     private void List_KeyDown(object sender, KeyEventArgs e)
     {
         if (Vm is not { SelectedRow: { } row } vm) return;
@@ -50,7 +52,7 @@ public partial class SensorExplorerView : UserControl
             case Key.P when row.IsSensor:
                 vm.TogglePinnedCommand.Execute(row);
                 break;
-            case Key.H when row.IsSensor:
+            case Key.H when row.Kind is not HWUltimate.Core.Explorer.ExplorerNodeKind.Category:
                 vm.ToggleHiddenCommand.Execute(row);
                 break;
             case Key.C when Keyboard.Modifiers == ModifierKeys.Control:

@@ -38,21 +38,34 @@
   <DockPanel Margin="20,2,20,16">
     <!-- Title -->
     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-      <ui:HwuIconButton DockPanel.Dock="Right" Icon="Reset" Label="{loc:Tr Explorer_ResetAll}" Command="{Binding ResetAllCommand}" Style="{StaticResource Hwu.IconButton.Bordered}" />
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock Style="{StaticResource Text.Small}" Text="{Binding RescanStatus}" VerticalAlignment="Center" Margin="0,0,10,0" />
+        <ui:HwuIconButton Icon="Refresh" Label="{loc:Tr Explorer_Rescan}" ToolTip="{loc:Tr Explorer_RescanHint}" Command="{Binding RescanCommand}" Style="{StaticResource Hwu.IconButton.Bordered}"
+                          IsEnabled="{Binding IsRescanning, Converter={x:Static local:InverseBool.Instance}}" />
+      </StackPanel>
       <TextBlock Style="{StaticResource Text.PageTitle}" Text="{loc:Tr Nav_Sensors}" VerticalAlignment="Center" />
       <TextBlock Style="{StaticResource Text.Small}" Text="{Binding Summary}" VerticalAlignment="Center" Margin="14,6,0,0" />
     </DockPanel>
 
-    <!-- Primary toolbar -->
+    <!-- Missing low-level driver: explains why motherboard / fan / voltage sensors are absent and how to fix it without a restart -->
+    <Border DockPanel.Dock="Top" Margin="0,0,0,10" Padding="12,9" CornerRadius="{StaticResource Radius.Card}" Background="{DynamicResource Brush.WarnSoft}"
+            BorderBrush="{DynamicResource Brush.Warn}" BorderThickness="1" Visibility="{Binding LowLevelDriverMissing, Converter={StaticResource BoolToVis}}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Style="{StaticResource Hwu.Button.Primary}" Content="{loc:Tr Explorer_GetPawnIo}" Command="{Binding OpenPawnIoCommand}" Margin="0,0,8,0" />
+          <Button Content="{loc:Tr Explorer_Rescan}" Command="{Binding RescanCommand}" />
+        </StackPanel>
+        <ui:Icon DockPanel.Dock="Left" Kind="Warning" Width="16" Height="16" Margin="0,0,10,0" Foreground="{DynamicResource Brush.Warn}" VerticalAlignment="Center" />
+        <TextBlock Text="{loc:Tr Explorer_PawnIoMissing}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0" />
+      </DockPanel>
+    </Border>
+
+    <!-- Toolbar -->
     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8" LastChildFill="False">
       <ui:HwuSearchBox Width="240" Margin="0,0,8,0" Placeholder="{loc:Tr Explorer_SearchPlaceholder}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=200}" AutomationProperties.Name="{loc:Tr Common_Search}" />
-      <ComboBox Width="210" Margin="0,0,8,0" ItemsSource="{Binding DeviceFilters}" SelectedItem="{Binding DeviceFilter}" DisplayMemberPath="Label" ToolTip="{loc:Tr Explorer_FilterDevice}" />
-      <ComboBox Width="170" Margin="0,0,4,0" ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SortOption}" DisplayMemberPath="Label" ToolTip="{loc:Tr Explorer_Sort}" />
-      <ToggleButton Style="{StaticResource Hwu.ToggleButton}" IsChecked="{Binding SortDescending}" Padding="7,4" Margin="0,0,8,0" ToolTip="{loc:Tr Explorer_SortReverse}">
-        <ui:Icon Kind="Sort" Width="14" Height="14" />
-      </ToggleButton>
+      <ComboBox Width="220" Margin="0,0,8,0" ItemsSource="{Binding DeviceFilters}" SelectedItem="{Binding DeviceFilter}" DisplayMemberPath="Label" ToolTip="{loc:Tr Explorer_FilterDevice}" />
 
-      <!-- Filters popup -->
+      <!-- Filters & sorting popup -->
       <ToggleButton x:Name="FiltersToggle" Style="{StaticResource Hwu.ToggleButton}" Margin="0,0,6,0">
         <StackPanel Orientation="Horizontal">
           <ui:Icon Kind="Filter" Width="14" Height="14" Margin="0,0,6,0" />
@@ -72,7 +85,14 @@
             <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Explorer_FilterProvider}" />
             <ComboBox ItemsSource="{Binding ProviderFilters}" SelectedItem="{Binding ProviderFilter}" DisplayMemberPath="Label" Margin="0,0,0,10" />
             <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Explorer_FilterStatus}" />
-            <ComboBox ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}" DisplayMemberPath="Label" Margin="0,0,0,12" />
+            <ComboBox ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}" DisplayMemberPath="Label" Margin="0,0,0,10" />
+            <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Explorer_Sort}" />
+            <DockPanel Margin="0,0,0,12">
+              <ToggleButton DockPanel.Dock="Right" Style="{StaticResource Hwu.ToggleButton}" IsChecked="{Binding SortDescending}" Padding="7,4" Margin="6,0,0,0" ToolTip="{loc:Tr Explorer_SortReverse}">
+                <ui:Icon Kind="Sort" Width="14" Height="14" />
+              </ToggleButton>
+              <ComboBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SortOption}" DisplayMemberPath="Label" />
+            </DockPanel>
             <Button Content="{loc:Tr Explorer_ClearFilters}" Command="{Binding ClearFiltersCommand}" HorizontalAlignment="Left" />
           </StackPanel>
         </Border>
@@ -95,6 +115,46 @@
             <CheckBox Content="{loc:Tr Col_Quality}" IsChecked="{Binding ShowQuality}" />
             <CheckBox Content="{loc:Tr Col_SensorId}" IsChecked="{Binding ShowSensorId}" />
             <CheckBox Content="{loc:Tr Col_Samples}" IsChecked="{Binding ShowSamples}" />
+            <Separator />
+            <CheckBox Content="{loc:Tr Explorer_AdvancedDetails}" IsChecked="{Binding IsAdvanced}" ToolTip="{loc:Tr Explorer_AdvancedHint}" />
+          </StackPanel>
+        </Border>
+      </Popup>
+
+      <!-- Hidden sensors popup: everything the user turned off, each with a Show button -->
+      <ToggleButton x:Name="HiddenToggle" Style="{StaticResource Hwu.ToggleButton}" Margin="0,0,6,0" Checked="HiddenToggle_Checked">
+        <StackPanel Orientation="Horizontal">
+          <ui:Icon Kind="EyeOff" Width="14" Height="14" Margin="0,0,6,0" />
+          <TextBlock Text="{loc:Tr Explorer_HiddenList}" />
+          <Border Margin="6,0,0,0" Padding="5,0" CornerRadius="7" Background="{DynamicResource Brush.Surface}" Visibility="{Binding HiddenCount, Converter={x:Static local:PositiveToVisibility.Instance}}">
+            <TextBlock Text="{Binding HiddenCount}" FontSize="10" Foreground="{DynamicResource Brush.TextMuted}" />
+          </Border>
+        </StackPanel>
+      </ToggleButton>
+      <Popup IsOpen="{Binding IsChecked, ElementName=HiddenToggle}" PlacementTarget="{Binding ElementName=HiddenToggle}" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+        <Border Style="{StaticResource Popup.Card}" Padding="14" Width="380">
+          <StackPanel>
+            <TextBlock Style="{StaticResource Text.Section}" Text="{loc:Tr Explorer_HiddenList}" />
+            <TextBlock Style="{StaticResource Text.Small}" Text="{loc:Tr Explorer_HiddenListHint}" TextWrapping="Wrap" Margin="0,0,0,8" />
+            <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Explorer_NoHidden}" Margin="0,4,0,8" Visibility="{Binding HiddenCount, Converter={x:Static local:ZeroToVisibility.Instance}}" />
+            <ItemsControl ItemsSource="{Binding HiddenItems}" MaxHeight="320">
+              <ItemsControl.Template>
+                <ControlTemplate TargetType="ItemsControl"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsPresenter /></ScrollViewer></ControlTemplate>
+              </ItemsControl.Template>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <DockPanel Margin="0,0,0,6">
+                    <Button DockPanel.Dock="Right" Content="{loc:Tr Explorer_Show}" Padding="10,3" VerticalAlignment="Center"
+                            Command="{Binding DataContext.UnhideCommand, RelativeSource={RelativeSource AncestorType=Popup}}" CommandParameter="{Binding}" />
+                    <StackPanel Margin="0,0,10,0">
+                      <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Small}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DockPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Content="{loc:Tr Explorer_UnhideAll}" Command="{Binding UnhideAllCommand}" HorizontalAlignment="Left" Margin="0,6,0,0" />
           </StackPanel>
         </Border>
       </Popup>
@@ -106,6 +166,7 @@
             <MenuItem Header="{loc:Tr Explorer_ExpandAll}" Command="{Binding ExpandAllCommand}" />
             <MenuItem Header="{loc:Tr Explorer_CollapseAll}" Command="{Binding CollapseAllCommand}" />
             <Separator />
+            <MenuItem Header="{loc:Tr Explorer_ShowHidden}" IsCheckable="True" IsChecked="{Binding ShowHidden}" />
             <MenuItem Header="{loc:Tr Explorer_UnhideAll}" Command="{Binding UnhideAllCommand}" />
             <MenuItem Header="{loc:Tr Explorer_ResetOrder}" Command="{Binding ResetOrderCommand}" />
             <MenuItem Header="{loc:Tr Explorer_ResetAll}" Command="{Binding ResetAllCommand}" />
@@ -113,61 +174,52 @@
         </ui:HwuIconButton.ContextMenu>
       </ui:HwuIconButton>
 
-      <!-- Right side: view mode, hidden toggle, refresh -->
-      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-        <ToggleButton Style="{StaticResource Hwu.ToggleButton}" IsChecked="{Binding ShowHidden}" Padding="7,4" Margin="0,0,8,0" ToolTip="{loc:Tr Explorer_ShowHidden}">
-          <ui:Icon Kind="Eye" Width="14" Height="14" />
-        </ToggleButton>
-        <Border BorderBrush="{DynamicResource Brush.Line}" BorderThickness="1" CornerRadius="7" Background="{DynamicResource Brush.Surface}" Padding="2" Margin="0,0,8,0">
-          <StackPanel Orientation="Horizontal">
-            <RadioButton Style="{StaticResource Segment}" GroupName="Mode" IsChecked="{Binding IsAdvanced, Converter={x:Static local:InverseBool.Instance}}" ToolTip="{loc:Tr Explorer_CompactHint}">
-              <StackPanel Orientation="Horizontal"><ui:Icon Kind="Compact" Width="13" Height="13" Margin="0,0,5,0" /><TextBlock Text="{loc:Tr Explorer_Compact}" /></StackPanel>
-            </RadioButton>
-            <RadioButton Style="{StaticResource Segment}" GroupName="Mode" IsChecked="{Binding IsAdvanced}" ToolTip="{loc:Tr Explorer_AdvancedHint}">
-              <StackPanel Orientation="Horizontal"><ui:Icon Kind="Detailed" Width="13" Height="13" Margin="0,0,5,0" /><TextBlock Text="{loc:Tr Explorer_Advanced}" /></StackPanel>
-            </RadioButton>
-          </StackPanel>
-        </Border>
-        <ComboBox ItemsSource="{Binding RefreshIntervals}" SelectedItem="{Binding RefreshIntervalMs}" MinWidth="96" Width="96" ItemStringFormat="{}{0} ms" ToolTip="{loc:Tr Explorer_Interval}" />
+      <!-- Right: show all sensors -->
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock Style="{StaticResource Text.Small}" Text="{Binding SecondaryNote}" VerticalAlignment="Center" Margin="0,0,10,0" />
+        <ToggleButton Style="{StaticResource HwuToggle}" IsChecked="{Binding ShowAllSensors}" Content="{loc:Tr Explorer_ShowAll}" ToolTip="{loc:Tr Explorer_ShowAllHint}" VerticalAlignment="Center" />
       </StackPanel>
     </DockPanel>
 
-    <!-- Table -->
+    <!-- Tree table: Sensor | Value | Min | Max -->
     <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" ClipToBounds="True">
       <DockPanel>
-        <Grid DockPanel.Dock="Top" Height="28" Margin="0,0,10,0">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="240" />
-            <ColumnDefinition Width="{Binding Layout.Value}" />
-            <ColumnDefinition Width="{Binding Layout.Minimum}" />
-            <ColumnDefinition Width="{Binding Layout.Maximum}" />
-            <ColumnDefinition Width="{Binding Layout.Average}" />
-            <ColumnDefinition Width="{Binding Layout.Type}" />
-            <ColumnDefinition Width="{Binding Layout.Provider}" />
-            <ColumnDefinition Width="{Binding Layout.Quality}" />
-            <ColumnDefinition Width="{Binding Layout.SensorId}" />
-            <ColumnDefinition Width="{Binding Layout.Samples}" />
-            <ColumnDefinition Width="130" />
-          </Grid.ColumnDefinitions>
-          <TextBlock Style="{StaticResource HeaderText}" Margin="14,0" Text="{loc:Tr Explorer_Name}" />
-          <TextBlock Grid.Column="1" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Value}" />
-          <TextBlock Grid.Column="2" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Minimum}" />
-          <TextBlock Grid.Column="3" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Maximum}" />
-          <TextBlock Grid.Column="4" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Average}" />
-          <TextBlock Grid.Column="5" Style="{StaticResource HeaderText}" Text="{loc:Tr Col_Type}" />
-          <TextBlock Grid.Column="6" Style="{StaticResource HeaderText}" Text="{loc:Tr Col_Provider}" />
-          <TextBlock Grid.Column="7" Style="{StaticResource HeaderText}" Text="{loc:Tr Col_Quality}" />
-          <TextBlock Grid.Column="8" Style="{StaticResource HeaderText}" Text="{loc:Tr Col_SensorId}" />
-          <TextBlock Grid.Column="9" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Samples}" />
-          <Border Grid.ColumnSpan="11" VerticalAlignment="Bottom" Height="1" Background="{DynamicResource Brush.Line}" Margin="0,0,-10,0" />
-        </Grid>
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Line}" BorderThickness="0,0,0,1">
+          <Grid Height="28" Margin="0,0,10,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" MinWidth="240" />
+              <ColumnDefinition Width="{Binding Layout.Value}" />
+              <ColumnDefinition Width="{Binding Layout.Minimum}" />
+              <ColumnDefinition Width="{Binding Layout.Maximum}" />
+              <ColumnDefinition Width="{Binding Layout.Average}" />
+              <ColumnDefinition Width="{Binding Layout.Type}" />
+              <ColumnDefinition Width="{Binding Layout.Provider}" />
+              <ColumnDefinition Width="{Binding Layout.Quality}" />
+              <ColumnDefinition Width="{Binding Layout.SensorId}" />
+              <ColumnDefinition Width="{Binding Layout.Samples}" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Style="{StaticResource HeaderText}" Margin="12,0" Text="{loc:Tr Col_Sensor}" />
+            <TextBlock Grid.Column="1" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Value}" />
+            <TextBlock Grid.Column="2" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Minimum}" />
+            <TextBlock Grid.Column="3" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Maximum}" />
+            <TextBlock Grid.Column="4" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Average}" />
+            <TextBlock Grid.Column="5" Style="{StaticResource HeaderText}" Text="{loc:Tr Col_Type}" />
+            <TextBlock Grid.Column="6" Style="{StaticResource HeaderText}" Text="{loc:Tr Col_Provider}" />
+            <TextBlock Grid.Column="7" Style="{StaticResource HeaderText}" Text="{loc:Tr Col_Quality}" />
+            <TextBlock Grid.Column="8" Style="{StaticResource HeaderText}" Text="{loc:Tr Col_SensorId}" />
+            <TextBlock Grid.Column="9" Style="{StaticResource HeaderText}" HorizontalAlignment="Right" Text="{loc:Tr Col_Samples}" />
+          </Grid>
+        </Border>
 
         <Grid>
           <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
             <TextBlock Style="{StaticResource Text.Muted}" Text="{loc:Tr Explorer_NoSensors}" HorizontalAlignment="Center" />
-            <Button Content="{loc:Tr Explorer_ClearFilters}" Command="{Binding ClearFiltersCommand}" HorizontalAlignment="Center" Margin="0,10,0,0" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+              <Button Content="{loc:Tr Explorer_ClearFilters}" Command="{Binding ClearFiltersCommand}" Margin="0,0,8,0" />
+              <Button Content="{loc:Tr Explorer_Rescan}" Command="{Binding RescanCommand}" />
+            </StackPanel>
           </StackPanel>
-          <ListBox x:Name="List" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}" AlternationCount="2"
+          <ListBox x:Name="List" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
                    VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel"
                    KeyDown="List_KeyDown" AutomationProperties.Name="{loc:Tr Nav_Sensors}">
             <ListBox.ItemContainerStyle>
@@ -180,7 +232,6 @@
                     <ControlTemplate TargetType="ListBoxItem">
                       <Border x:Name="Bd" Background="Transparent"><ContentPresenter /></Border>
                       <ControlTemplate.Triggers>
-                        <Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.RowAlt}" /></Trigger>
                         <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.PanelHover}" /></Trigger>
                         <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Selection}" /></Trigger>
                       </ControlTemplate.Triggers>
@@ -191,106 +242,102 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
               <DataTemplate>
-                <Grid x:Name="RowGrid" Height="{DynamicResource Size.Row}" Background="Transparent" MouseLeftButtonDown="Row_MouseLeftButtonDown">
-                  <Grid.Tag><Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType=UserControl}" /></Grid.Tag>
-                  <Grid.ContextMenu>
-                    <ContextMenu>
-                      <MenuItem Header="{loc:Tr Explorer_CopyValue}" Command="{Binding PlacementTarget.Tag.CopyValueCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
-                      <MenuItem Header="{loc:Tr Explorer_CopyRow}" InputGestureText="Ctrl+C" Command="{Binding PlacementTarget.Tag.CopyRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
-                      <Separator />
-                      <MenuItem Header="{loc:Tr Explorer_Favorite}" InputGestureText="F" Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" IsEnabled="{Binding IsSensor}" />
-                      <MenuItem Header="{loc:Tr Explorer_Pin}" InputGestureText="P" Command="{Binding PlacementTarget.Tag.TogglePinnedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" IsEnabled="{Binding IsSensor}" />
-                      <MenuItem Header="{loc:Tr Explorer_Hide}" InputGestureText="H" Command="{Binding PlacementTarget.Tag.ToggleHiddenCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" IsEnabled="{Binding IsSensor}" />
-                      <MenuItem Header="{loc:Tr Explorer_MoveUp}" Command="{Binding PlacementTarget.Tag.MoveUpCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" IsEnabled="{Binding IsSensor}" />
-                      <MenuItem Header="{loc:Tr Explorer_MoveDown}" Command="{Binding PlacementTarget.Tag.MoveDownCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" IsEnabled="{Binding IsSensor}" />
-                      <MenuItem Header="{loc:Tr Explorer_ResetSensor}" Command="{Binding PlacementTarget.Tag.ResetSensorCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" IsEnabled="{Binding IsSensor}" />
-                    </ContextMenu>
-                  </Grid.ContextMenu>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="240" />
-                    <ColumnDefinition Width="{Binding Layout.Value}" />
-                    <ColumnDefinition Width="{Binding Layout.Minimum}" />
-                    <ColumnDefinition Width="{Binding Layout.Maximum}" />
-                    <ColumnDefinition Width="{Binding Layout.Average}" />
-                    <ColumnDefinition Width="{Binding Layout.Type}" />
-                    <ColumnDefinition Width="{Binding Layout.Provider}" />
-                    <ColumnDefinition Width="{Binding Layout.Quality}" />
-                    <ColumnDefinition Width="{Binding Layout.SensorId}" />
-                    <ColumnDefinition Width="{Binding Layout.Samples}" />
-                    <ColumnDefinition Width="130" />
-                  </Grid.ColumnDefinitions>
+                <Border x:Name="RowBand" Background="Transparent">
+                  <Grid x:Name="RowGrid" Height="{DynamicResource Size.Row}" Background="Transparent" MouseLeftButtonDown="Row_MouseLeftButtonDown" Margin="0,0,10,0">
+                    <Grid.Tag><Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType=UserControl}" /></Grid.Tag>
+                    <Grid.ContextMenu>
+                      <ContextMenu>
+                        <MenuItem Header="{loc:Tr Explorer_CopyValue}" Command="{Binding PlacementTarget.Tag.CopyValueCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                        <MenuItem Header="{loc:Tr Explorer_CopyRow}" InputGestureText="Ctrl+C" Command="{Binding PlacementTarget.Tag.CopyRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                        <Separator />
+                        <MenuItem x:Name="HideItem" Header="{loc:Tr Explorer_Hide}" InputGestureText="H" Command="{Binding PlacementTarget.Tag.ToggleHiddenCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                        <MenuItem Header="{loc:Tr Explorer_Favorite}" InputGestureText="F" Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" Visibility="{Binding IsSensor, Converter={StaticResource BoolToVis}}" />
+                        <MenuItem Header="{loc:Tr Explorer_Pin}" InputGestureText="P" Command="{Binding PlacementTarget.Tag.TogglePinnedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" Visibility="{Binding IsSensor, Converter={StaticResource BoolToVis}}" />
+                        <MenuItem Header="{loc:Tr Explorer_MoveUp}" Command="{Binding PlacementTarget.Tag.MoveUpCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" Visibility="{Binding IsSensor, Converter={StaticResource BoolToVis}}" />
+                        <MenuItem Header="{loc:Tr Explorer_MoveDown}" Command="{Binding PlacementTarget.Tag.MoveDownCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" Visibility="{Binding IsSensor, Converter={StaticResource BoolToVis}}" />
+                        <MenuItem Header="{loc:Tr Explorer_ResetSensor}" Command="{Binding PlacementTarget.Tag.ResetSensorCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" Visibility="{Binding IsSensor, Converter={StaticResource BoolToVis}}" />
+                      </ContextMenu>
+                    </Grid.ContextMenu>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" MinWidth="240" />
+                      <ColumnDefinition Width="{Binding Layout.Value}" />
+                      <ColumnDefinition Width="{Binding Layout.Minimum}" />
+                      <ColumnDefinition Width="{Binding Layout.Maximum}" />
+                      <ColumnDefinition Width="{Binding Layout.Average}" />
+                      <ColumnDefinition Width="{Binding Layout.Type}" />
+                      <ColumnDefinition Width="{Binding Layout.Provider}" />
+                      <ColumnDefinition Width="{Binding Layout.Quality}" />
+                      <ColumnDefinition Width="{Binding Layout.SensorId}" />
+                      <ColumnDefinition Width="{Binding Layout.Samples}" />
+                    </Grid.ColumnDefinitions>
 
-                  <DockPanel Margin="{Binding Indent, Converter={StaticResource IndentMargin}}">
-                    <Button DockPanel.Dock="Left" Width="20" Margin="6,0,0,0" Focusable="False" Cursor="Hand" Background="Transparent"
-                            Command="{Binding DataContext.ToggleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
-                            Visibility="{Binding IsContainer, Converter={StaticResource BoolToVis}}">
-                      <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"><ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" /></Border></ControlTemplate></Button.Template>
-                      <ui:HwuChevron Width="11" Height="11" IsExpanded="{Binding IsExpanded}" Foreground="{DynamicResource Brush.TextMuted}" />
-                    </Button>
-                    <Border DockPanel.Dock="Left" Width="20" Visibility="{Binding IsSensor, Converter={StaticResource BoolToVis}}" />
-                    <ui:Icon x:Name="RowIcon" DockPanel.Dock="Left" Kind="{Binding Icon}" Width="14" Height="14" Margin="4,0,8,0" Foreground="{DynamicResource Brush.TextMuted}" />
-                    <ui:HwuStatusIndicator x:Name="DeviceStatus" DockPanel.Dock="Right" Status="{Binding Status}" Margin="8,0,4,0" Visibility="Collapsed" />
-                    <Border x:Name="CountBadge" DockPanel.Dock="Right" Margin="6,0,2,0" Padding="6,0" CornerRadius="7" VerticalAlignment="Center"
-                            Background="{DynamicResource Brush.Surface}" Visibility="{Binding IsContainer, Converter={StaticResource BoolToVis}}">
-                      <TextBlock FontSize="10.5" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding ChildCount}" />
-                    </Border>
-                    <ui:Icon x:Name="PinMark" DockPanel.Dock="Right" Kind="Pin" Width="11" Height="11" Margin="4,0,0,0" Foreground="{DynamicResource Brush.Accent}" Visibility="Collapsed" />
-                    <ui:Icon x:Name="FavMark" DockPanel.Dock="Right" Kind="Star" Width="11" Height="11" Margin="4,0,0,0" Foreground="{DynamicResource Brush.Warn}" Visibility="Collapsed" />
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True">
-                      <TextBlock x:Name="TitleText" Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                      <TextBlock x:Name="SubtitleText" Text="{Binding Subtitle}" Margin="10,0,0,0" FontSize="{DynamicResource Size.FontSmall}" Foreground="{DynamicResource Brush.TextMuted}"
-                                 TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Visibility="Collapsed" />
-                      <TextBlock x:Name="DetailText" Text="{Binding Detail}" Margin="10,0,0,0" FontSize="{DynamicResource Size.FontSmall}" Foreground="{DynamicResource Brush.TextMuted}"
-                                 TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Visibility="Collapsed" />
-                    </StackPanel>
-                  </DockPanel>
+                    <DockPanel Margin="{Binding Indent, Converter={StaticResource IndentMargin}}">
+                      <Button DockPanel.Dock="Left" Width="18" Margin="4,0,0,0" Focusable="False" Cursor="Hand" Background="Transparent"
+                              Command="{Binding DataContext.ToggleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                              Visibility="{Binding IsContainer, Converter={StaticResource BoolToVis}}">
+                        <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"><ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" /></Border></ControlTemplate></Button.Template>
+                        <ui:HwuChevron Width="10" Height="10" IsExpanded="{Binding IsExpanded}" Foreground="{DynamicResource Brush.TextMuted}" />
+                      </Button>
+                      <Border DockPanel.Dock="Left" Width="22" Visibility="{Binding IsSensor, Converter={StaticResource BoolToVis}}" />
+                      <ui:Icon x:Name="RowIcon" DockPanel.Dock="Left" Kind="{Binding Icon}" Width="14" Height="14" Margin="4,0,8,0" Foreground="{DynamicResource Brush.TextMuted}" />
+                      <ui:Icon x:Name="PinMark" DockPanel.Dock="Right" Kind="Pin" Width="11" Height="11" Margin="4,0,4,0" Foreground="{DynamicResource Brush.Accent}" Visibility="Collapsed" />
+                      <ui:Icon x:Name="FavMark" DockPanel.Dock="Right" Kind="Star" Width="11" Height="11" Margin="4,0,4,0" Foreground="{DynamicResource Brush.Warn}" Visibility="Collapsed" />
+                      <ui:Icon x:Name="HiddenMark" DockPanel.Dock="Right" Kind="EyeOff" Width="11" Height="11" Margin="4,0,4,0" Foreground="{DynamicResource Brush.TextMuted}" Visibility="Collapsed" />
+                      <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True">
+                        <TextBlock x:Name="TitleText" Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        <TextBlock x:Name="DetailText" Text="{Binding Detail}" Margin="10,0,0,0" FontSize="{DynamicResource Size.FontSmall}" Foreground="{DynamicResource Brush.TextMuted}"
+                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Visibility="Collapsed" />
+                      </StackPanel>
+                    </DockPanel>
 
-                  <TextBlock x:Name="CurrentText" Grid.Column="1" Style="{StaticResource Num}" FontWeight="SemiBold" Text="{Binding Current}" />
-                  <TextBlock Grid.Column="2" Style="{StaticResource Num}" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Minimum}" />
-                  <TextBlock Grid.Column="3" Style="{StaticResource Num}" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Maximum}" />
-                  <TextBlock Grid.Column="4" Style="{StaticResource Num}" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Average}" />
-                  <TextBlock Grid.Column="5" Style="{StaticResource Cell}" Text="{Binding TypeName}" />
-                  <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Provider}" />
-                  <TextBlock Grid.Column="7" Style="{StaticResource Cell}" Text="{Binding Quality, Converter={StaticResource QualityText}}" Foreground="{Binding Quality, Converter={StaticResource QualityBrush}}" />
-                  <TextBlock Grid.Column="8" Style="{StaticResource Cell}" FontFamily="{StaticResource Font.Mono}" Text="{Binding SensorId}" ToolTip="{Binding SensorId}" />
-                  <TextBlock Grid.Column="9" Style="{StaticResource Num}" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Samples}" />
-
-                  <StackPanel x:Name="Actions" Grid.Column="10" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,6,0" Visibility="Hidden">
-                    <ui:HwuIconButton x:Name="FavButton" Style="{StaticResource RowAction}" Icon="Star" ToolTip="{loc:Tr Explorer_Favorite}" Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                    <ui:HwuIconButton x:Name="PinButton" Style="{StaticResource RowAction}" Icon="Pin" ToolTip="{loc:Tr Explorer_Pin}" Command="{Binding DataContext.TogglePinnedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                    <ui:HwuIconButton x:Name="HideButton" Style="{StaticResource RowAction}" Icon="EyeOff" ToolTip="{loc:Tr Explorer_Hide}" Command="{Binding DataContext.ToggleHiddenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                    <ui:HwuIconButton Style="{StaticResource RowAction}" Icon="ArrowUp" ToolTip="{loc:Tr Explorer_MoveUp}" Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                    <ui:HwuIconButton Style="{StaticResource RowAction}" Icon="ArrowDown" ToolTip="{loc:Tr Explorer_MoveDown}" Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                    <ui:HwuIconButton Style="{StaticResource RowAction}" Icon="Reset" ToolTip="{loc:Tr Explorer_ResetSensor}" Command="{Binding DataContext.ResetSensorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                  </StackPanel>
-                </Grid>
+                    <TextBlock x:Name="CurrentText" Grid.Column="1" Style="{StaticResource Num}" FontWeight="SemiBold" Text="{Binding Current}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource Num}" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Minimum}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource Num}" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Maximum}" />
+                    <TextBlock Grid.Column="4" Style="{StaticResource Num}" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Average}" />
+                    <TextBlock Grid.Column="5" Style="{StaticResource Cell}" Text="{Binding TypeName}" />
+                    <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Provider}" />
+                    <TextBlock Grid.Column="7" Style="{StaticResource Cell}" Text="{Binding Quality, Converter={StaticResource QualityText}}" Foreground="{Binding Quality, Converter={StaticResource QualityBrush}}" />
+                    <TextBlock Grid.Column="8" Style="{StaticResource Cell}" FontFamily="{StaticResource Font.Mono}" Text="{Binding SensorId}" ToolTip="{Binding SensorId}" />
+                    <TextBlock Grid.Column="9" Style="{StaticResource Num}" Foreground="{DynamicResource Brush.TextMuted}" Text="{Binding Samples}" />
+                  </Grid>
+                </Border>
 
                 <DataTemplate.Triggers>
-                  <DataTrigger Binding="{Binding Kind}" Value="Category">
+                  <!-- Device: bold header band across the table, like a classic hardware monitor -->
+                  <DataTrigger Binding="{Binding Kind}" Value="Device">
+                    <Setter TargetName="RowBand" Property="Background" Value="{DynamicResource Brush.RowAlt}" />
                     <Setter TargetName="TitleText" Property="FontWeight" Value="SemiBold" />
                     <Setter TargetName="RowIcon" Property="Foreground" Value="{DynamicResource Brush.Accent}" />
+                    <Setter TargetName="RowIcon" Property="Width" Value="16" />
+                    <Setter TargetName="RowIcon" Property="Height" Value="16" />
+                    <Setter TargetName="RowGrid" Property="ToolTip" Value="{Binding Subtitle}" />
+                    <Setter TargetName="HideItem" Property="Header" Value="{loc:Tr Explorer_HideDevice}" />
                   </DataTrigger>
-                  <DataTrigger Binding="{Binding Kind}" Value="Device">
+                  <DataTrigger Binding="{Binding Kind}" Value="Category">
+                    <Setter TargetName="RowBand" Property="Background" Value="{DynamicResource Brush.RowAlt}" />
                     <Setter TargetName="TitleText" Property="FontWeight" Value="SemiBold" />
-                    <Setter TargetName="RowIcon" Property="Foreground" Value="{DynamicResource Brush.Text}" />
-                    <Setter TargetName="SubtitleText" Property="Visibility" Value="Visible" />
-                    <Setter TargetName="DeviceStatus" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="RowIcon" Property="Foreground" Value="{DynamicResource Brush.Warn}" />
+                    <Setter TargetName="HideItem" Property="Visibility" Value="Collapsed" />
                   </DataTrigger>
                   <DataTrigger Binding="{Binding Kind}" Value="Group">
                     <Setter TargetName="TitleText" Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
+                    <Setter TargetName="TitleText" Property="FontWeight" Value="SemiBold" />
                     <Setter TargetName="TitleText" Property="FontSize" Value="{DynamicResource Size.FontSmall}" />
+                    <Setter TargetName="HideItem" Property="Header" Value="{loc:Tr Explorer_HideGroup}" />
+                  </DataTrigger>
+                  <DataTrigger Binding="{Binding Kind}" Value="Sensor">
+                    <Setter TargetName="RowIcon" Property="Visibility" Value="Collapsed" />
                   </DataTrigger>
                   <DataTrigger Binding="{Binding IsFavorite}" Value="True">
-                    <Setter TargetName="FavButton" Property="Foreground" Value="{DynamicResource Brush.Warn}" />
                     <Setter TargetName="FavMark" Property="Visibility" Value="Visible" />
                   </DataTrigger>
                   <DataTrigger Binding="{Binding IsPinned}" Value="True">
-                    <Setter TargetName="PinButton" Property="Foreground" Value="{DynamicResource Brush.Accent}" />
                     <Setter TargetName="PinMark" Property="Visibility" Value="Visible" />
                   </DataTrigger>
                   <DataTrigger Binding="{Binding IsHidden}" Value="True">
                     <Setter TargetName="RowGrid" Property="Opacity" Value="0.45" />
-                    <Setter TargetName="HideButton" Property="Icon" Value="Eye" />
+                    <Setter TargetName="HiddenMark" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="HideItem" Property="Header" Value="{loc:Tr Explorer_Show}" />
                   </DataTrigger>
                   <MultiDataTrigger>
                     <MultiDataTrigger.Conditions>
@@ -301,22 +348,7 @@
                     <Setter TargetName="CurrentText" Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
                   </MultiDataTrigger>
                   <DataTrigger Binding="{Binding Status}" Value="Warning"><Setter TargetName="CurrentText" Property="Foreground" Value="{DynamicResource Brush.Warn}" /></DataTrigger>
-                  <DataTrigger Binding="{Binding Status}" Value="Critical"><Setter TargetName="CurrentText" Property="Foreground" Value="{DynamicResource Brush.Bad}" /></DataTrigger>
-                  <MultiDataTrigger>
-                    <MultiDataTrigger.Conditions>
-                      <Condition Binding="{Binding IsSensor}" Value="True" />
-                      <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True" />
-                    </MultiDataTrigger.Conditions>
-                    <Setter TargetName="Actions" Property="Visibility" Value="Visible" />
-                  </MultiDataTrigger>
-                  <MultiDataTrigger>
-                    <MultiDataTrigger.Conditions>
-                      <Condition Binding="{Binding IsSensor}" Value="True" />
-                      <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True" />
-                    </MultiDataTrigger.Conditions>
-                    <Setter TargetName="Actions" Property="Visibility" Value="Visible" />
-                  </MultiDataTrigger>
-                  <!-- Advanced mode: taller rows with sensor id / providers -->
+                  <!-- Advanced details: taller rows with sensor id / providers -->
                   <DataTrigger Binding="{Binding Layout.IsAdvanced}" Value="True">
                     <Setter TargetName="RowGrid" Property="Height" Value="{DynamicResource Size.RowAdvanced}" />
                   </DataTrigger>

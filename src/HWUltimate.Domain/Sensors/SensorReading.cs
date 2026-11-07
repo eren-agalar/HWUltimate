@@ -49,6 +49,8 @@ public sealed record SensorReading
     public SensorKind Kind { get; init; }
     /// <summary>Other providers that reported the same measurement for the same physical device (suppressed as duplicates).</summary>
     public IReadOnlyList<string> AlsoReportedBy { get; init; } = [];
+    /// <summary>Ids of the same measurement from lower-priority providers, suppressed in favour of this one.</summary>
+    public IReadOnlyList<string> DuplicateIds { get; init; } = [];
 
     public string UnitSymbol => Unit.ToSymbol();
     public bool HasValue => Value.HasValue;

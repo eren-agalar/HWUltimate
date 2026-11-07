@@ -50,9 +50,10 @@ public sealed record ExplorerFilter(
 }
 
 /// <summary>
-/// Builds the explorer hierarchy Category → Device → Sensor group → Sensor from a snapshot, applying
-/// user preferences (collapsed nodes, hidden sensors, favourites, custom order) and filters.
-/// Pure and allocation-light; the UI rebuilds only when the structure changes.
+/// Builds the sensor tree Device → Sensor group → Sensor from a snapshot (the layout of classic hardware monitors):
+/// devices in category order, Super I/O / EC chips folded into their motherboard, every core reading in its type group.
+/// Applies user preferences (collapsed nodes, hidden sensors / devices / groups, favourites, custom order), the
+/// secondary-sensor rules and filters. Pure; the UI rebuilds only when the structure changes.
 /// </summary>
 public static class SensorExplorerBuilder
 {
@@ -72,13 +73,21 @@ public static class SensorExplorerBuilder
         _ => HardwareCategory.Other,
     };
 
-    private sealed record DeviceEntry(HardwareDevice Device, List<(SensorGroupKind Kind, List<SensorReading> Sensors)> Groups);
+    private sealed record GroupEntry(SensorGroupKind Kind, string Key, List<SensorReading> Sensors, bool IsHidden);
 
-    public static IReadOnlyList<ExplorerNode> Build(SensorSnapshot snapshot, SensorExplorerState state, ExplorerFilter? filter = null)
+    private sealed record DeviceEntry(HardwareDevice Device, List<GroupEntry> Groups, bool IsHidden, int SecondaryCount);
+
+    /// <summary>Result details the view shows next to the tree.</summary>
+    public sealed record BuildStats(int SecondaryHidden, int UserHidden);
+
+    public static IReadOnlyList<ExplorerNode> Build(SensorSnapshot snapshot, SensorExplorerState state, ExplorerFilter? filter = null) =>
+        Build(snapshot, state, filter, out _);
+
+    public static IReadOnlyList<ExplorerNode> Build(SensorSnapshot snapshot, SensorExplorerState state, ExplorerFilter? filter, out BuildStats stats)
     {
         filter ??= ExplorerFilter.None;
         var nodes = new List<ExplorerNode>(snapshot.Sensors.Count + 64);
-        var devices = Organize(snapshot, state, filter);
+        var devices = Organize(snapshot, state, filter, out stats);
         var forceExpand = filter.IsActive;
         var showMetadata = filter.IncludeMetadata;
 
@@ -101,63 +110,60 @@ public static class SensorExplorerBuilder
             }
         }
 
-        foreach (var category in CategoryOrder)
+        var ordered = devices
+            .Select((d, i) => (d, i))
+            .OrderBy(x => CategoryRank(x.d.Device.Category))
+            .ThenBy(x => DeviceRank(state.SortColumn) is { } rankType
+                ? -x.d.Groups.SelectMany(g => g.Sensors).Where(s => s.Type == rankType && s.Value.HasValue).Select(s => s.Value!.Value).DefaultIfEmpty(double.MinValue).Max()
+                : 0)
+            .ThenBy(x => x.i)
+            .Select(x => x.d);
+
+        foreach (var entry in ordered)
         {
-            var inCategory = devices.Where(d => ExplorerCategory(d.Device.Category) == category).ToList();
-            if (DeviceRank(state.SortColumn) is { } rankType)
-            {
-                // "Sort by temperature / power / utilisation" also orders devices by their highest such reading.
-                inCategory = inCategory.OrderByDescending(d => d.Groups.SelectMany(g => g.Sensors).Where(s => s.Type == rankType && s.Value.HasValue)
-                    .Select(s => s.Value!.Value).DefaultIfEmpty(double.MinValue).Max()).ToList();
-            }
-            if (inCategory.Count == 0)
-            {
-                continue;
-            }
-
-            var catKey = ExplorerKeys.Category(category);
-            var catExpanded = forceExpand || state.IsExpanded(catKey);
-            nodes.Add(new ExplorerNode(catKey, ExplorerNodeKind.Category, 0, category.ToString(), category,
-                IsExpanded: catExpanded, ChildCount: inCategory.Count));
-            if (!catExpanded)
+            var dev = entry.Device;
+            var devKey = ExplorerKeys.Device(dev.DeviceId);
+            var devExpanded = forceExpand || state.IsExpanded(devKey);
+            var sensorCount = entry.Groups.Sum(g => g.Sensors.Count);
+            var available = entry.Groups.Any(g => g.Sensors.Any(s => s.Value.HasValue));
+            nodes.Add(new ExplorerNode(devKey, ExplorerNodeKind.Device, 0, dev.Name, dev.Category, dev.DeviceId,
+                IsExpanded: devExpanded, ChildCount: sensorCount, IsAvailable: available, Device: dev, IsHidden: entry.IsHidden));
+            if (!devExpanded)
             {
                 continue;
             }
 
-            foreach (var entry in inCategory)
+            foreach (var group in entry.Groups)
             {
-                var dev = entry.Device;
-                var devKey = ExplorerKeys.Device(dev.DeviceId);
-                var devExpanded = forceExpand || state.IsExpanded(devKey);
-                var sensorCount = entry.Groups.Sum(g => g.Sensors.Count);
-                var available = entry.Groups.Any(g => g.Sensors.Any(s => s.Value.HasValue));
-                nodes.Add(new ExplorerNode(devKey, ExplorerNodeKind.Device, 1, dev.Name, dev.Category, dev.DeviceId,
-                    IsExpanded: devExpanded, ChildCount: sensorCount, IsAvailable: available, Device: dev));
-                if (!devExpanded)
+                var grpExpanded = forceExpand || state.IsExpanded(group.Key);
+                nodes.Add(new ExplorerNode(group.Key, ExplorerNodeKind.Group, 1, group.Kind.ToString(), dev.Category, dev.DeviceId, group.Kind, group.Key,
+                    IsExpanded: grpExpanded, ChildCount: group.Sensors.Count, IsHidden: group.IsHidden));
+                if (!grpExpanded)
                 {
                     continue;
                 }
 
-                foreach (var (kind, sensors) in entry.Groups)
+                foreach (var s in group.Sensors)
                 {
-                    var grpKey = ExplorerKeys.Group(dev.DeviceId, kind);
-                    var grpExpanded = forceExpand || state.IsExpanded(grpKey);
-                    nodes.Add(new ExplorerNode(grpKey, ExplorerNodeKind.Group, 2, kind.ToString(), dev.Category, dev.DeviceId, kind, grpKey,
-                        IsExpanded: grpExpanded, ChildCount: sensors.Count));
-                    if (!grpExpanded)
-                    {
-                        continue;
-                    }
-
-                    foreach (var s in sensors)
-                    {
-                        nodes.Add(SensorNode(ExplorerKeys.Sensor(s.SensorId), s, 3, grpKey, state, kind));
-                    }
+                    nodes.Add(SensorNode(ExplorerKeys.Sensor(s.SensorId), s, 2, group.Key, state, group.Kind));
                 }
             }
         }
 
         return nodes;
+    }
+
+    private static int CategoryRank(HardwareCategory c)
+    {
+        var i = 0;
+        var target = ExplorerCategory(c);
+        foreach (var x in CategoryOrder)
+        {
+            if (x == target) return i;
+            i++;
+        }
+
+        return i;
     }
 
     private static ExplorerNode SensorNode(string key, SensorReading s, int depth, string groupKey, SensorExplorerState state, SensorGroupKind? kind) =>
@@ -172,63 +178,112 @@ public static class SensorExplorerBuilder
         _ => null,
     };
 
-    private static List<DeviceEntry> Organize(SensorSnapshot snapshot, SensorExplorerState state, ExplorerFilter filter)
+    /// <summary>
+    /// The device a sensor is shown under: Super I/O and EC chips fold into their parent motherboard when it is present,
+    /// so one board lists all its temperatures, voltages and fans together.
+    /// </summary>
+    public static Dictionary<string, HardwareDevice> DisplayDevices(SensorSnapshot snapshot)
+    {
+        var byId = snapshot.Devices.GroupBy(d => d.DeviceId, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        var result = new Dictionary<string, HardwareDevice>(StringComparer.Ordinal);
+        foreach (var d in byId.Values)
+        {
+            var target = d;
+            for (var guard = 0; guard < 4 && target.Category is HardwareCategory.SuperIo or HardwareCategory.EmbeddedController
+                                              && target.ParentDeviceId is { } p && byId.TryGetValue(p, out var parent); guard++)
+            {
+                target = parent;
+            }
+
+            result[d.DeviceId] = target;
+        }
+
+        return result;
+    }
+
+    private static List<DeviceEntry> Organize(SensorSnapshot snapshot, SensorExplorerState state, ExplorerFilter filter, out BuildStats stats)
     {
         var search = filter.Search?.Trim();
-        var bySensorDevice = snapshot.Sensors.GroupBy(s => s.DeviceId, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.ToList(), StringComparer.Ordinal);
+        var hasSearch = !string.IsNullOrEmpty(search);
+        var display = DisplayDevices(snapshot);
+        var sensorsByDisplay = snapshot.Sensors
+            .GroupBy(s => display.TryGetValue(s.DeviceId, out var d) ? d.DeviceId : s.DeviceId, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.Ordinal);
         var result = new List<DeviceEntry>();
+        int secondaryTotal = 0, userHidden = 0;
+        var showHidden = state.ShowHidden || filter.Status == SensorStatusFilter.Hidden;
+        var ownCategory = snapshot.Devices.DistinctBy(d => d.DeviceId).ToDictionary(d => d.DeviceId, d => d.Category, StringComparer.Ordinal);
+        var ownName = snapshot.Devices.DistinctBy(d => d.DeviceId).ToDictionary(d => d.DeviceId, d => d.Name, StringComparer.Ordinal);
 
         foreach (var device in snapshot.Devices.DistinctBy(d => d.DeviceId))
         {
-            if (filter.Category is { } fc && ExplorerCategory(device.Category) != ExplorerCategory(fc))
+            if (display.TryGetValue(device.DeviceId, out var shownAs) && shownAs.DeviceId != device.DeviceId) continue; // folded into its parent
+            if (filter.Category is { } fc && ExplorerCategory(device.Category) != ExplorerCategory(fc)) continue;
+            if (filter.DeviceId is { } fd && device.DeviceId != fd) continue;
+            if (!sensorsByDisplay.TryGetValue(device.DeviceId, out var sensors)) continue;
+
+            // Virtual / disconnected devices (e.g. Hyper-V or VPN network adapters) only with "Show all", or when picked explicitly.
+            if (device.Relevance != DeviceRelevance.Primary && !state.ShowAllSensors && filter.DeviceId is null)
             {
+                secondaryTotal += sensors.Count;
                 continue;
             }
 
-            if (filter.DeviceId is { } fd && device.DeviceId != fd)
+            var deviceHidden = state.IsNodeHidden(ExplorerKeys.Device(device.DeviceId));
+            if (deviceHidden && !showHidden)
             {
+                userHidden += sensors.Count;
                 continue;
             }
 
-            if (!bySensorDevice.TryGetValue(device.DeviceId, out var sensors))
-            {
-                continue;
-            }
-
-            var deviceMatches = !string.IsNullOrEmpty(search) && device.Name.Contains(search, StringComparison.CurrentCultureIgnoreCase);
-            var groups = new List<(SensorGroupKind, List<SensorReading>)>();
+            var deviceMatches = hasSearch && device.Name.Contains(search!, StringComparison.CurrentCultureIgnoreCase);
+            var groups = new List<GroupEntry>();
+            var secondary = 0;
             foreach (var g in sensors.GroupBy(s => SensorClassifier.Classify(s, device.Category)).OrderBy(g => g.Key))
             {
-                if (filter.Group is { } fg && g.Key != fg)
-                {
-                    continue;
-                }
-
-                if (g.Key == SensorGroupKind.Metadata && !filter.IncludeMetadata)
-                {
-                    continue;
-                }
+                if (filter.Group is { } fg && g.Key != fg) continue;
+                if (g.Key == SensorGroupKind.Metadata && !filter.IncludeMetadata) continue;
 
                 var groupKey = ExplorerKeys.Group(device.DeviceId, g.Key);
-                var list = g.Where(s => state.ShowHidden || filter.Status == SensorStatusFilter.Hidden || !state.IsHidden(s.SensorId))
-                            .Where(s => filter.Provider is null || s.ProviderName == filter.Provider)
-                            .Where(s => filter.Accepts(s, state))
-                            .Where(s => string.IsNullOrEmpty(search) || deviceMatches || Matches(s, search))
-                            .ToList();
-                if (list.Count == 0)
+                var groupHidden = state.IsNodeHidden(groupKey);
+                if (groupHidden && !showHidden)
                 {
+                    userHidden += g.Count();
                     continue;
                 }
 
-                groups.Add((g.Key, Sort(list, groupKey, state)));
+                var list = new List<SensorReading>();
+                foreach (var s in g)
+                {
+                    if (!showHidden && state.IsHidden(s.SensorId)) { userHidden++; continue; }
+                    if (filter.Provider is not null && s.ProviderName != filter.Provider) continue;
+                    if (!filter.Accepts(s, state)) continue;
+                    if (hasSearch && !deviceMatches && !Matches(s, search!)
+                        && !(ownName.TryGetValue(s.DeviceId, out var chip) && chip.Contains(search!, StringComparison.CurrentCultureIgnoreCase))) continue;
+                    // Secondary sensors: shown with "Show all", when searched for, or when the user asked for them by status / pin / favourite.
+                    if (!state.ShowAllSensors && !hasSearch && !state.IsPinned(s.SensorId) && !state.IsFavorite(s.SensorId)
+                        && filter.Status is SensorStatusFilter.All or SensorStatusFilter.Reporting
+                        && SensorNoiseRules.IsSecondary(s, display.TryGetValue(s.DeviceId, out _) && ownCategory.TryGetValue(s.DeviceId, out var own) ? own : device.Category, g.Key))
+                    {
+                        secondary++;
+                        continue;
+                    }
+
+                    list.Add(s);
+                }
+
+                if (list.Count == 0) continue;
+                groups.Add(new GroupEntry(g.Key, groupKey, Sort(list, groupKey, state), groupHidden));
             }
 
+            secondaryTotal += secondary;
             if (groups.Count > 0)
             {
-                result.Add(new DeviceEntry(device, groups));
+                result.Add(new DeviceEntry(device, groups, deviceHidden, secondary));
             }
         }
 
+        stats = new BuildStats(secondaryTotal, userHidden);
         return result;
     }
 
@@ -300,16 +355,15 @@ public static class SensorExplorerBuilder
     public static IEnumerable<string> ContainerKeys(SensorSnapshot snapshot)
     {
         yield return ExplorerKeys.Favorites;
-        var cats = new HashSet<HardwareCategory>();
-        foreach (var d in snapshot.Devices)
+        var display = DisplayDevices(snapshot);
+        foreach (var d in display.Values.DistinctBy(d => d.DeviceId))
         {
-            if (cats.Add(ExplorerCategory(d.Category))) yield return ExplorerKeys.Category(ExplorerCategory(d.Category));
             yield return ExplorerKeys.Device(d.DeviceId);
         }
 
-        var devices = snapshot.Devices.ToDictionary(d => d.DeviceId, d => d.Category, StringComparer.Ordinal);
         foreach (var key in snapshot.Sensors
-                     .Select(s => ExplorerKeys.Group(s.DeviceId, SensorClassifier.Classify(s, devices.GetValueOrDefault(s.DeviceId))))
+                     .Select(s => display.TryGetValue(s.DeviceId, out var d) ? ExplorerKeys.Group(d.DeviceId, SensorClassifier.Classify(s, d.Category)) : null)
+                     .OfType<string>()
                      .Distinct(StringComparer.Ordinal))
         {
             yield return key;

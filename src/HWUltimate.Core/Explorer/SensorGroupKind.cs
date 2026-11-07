@@ -17,6 +17,7 @@ public enum SensorGroupKind
     Clocks,
     MemoryClocks,
     Utilization,
+    /// <summary>No longer assigned: per-core readings are listed with their type (all core temperatures under Temperatures). Kept so saved keys parse.</summary>
     PerCore,
     Throttling,
     PerformanceLimits,
@@ -63,11 +64,6 @@ public static partial class SensorClassifier
         if (category == HardwareCategory.Cpu && ThrottleName().IsMatch(name))
         {
             return SensorGroupKind.Throttling;
-        }
-
-        if (category == HardwareCategory.Cpu && IsPerCore(name) && type is SensorType.Temperature or SensorType.Clock or SensorType.Utilization or SensorType.Voltage or SensorType.Power or SensorType.Factor)
-        {
-            return SensorGroupKind.PerCore;
         }
 
         var lower = name.ToLowerInvariant();

@@ -65,6 +65,7 @@ public static class ThemeManager
         ("Brush.OnAccent", p.OnAccent),
         ("Brush.Good", p.Good),
         ("Brush.Warn", p.Warn),
+        ("Brush.WarnSoft", p.Panel.Mix(p.Warn, p.IsLight ? 0.12 : 0.16)),
         ("Brush.Bad", p.Bad),
         ("Brush.Info", p.Info),
         ("Brush.Series1", p.Accent),

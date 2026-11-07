@@ -59,7 +59,7 @@ public sealed partial class ExplorerRow : ObservableObject
     public string? GroupKey { get; private set; }
     public bool IsContainer => Kind != ExplorerNodeKind.Sensor;
     public bool IsSensor => Kind == ExplorerNodeKind.Sensor;
-    public double Indent => Depth * 16;
+    public double Indent => Depth * 18;
     public int Depth { get; private set; }
 
     [ObservableProperty] private string _title = string.Empty;
@@ -97,6 +97,7 @@ public sealed partial class ExplorerRow : ObservableObject
         (Title, Icon) = node.Kind switch
         {
             ExplorerNodeKind.Category when node.Key == ExplorerKeys.Favorites => (Loc.Get("Explorer_Favorites"), "Star"),
+            ExplorerNodeKind.Device when string.IsNullOrWhiteSpace(node.Title) => (Loc.Get($"Category_{node.Category}"), IconMap.ForCategory(node.Category)),
             ExplorerNodeKind.Category => (Loc.Get($"Category_{node.Category}"), IconMap.ForCategory(node.Category)),
             ExplorerNodeKind.Device => (node.Title, IconMap.ForCategory(node.Category)),
             ExplorerNodeKind.Group => (Loc.Get($"Group_{node.Group}"), SensorExplorerViewModel.GroupIcon(node.Group!.Value)),
@@ -104,8 +105,8 @@ public sealed partial class ExplorerRow : ObservableObject
         };
         if (node.Kind == ExplorerNodeKind.Device && node.Device is { } d)
         {
-            // Identification line: PCI ids when known, plus every provider contributing to this physical device.
-            Subtitle = string.Join("  ·  ", new[] { d.Identity?.PciIdText, string.Join(" + ", d.Providers) }.Where(x => !string.IsNullOrEmpty(x)));
+            // Identification (tooltip): category, PCI ids when known, and every provider contributing to this physical device.
+            Subtitle = string.Join("\n", new[] { Loc.Get($"Category_{SensorExplorerBuilder.ExplorerCategory(d.Category)}"), d.Identity?.PciIdText, string.Join(" + ", d.Providers) }.Where(x => !string.IsNullOrEmpty(x)));
             Status = node.IsAvailable ? HwuStatus.Normal : HwuStatus.Inactive;
         }
 
@@ -145,7 +146,14 @@ public sealed partial class ExplorerRow : ObservableObject
         unit == SensorUnit.Flag && value is { } f ? (f != 0 ? Loc.Get("Explorer_FlagActive") : "—") : unit.FormatValue(value, culture, na);
 }
 
-public sealed record FilterOption<T>(T? Value, string Label);
+public sealed record FilterOption<T>(T? Value, string Label)
+{
+    /// <summary>Shown wherever a template is missing, so a technical record name never reaches the screen.</summary>
+    public override string ToString() => Label;
+}
+
+/// <summary>An entry of the "Hidden sensors" list: a hidden sensor, device or group that can be shown again.</summary>
+public sealed record HiddenItem(string Key, string Title, string Detail, bool IsNode);
 
 public sealed partial class SensorExplorerViewModel : ObservableObject
 {
@@ -155,7 +163,7 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     private readonly DispatcherTimer _timer;
     private volatile SensorSnapshot _latest = SensorSnapshot.Empty;
     private SensorSnapshot? _applied;
-    private (int Sensors, int Devices, int Version) _signature = (-1, -1, -1);
+    private (int Sensors, int Devices, int Version, int Dynamic) _signature = (-1, -1, -1, -1);
     private int _version;
     private IReadOnlyList<ExplorerNode> _nodes = [];
 
@@ -167,6 +175,7 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         State = loaded.Sanitize();
         _isAdvanced = State.DisplayMode == ExplorerDisplayMode.Advanced;
         _showHidden = State.ShowHidden;
+        _showAllSensors = State.ShowAllSensors;
         _refreshIntervalMs = State.RefreshIntervalMs;
         Layout.Apply(State);
 
@@ -199,6 +208,7 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     public IReadOnlyList<FilterOption<HardwareCategory?>> CategoryFilters { get; }
     public RangeObservableCollection<FilterOption<string>> DeviceFilters { get; } = [];
     public RangeObservableCollection<FilterOption<string>> ProviderFilters { get; } = [];
+    public RangeObservableCollection<HiddenItem> HiddenItems { get; } = [];
     public IReadOnlyList<int> RefreshIntervals => SensorExplorerState.RefreshIntervals;
 
     [ObservableProperty] private string _searchText = string.Empty;
@@ -210,6 +220,12 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     [ObservableProperty] private FilterOption<SensorSortColumn?> _sortOption;
     [ObservableProperty] private bool _isAdvanced;
     [ObservableProperty] private bool _showHidden;
+    [ObservableProperty] private bool _showAllSensors;
+    [ObservableProperty] private bool _isRescanning;
+    [ObservableProperty] private string _rescanStatus = string.Empty;
+    [ObservableProperty] private bool _lowLevelDriverMissing;
+    [ObservableProperty] private string _secondaryNote = string.Empty;
+    [ObservableProperty] private int _hiddenCount;
     [ObservableProperty] private int _refreshIntervalMs;
     [ObservableProperty] private string _summary = string.Empty;
     [ObservableProperty] private bool _isEmpty;
@@ -253,11 +269,18 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         var snap = _latest;
         if (ReferenceEquals(snap, _applied)) return;
         _applied = snap;
-        var sig = (snap.Sensors.Count, snap.Devices.Count, _version);
+        var sig = (snap.Sensors.Count, snap.Devices.Count, _version, DynamicSignature(snap));
         var valueSorted = State.SortColumn is not (SensorSortColumn.Default or SensorSortColumn.Name);
         if (sig != _signature || valueSorted)
         {
-            if (sig.Item1 != _signature.Sensors || sig.Item2 != _signature.Devices) UpdateFilterLists(snap);
+            if (sig.Item1 != _signature.Sensors || sig.Item2 != _signature.Devices)
+            {
+                UpdateFilterLists(snap);
+                // Sensor ids that moved (e.g. drives renumbered at boot) take their hidden / favourite / pinned state with them.
+                if (State.Rebind(snap)) _store.Save(State);
+                LowLevelDriverMissing = _polling.ProviderStatuses.Values.Any(p => p.LowLevelDriverMissing);
+            }
+
             _signature = sig;
             Rebuild(snap);
         }
@@ -268,6 +291,22 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
                 if (row.SensorId is { } id && snap.Find(id) is { } reading) row.Apply(reading);
             }
         }
+    }
+
+    /// <summary>
+    /// Changes that alter the tree without changing the sensor count: a sensor reporting its first value, an empty fan
+    /// header starting to turn, a network adapter connecting.
+    /// </summary>
+    private static int DynamicSignature(SensorSnapshot snap)
+    {
+        var hash = 0;
+        foreach (var d in snap.Devices) hash = hash * 31 + (int)d.Relevance;
+        foreach (var s in snap.Sensors)
+        {
+            if (s.SampleCount == 0 || s.Maximum is <= 0 || s.Quality is DataQuality.Suspect or DataQuality.Stale) hash = hash * 31 + s.SensorId.Length + (int)s.Quality;
+        }
+
+        return hash;
     }
 
     private void Invalidate()
@@ -284,7 +323,7 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     private void Rebuild(SensorSnapshot snap)
     {
         var filter = CurrentFilter();
-        _nodes = SensorExplorerBuilder.Build(snap, State, filter);
+        _nodes = SensorExplorerBuilder.Build(snap, State, filter, out var stats);
         var rows = new List<ExplorerRow>(_nodes.Count);
         foreach (var node in _nodes)
         {
@@ -297,7 +336,9 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         IsEmpty = rows.Count == 0;
         ActiveFilterCount = new object?[] { GroupFilter.Value, CategoryFilter.Value, DeviceFilter.Value, ProviderFilter.Value }.Count(v => v is not null)
                             + (StatusFilter.Value is SensorStatusFilter.All or null ? 0 : 1);
-        Summary = Loc.Format("Explorer_Count", snap.Sensors.Count(s => s.IsMeasurement), snap.Devices.Count, State.HiddenSensors.Count, State.FavoriteSensors.Count);
+        Summary = Loc.Format("Explorer_Count", snap.Sensors.Count(s => s.IsMeasurement), SensorExplorerBuilder.DisplayDevices(snap).Values.DistinctBy(d => d.DeviceId).Count());
+        SecondaryNote = stats.SecondaryHidden > 0 && !ShowAllSensors ? Loc.Format("Explorer_SecondaryHidden", stats.SecondaryHidden) : string.Empty;
+        HiddenCount = State.HiddenSensors.Count + State.HiddenNodes.Count;
     }
 
     private void UpdateFilterLists(SensorSnapshot snap)
@@ -336,6 +377,12 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
         Invalidate();
     }
 
+    partial void OnShowAllSensorsChanged(bool value)
+    {
+        State.ShowAllSensors = value;
+        Invalidate();
+    }
+
     partial void OnRefreshIntervalMsChanged(int value)
     {
         State.RefreshIntervalMs = value;
@@ -366,17 +413,129 @@ public sealed partial class SensorExplorerViewModel : ObservableObject
     [RelayCommand]
     private void CollapseAll() { State.CollapseAll(SensorExplorerBuilder.ContainerKeys(_latest)); Invalidate(); }
 
-    [RelayCommand]
-    private void ToggleFavorite(ExplorerRow? row) { if (row?.SensorId is { } id) { State.ToggleFavorite(id); Invalidate(); } }
+    private string? Fingerprint(string sensorId)
+    {
+        var snap = _latest;
+        if (snap.Find(sensorId) is not { } s) return null;
+        var device = snap.Devices.FirstOrDefault(d => d.DeviceId == s.DeviceId);
+        return SensorExplorerState.FingerprintOf(s, device?.Name ?? s.DeviceId);
+    }
 
     [RelayCommand]
-    private void TogglePinned(ExplorerRow? row) { if (row?.SensorId is { } id) { State.TogglePinned(id); Invalidate(); } }
+    private void ToggleFavorite(ExplorerRow? row)
+    {
+        if (row?.SensorId is not { } id) return;
+        State.SetFavorite(id, !State.IsFavorite(id), Fingerprint(id));
+        Invalidate();
+    }
 
     [RelayCommand]
-    private void ToggleHidden(ExplorerRow? row) { if (row?.SensorId is { } id) { State.SetHidden(id, !State.IsHidden(id)); Invalidate(); } }
+    private void TogglePinned(ExplorerRow? row)
+    {
+        if (row?.SensorId is not { } id) return;
+        State.SetPinned(id, !State.IsPinned(id), Fingerprint(id));
+        Invalidate();
+    }
+
+    /// <summary>Hides (or shows again) a sensor, or a whole device / sensor group. Saved immediately; survives restarts.</summary>
+    [RelayCommand]
+    private void ToggleHidden(ExplorerRow? row)
+    {
+        if (row is null) return;
+        if (row.SensorId is { } id)
+        {
+            var hide = !State.IsHidden(id);
+            State.SetHidden(id, hide, Fingerprint(id), _latest.Find(id)?.DuplicateIds);
+        }
+        else if (row.Kind is ExplorerNodeKind.Device or ExplorerNodeKind.Group && ExplorerKeys.DeviceIdOf(row.Key) is { } deviceId)
+        {
+            var name = _latest.Devices.FirstOrDefault(d => d.DeviceId == deviceId)?.Name;
+            State.SetNodeHidden(row.Key, !State.IsNodeHidden(row.Key), name);
+        }
+        else
+        {
+            return;
+        }
+
+        Invalidate();
+        RefreshHiddenItems();
+    }
 
     [RelayCommand]
-    public void UnhideAll() { State.UnhideAll(); Invalidate(); }
+    public void UnhideAll() { State.UnhideAll(); Invalidate(); RefreshHiddenItems(); }
+
+    [RelayCommand]
+    private void Unhide(HiddenItem? item)
+    {
+        if (item is null) return;
+        if (item.IsNode) State.SetNodeHidden(item.Key, false, null);
+        else State.SetHidden(item.Key, false);
+        Invalidate();
+        RefreshHiddenItems();
+    }
+
+    /// <summary>Fills the "Hidden sensors" list, naming items from the live snapshot (or the saved fingerprint when absent).</summary>
+    [RelayCommand]
+    public void RefreshHiddenItems()
+    {
+        var snap = _latest;
+        var devices = snap.Devices.GroupBy(d => d.DeviceId).ToDictionary(g => g.Key, g => g.First());
+        var items = new List<HiddenItem>();
+        foreach (var key in State.HiddenNodes.Order())
+        {
+            var deviceId = ExplorerKeys.DeviceIdOf(key);
+            var name = deviceId is not null && devices.TryGetValue(deviceId, out var d) ? d.Name : State.NodeFingerprints.GetValueOrDefault(key, key);
+            var isGroup = key.StartsWith("grp:", StringComparison.Ordinal);
+            var title = isGroup && Enum.TryParse<SensorGroupKind>(key[(key.LastIndexOf('|') + 1)..], out var g) ? $"{name} › {Loc.Get($"Group_{g}")}" : name;
+            items.Add(new HiddenItem(key, title, Loc.Get(isGroup ? "Explorer_HiddenGroup" : "Explorer_HiddenDevice"), true));
+        }
+
+        foreach (var id in State.HiddenSensors.Order())
+        {
+            if (snap.Find(id) is { } s)
+            {
+                var dev = devices.TryGetValue(s.DeviceId, out var d) ? d.Name : s.DeviceId;
+                // A suppressed duplicate of a hidden sensor is hidden together with it; list the visible one only.
+                if (snap.Sensors.Any(o => o.DuplicateIds.Contains(id))) continue;
+                items.Add(new HiddenItem(id, s.Name, dev, false));
+            }
+            else if (State.Fingerprints.TryGetValue(id, out var fp))
+            {
+                var parts = fp.Split('|');
+                items.Add(new HiddenItem(id, parts[^1], $"{parts[0]} · {Loc.Get("Explorer_NotDetectedNow")}", false));
+            }
+        }
+
+        HiddenItems.ReplaceAll(items);
+    }
+
+    /// <summary>Repeats hardware detection without restarting (e.g. after installing PawnIO or when sensors are missing).</summary>
+    [RelayCommand]
+    private async Task RescanAsync()
+    {
+        if (IsRescanning) return;
+        IsRescanning = true;
+        RescanStatus = Loc.Get("Explorer_Rescanning");
+        try
+        {
+            var before = _latest.Sensors.Count;
+            await _polling.RescanAsync();
+            var after = await Task.Run(_polling.PollOnce);
+            LowLevelDriverMissing = _polling.ProviderStatuses.Values.Any(p => p.LowLevelDriverMissing);
+            RescanStatus = after.Sensors.Count > before ? Loc.Format("Explorer_RescanFound", after.Sensors.Count - before) : Loc.Get("Explorer_RescanNoChange");
+        }
+        catch (Exception ex)
+        {
+            RescanStatus = ex.Message;
+        }
+        finally
+        {
+            IsRescanning = false;
+        }
+    }
+
+    [RelayCommand]
+    private static void OpenPawnIo() => Ui.OpenUrl(Hardware.LibreHardwareMonitorProvider.PawnIoUrl);
 
     [RelayCommand]
     public void ClearFavorites() { State.FavoriteSensors.Clear(); State.PinnedSensors.Clear(); Invalidate(); }

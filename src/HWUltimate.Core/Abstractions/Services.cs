@@ -39,6 +39,12 @@ public interface ISensorPollingService : IAsyncDisposable
     void Start();
     Task StopAsync();
 
+    /// <summary>
+    /// Repeats hardware detection (providers that failed to open are retried; partial detections are redone).
+    /// Returns a description of what changed; empty when nothing did.
+    /// </summary>
+    Task<IReadOnlyList<string>> RescanAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Runs a single poll synchronously (used at start-up and by tests).</summary>
     SensorSnapshot PollOnce();
 
